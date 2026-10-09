@@ -71,3 +71,39 @@ body {
   }
   .print-area .keep-colors { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 }
+
+/* ===== CKEditor 4 Styles (from hostel reference) ===== */
+.ckeditor4-wrapper .cke {
+  border-radius: 0.75rem !important;
+  overflow: hidden;
+  border: 1px solid #d1d5db !important;
+}
+.ckeditor4-wrapper .cke_top {
+  background: #f9fafb !important;
+  border-bottom: 1px solid #e5e7eb !important;
+}
+.ckeditor4-wrapper .cke_bottom {
+  background: #f9fafb !important;
+  border-top: 1px solid #e5e7eb !important;
+}
+.ckeditor4-wrapper .cke_contents {
+  border: none !important;
+  font-size: 15px;
+  line-height: 1.8;
+}
+.ckeditor4-wrapper .cke_wysiwyg_frame {
+  font-size: 15px;
+  line-height: 1.8;
+  color: #1f2937;
+  padding: 4px;
+}
+.ckeditor4-wrapper .cke_toolgroup {
+  border-radius: 6px !important;
+  margin-right: 2px !important;
+}
+.ckeditor4-wrapper .cke_button:hover {
+  background: #ede9fe !important;
+}
+.ckeditor4-wrapper .cke_button_on {
+  background: #ddd6fe !important;
+}

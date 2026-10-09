@@ -9,6 +9,7 @@ import Orders from './Orders';
 import OrderDetail from './OrderDetail';
 import CheckIn from './CheckIn';
 import Settings from './Settings';
+import EmailTemplates from './EmailTemplates';
 import { lazy, Suspense, useEffect, useState } from 'react';
 import api from '../api/client';
 const StudioPage = lazy(() => import('./studio/Studio'));
@@ -31,7 +32,7 @@ export default function AdminApp() {
           <Route path="settings" element={<Settings />} />
           <Route element={<RequireSuperAdmin />}>
             <Route path="ticket-designs" element={<Studio section="tickets" />} />
-            <Route path="email-templates" element={<Studio section="emails" />} />
+            <Route path="email-templates" element={<EmailTemplates />} />
             <Route path="mail-settings" element={<Studio section="smtp" />} />
             <Route path="policies" element={<Studio section="pages" />} />
             <Route path="email-delivery" element={<Studio section="delivery" />} />

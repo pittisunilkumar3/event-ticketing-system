@@ -1,0 +1,128 @@
+/**
+ * Default email templates for TicketFlow — same structure as the hostel
+ * reference project's emailTemplateDefaults.ts. Auto-seeded when missing.
+ */
+const DEFAULT_TEMPLATES = [
+  // ── Customer Templates (template_type = 'user') ──────────────────
+  {
+    email_type: 'registration',
+    template_type: 'user',
+    title: 'Welcome to TicketFlow!',
+    body: 'Hi {{name}},<br><br>Thank you for registering with us! Your account has been created successfully.<br><br>You can now browse events, book tickets, and manage your reservations all in one place.',
+    button_name: 'Browse Events',
+    button_url: '#',
+    footer_text: 'Please contact us for any queries, we are always happy to help.',
+  },
+  {
+    email_type: 'forgot_password',
+    template_type: 'user',
+    title: 'Password Reset Request',
+    body: 'Hi {{name}},<br><br>We received a request to reset your password. Click the button below to create a new password.<br><br>If you did not request this, you can safely ignore this email.',
+    button_name: 'Reset Password',
+    button_url: '{{reset_url}}',
+    footer_text: 'If you did not request a password reset, please ignore this email.',
+  },
+  {
+    email_type: 'booking_confirmation',
+    template_type: 'user',
+    title: 'Your Booking is Confirmed!',
+    body: 'Hi {{name}},<br><br>Great news! Your booking has been confirmed.<br><br><strong>Booking ID:</strong> {{booking_id}}<br><strong>Event:</strong> {{event_title}}<br><strong>Date:</strong> {{event_date}} at {{event_time}}<br><strong>Venue:</strong> {{venue}}, {{city}}<br><strong>Tickets:</strong> {{tickets_summary}}<br><strong>Amount Paid:</strong> {{amount}}<br><br>Please present your QR e-tickets at the entrance. We look forward to seeing you!',
+    button_name: 'View My Tickets',
+    button_url: '#',
+    footer_text: 'Please contact us for any queries regarding your booking.',
+  },
+  {
+    email_type: 'booking_cancelled',
+    template_type: 'user',
+    title: 'Booking Cancelled',
+    body: 'Hi {{name}},<br><br>Your booking <strong>{{booking_id}}</strong> for <strong>{{event_title}}</strong> has been cancelled as per your request.<br><br>Refund amount: {{refund_amount}}<br><br>If you did not request this cancellation, please contact our support team immediately.',
+    button_name: 'Book Again',
+    button_url: '#',
+    footer_text: 'Please contact us for any queries, we are always happy to help.',
+  },
+  {
+    email_type: 'payment_success',
+    template_type: 'user',
+    title: 'Payment Successful!',
+    body: 'Hi {{name}},<br><br>Your payment has been processed successfully!<br><br><strong>Amount:</strong> {{amount}}<br><strong>Booking ID:</strong> {{booking_id}}<br><strong>Event:</strong> {{event_title}}<br><br>Thank you for your payment. Your e-tickets are confirmed.',
+    button_name: 'View Booking',
+    button_url: '#',
+    footer_text: 'Please keep this as your payment confirmation.',
+  },
+  {
+    email_type: 'payment_failed',
+    template_type: 'user',
+    title: 'Payment Failed',
+    body: 'Hi {{name}},<br><br>Unfortunately, your payment of <strong>{{amount}}</strong> for <strong>{{event_title}}</strong> could not be processed.<br><br>Your booking <strong>{{booking_id}}</strong> is still reserved — please retry the payment from your bookings page.',
+    button_name: 'Retry Payment',
+    button_url: '#',
+    footer_text: 'If you believe this is an error, please contact support.',
+  },
+  {
+    email_type: 'event_reminder',
+    template_type: 'user',
+    title: 'Tomorrow: {{event_title}}!',
+    body: 'Hi {{name}},<br><br>This is a friendly reminder that <strong>{{event_title}}</strong> is tomorrow!<br><br><strong>Date:</strong> {{event_date}} at {{event_time}}<br><strong>Venue:</strong> {{venue}}, {{city}}<br><strong>Tickets:</strong> {{tickets_summary}}<br><br>Please arrive early with your QR e-tickets ready.',
+    button_name: 'View Tickets',
+    button_url: '#',
+    footer_text: 'We look forward to seeing you!',
+  },
+  {
+    email_type: 'ticket_refunded',
+    template_type: 'user',
+    title: 'Refund Processed',
+    body: 'Hi {{name}},<br><br>A refund of <strong>{{refund_amount}}</strong> for booking <strong>{{booking_id}}</strong> ({{event_title}}) has been processed.<br><br>The amount should reach your original payment method within 5-7 business days.',
+    button_name: 'View Details',
+    button_url: '#',
+    footer_text: 'Please contact us for any queries, we are always happy to help.',
+  },
+
+  // ── Admin Templates (template_type = 'admin') ────────────────────
+  {
+    email_type: 'registration',
+    template_type: 'admin',
+    title: 'New Customer Registration',
+    body: 'A new customer has registered on your platform.<br><br><strong>Name:</strong> {{name}}<br><strong>Email:</strong> {{email}}<br><strong>Phone:</strong> {{phone}}',
+    button_name: 'View Customer',
+    button_url: '#',
+    footer_text: 'Please review the new registration.',
+  },
+  {
+    email_type: 'new_booking',
+    template_type: 'admin',
+    title: 'New Booking Received',
+    body: 'A new booking has been placed.<br><br><strong>Customer:</strong> {{customer_name}}<br><strong>Email:</strong> {{email}}<br><strong>Booking ID:</strong> {{booking_id}}<br><strong>Event:</strong> {{event_title}}<br><strong>Tickets:</strong> {{tickets_summary}}<br><strong>Amount:</strong> {{amount}}',
+    button_name: 'View Booking',
+    button_url: '#',
+    footer_text: 'Please review the new booking.',
+  },
+  {
+    email_type: 'booking_cancelled',
+    template_type: 'admin',
+    title: 'Booking Cancelled',
+    body: 'A booking has been cancelled.<br><br><strong>Customer:</strong> {{customer_name}}<br><strong>Booking ID:</strong> {{booking_id}}<br><strong>Event:</strong> {{event_title}}<br><strong>Refund:</strong> {{refund_amount}}',
+    button_name: 'View Details',
+    button_url: '#',
+    footer_text: 'Please review the cancellation details.',
+  },
+  {
+    email_type: 'payment_received',
+    template_type: 'admin',
+    title: 'Payment Received',
+    body: 'A payment has been received.<br><br><strong>Customer:</strong> {{customer_name}}<br><strong>Amount:</strong> {{amount}}<br><strong>Booking ID:</strong> {{booking_id}}<br><br>Please review the payment in the admin dashboard.',
+    button_name: 'View Payment',
+    button_url: '#',
+    footer_text: 'Please review the payment details.',
+  },
+  {
+    email_type: 'contact_message',
+    template_type: 'admin',
+    title: 'New Contact Message',
+    body: 'A new message has been received from the contact form.<br><br><strong>Name:</strong> {{name}}<br><strong>Email:</strong> {{email}}<br><strong>Phone:</strong> {{phone}}<br><strong>Message:</strong> {{message}}',
+    button_name: 'View Message',
+    button_url: '#',
+    footer_text: 'Please respond to the customer inquiry.',
+  },
+];
+
+module.exports = { DEFAULT_TEMPLATES };

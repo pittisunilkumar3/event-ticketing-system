@@ -33,6 +33,7 @@ app.use('/api/admin/ticket-types', require('./routes/ticketTypeRoutes'));
 app.use('/api/admin/orders', require('./routes/orderRoutes'));
 app.use('/api/admin/tickets', require('./routes/ticketRoutes'));
 app.use('/api/admin/studio', require('./routes/studioRoutes'));
+app.use('/api/admin/email-templates', require('./routes/emailTemplateRoutes'));
 require('./services/mailer').startWorker();
 
 // ---- Errors ----
