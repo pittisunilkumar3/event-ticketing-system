@@ -8,7 +8,7 @@ function generateTicketCode() {
 }
 
 const Ticket = {
-  async create({ order_id, ticket_type_id, attendee_name }, connection = db) {
+  async create({ order_id, ticket_type_id, attendee_name, design_snapshot }, connection = db) {
     let code;
     let attempts = 0;
     // Retry in the rare case of a code collision
@@ -16,8 +16,8 @@ const Ticket = {
       try {
         code = generateTicketCode();
         const [result] = await connection.query(
-          'INSERT INTO tickets (order_id, ticket_type_id, ticket_code, attendee_name) VALUES (?, ?, ?, ?)',
-          [order_id, ticket_type_id, code, attendee_name || null]
+          'INSERT INTO tickets (order_id, ticket_type_id, ticket_code, attendee_name, design_snapshot) VALUES (?, ?, ?, ?, ?)',
+          [order_id, ticket_type_id, code, attendee_name || null, design_snapshot ? JSON.stringify(design_snapshot) : null]
         );
         const [rows] = await connection.query('SELECT * FROM tickets WHERE id = ?', [result.insertId]);
         return rows[0];
@@ -39,7 +39,7 @@ const Ticket = {
        WHERE t.order_id = ? ORDER BY t.id`,
       [orderId]
     );
-    return rows;
+    return rows.map(row => ({ ...row, design: row.design_snapshot ? JSON.parse(row.design_snapshot) : require('../services/studioDefaults').ticket, design_snapshot: undefined }));
   },
 
   async findByCode(code, connection = db) {

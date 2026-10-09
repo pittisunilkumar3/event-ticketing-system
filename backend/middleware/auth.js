@@ -16,4 +16,14 @@ function verifyToken(req, res, next) {
   }
 }
 
-module.exports = { verifyToken };
+/** Read the current role from the database; an old JWT cannot retain revoked privileges. */
+async function requireSuperAdmin(req, res, next) {
+  try {
+    const admin = await require('../models/Admin').findById(req.admin.id);
+    if (!admin || admin.role !== 'super_admin') return res.status(403).json({ success: false, message: 'Superadmin access is required.' });
+    req.admin = admin;
+    next();
+  } catch (err) { next(err); }
+}
+
+module.exports = { verifyToken, requireSuperAdmin };

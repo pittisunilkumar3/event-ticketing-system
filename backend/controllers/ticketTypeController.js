@@ -1,6 +1,21 @@
 const TicketType = require('../models/TicketType');
 const Event = require('../models/Event');
 const { asyncHandler } = require('../middleware/errorHandler');
+const Studio = require('../models/Studio');
+const { fail } = require('../services/studioValidation');
+
+async function validateFields(input, existing = {}) {
+  const values = { ...existing, ...input };
+  if (typeof values.name !== 'string' || !values.name.trim() || values.name.length > 100) fail('Ticket name is required (up to 100 characters).');
+  if (!Number.isFinite(Number(values.price)) || Number(values.price) < 0 || Number(values.price) > 99999999.99) fail('Enter a valid non-negative price.');
+  if (!Number.isInteger(Number(values.quantity)) || Number(values.quantity) < 1 || Number(values.quantity) > 1000000) fail('Capacity must be a whole number between 1 and 1,000,000.');
+  for (const field of ['sales_start','sales_end']) if (values[field] && Number.isNaN(new Date(values[field]).getTime())) fail('Enter valid sales dates.');
+  if (values.sales_start && values.sales_end && new Date(values.sales_end) <= new Date(values.sales_start)) fail('Sales end must be after sales start.');
+  if (input.template_id) {
+    const template = await Studio.template(input.template_id);
+    if (!template || template.kind !== 'ticket' || !template.active) fail('Choose an active ticket design.');
+  }
+}
 
 /** GET /api/admin/ticket-types?event_id=1 */
 const list = asyncHandler(async (req, res) => {
@@ -15,6 +30,7 @@ const list = asyncHandler(async (req, res) => {
 /** POST /api/admin/ticket-types */
 const create = asyncHandler(async (req, res) => {
   const { event_id, name, price, quantity } = req.body;
+  await validateFields(req.body);
   if (!event_id || !name || price === undefined || quantity === undefined) {
     return res.status(400).json({ success: false, message: 'event_id, name, price and quantity are required.' });
   }
@@ -33,6 +49,7 @@ const create = asyncHandler(async (req, res) => {
     quantity,
     sales_start: req.body.sales_start || null,
     sales_end: req.body.sales_end || null,
+    template_id: req.body.template_id || null,
   });
   res.status(201).json({ success: true, message: 'Ticket type created', data: { ticketType: type } });
 });
@@ -44,6 +61,7 @@ const update = asyncHandler(async (req, res) => {
     return res.status(404).json({ success: false, message: 'Ticket type not found' });
   }
   // cannot reduce quantity below already-sold
+  await validateFields(req.body, type);
   if (req.body.quantity !== undefined && Number(req.body.quantity) < type.sold) {
     return res.status(400).json({
       success: false,

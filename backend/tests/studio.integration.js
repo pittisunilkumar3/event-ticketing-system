@@ -1,0 +1,73 @@
+/** Uses an isolated disposable database; never writes to ticketing_db or sends email. */
+require('dotenv').config();
+const assert=require('node:assert/strict');
+const {spawn,spawnSync}=require('node:child_process');
+const mysql=require('mysql2/promise');
+const net=require('node:net');
+const crypto=require('node:crypto');
+const name=`ticketflow_test_${Date.now()}_${process.pid}`;
+const connOptions={host:process.env.DB_HOST || '127.0.0.1',port:Number(process.env.DB_PORT || 3306),user:process.env.DB_USER || 'root',password:process.env.DB_PASSWORD || ''};
+let child,connection;
+async function run(){
+  const listener=net.createServer();await new Promise(resolve=>listener.listen(0,'127.0.0.1',resolve));const port=listener.address().port;await new Promise(resolve=>listener.close(resolve));
+  const env={...process.env,DB_NAME:name,PORT:String(port),NODE_ENV:'test',SETTINGS_ENCRYPTION_KEY:crypto.randomBytes(32).toString('hex')};
+  for(const script of ['migrations/migrate.js','seeders/seed.js']){const result=spawnSync(process.execPath,[script],{env,encoding:'utf8'});if(result.status!==0)throw new Error(`Test setup failed: ${script}: ${result.stderr}`);}
+  connection=await mysql.createConnection({...connOptions,database:name});
+  child=spawn(process.execPath,['server.js'],{env,stdio:'ignore'});
+  const base=`http://127.0.0.1:${port}/api`;
+  for(let i=0;i<50;i++){try{await fetch(base+'/events');break;}catch{await new Promise(resolve=>setTimeout(resolve,100));}}
+  let token;
+  async function api(path,method='GET',body,auth=token){const r=await fetch(base+path,{method,headers:{'Content-Type':'application/json',...(auth?{Authorization:'Bearer '+auth}:{})},body:body?JSON.stringify(body):undefined});return {status:r.status,...await r.json()};}
+  const login=await api('/auth/login','POST',{email:'admin@ticketing.com',password:'admin123'},null);assert.equal(login.status,200);token=login.data.token;
+  assert.equal((await api('/admin/studio/bootstrap','GET',null,null)).status,401);
+  const bootstrap=await api('/admin/studio/bootstrap');assert.equal(bootstrap.status,200);assert.equal(bootstrap.data.ticketTemplates.length,3);assert.equal(bootstrap.data.emailTemplates.length,3);assert.equal(bootstrap.data.smtp.enabled,false);assert.ok(!('password_encrypted' in bootstrap.data.smtp));
+  const jwt=require('jsonwebtoken');
+  const [staffResult]=await connection.query("INSERT INTO admins (name,email,password_hash,role) VALUES ('Test staff','staff@example.test','unused','staff')");
+  const staff=jwt.sign({id:staffResult.insertId,role:'super_admin'},process.env.JWT_SECRET);
+  assert.equal((await api('/admin/studio/bootstrap','GET',null,staff)).status,403);
+  console.log('PASS: live superadmin authorization, defaults and secret masking');
+  const ticket=await api('/admin/studio/templates','POST',{kind:'ticket',name:'Integration VIP',active:true,config:{...bootstrap.data.defaults.ticket,brand:'Original Brand'}});assert.equal(ticket.status,201);
+  const event=await api('/admin/events','POST',{title:'Integration Event',category:'Conference',venue:'Test Hall',city:'Test City',status:'published',start_datetime:'2027-12-12 18:00:00'});assert.equal(event.status,201);
+  const type=await api('/admin/ticket-types','POST',{event_id:event.data.event.id,name:'VIP',price:30,quantity:2,template_id:ticket.data.template.id});assert.equal(type.status,201);
+  assert.equal((await api('/admin/ticket-types','POST',{event_id:event.data.event.id,name:'Broken',price:'bad',quantity:1})).status,400);
+  const order=await api('/orders','POST',{event_id:event.data.event.id,customer_name:'Test Guest',email:'guest@example.test',items:[{ticket_type_id:type.data.ticketType.id,qty:2}]},null);assert.equal(order.status,201);assert.equal(order.data.tickets.length,2);assert.equal(order.data.tickets[0].type_name,'VIP');assert.equal(order.data.tickets[0].design.brand,'Original Brand');
+  assert.equal((await api('/orders','POST',{event_id:event.data.event.id,customer_name:'Overflow',email:'overflow@example.test',items:[{ticket_type_id:type.data.ticketType.id,qty:1}]},null)).status,409);
+  await api('/admin/studio/templates/'+ticket.data.template.id,'PUT',{name:'Integration VIP',active:true,config:{...ticket.data.template.config,brand:'Changed Brand'}});
+  const booking=await api('/bookings/'+order.data.order.booking_ref,'GET',null,null);assert.equal(booking.data.tickets[0].design.brand,'Original Brand');
+  const results=await Promise.all([api(`/admin/orders/${order.data.order.id}/cancel`,'PATCH'),api(`/admin/orders/${order.data.order.id}/cancel`,'PATCH')]);assert.deepEqual(results.map(r=>r.status).sort(),[200,409]);
+  const after=await api('/admin/events/'+event.data.event.id);assert.equal(after.data.ticketTypes[0].sold,0);
+  const log=await api('/admin/studio/mail-log');const orderLogs=log.data.logs.filter(l=>l.order_id===order.data.order.id);assert.equal(orderLogs.length,2);assert.ok(orderLogs.every(l=>l.status==='skipped'));
+  console.log('PASS: event → ticket type → booking → immutable design → cancel / inventory release');
+  const email=bootstrap.data.emailTemplates[0];
+  const update=await api('/admin/studio/templates/'+email.id,'PUT',{name:email.name,active:false,config:{...email.config,title:'Saved {{customer_name}}'}});assert.equal(update.status,200);
+  const again=await api('/admin/studio/bootstrap');assert.equal(again.data.emailTemplates[0].config.title,'Saved {{customer_name}}');assert.equal(again.data.emailTemplates[0].active,false);
+  const preview=await api('/admin/studio/email-preview','POST',{config:update.data.template.config});assert.match(preview.data.html,/Saved Alex Morgan/);
+  const smtp=await api('/admin/studio/smtp','PUT',{...bootstrap.data.smtp,host:'smtp.example.test',username:'user',password:'secret-not-returned',from_email:'from@example.test',enabled:false});assert.equal(smtp.status,200);assert.equal(smtp.data.smtp.has_password,true);assert.doesNotMatch(JSON.stringify(smtp),/secret-not-returned|password_encrypted/);
+  const [secretRows]=await connection.query("SELECT value_json FROM system_settings WHERE setting_key='smtp'");assert.doesNotMatch(secretRows[0].value_json,/secret-not-returned/);
+  assert.equal((await api('/admin/studio/smtp','PUT',{...smtp.data.smtp,password:''})).status,200);
+  console.log('PASS: email save / preview parity and encrypted SMTP persistence');
+  assert.equal((await api('/admin/studio/social-links','PUT',{socialLinks:{instagram:'https://instagram.com/test'}},staff)).status,403);
+  assert.equal((await api('/admin/studio/social-links','PUT',{socialLinks:{instagram:'javascript:alert(1)'}})).status,400);
+  const socials=await api('/admin/studio/social-links','PUT',{socialLinks:{instagram:'https://instagram.com/test',youtube:'https://youtube.com/@test'}});
+  assert.equal(socials.status,200);
+  const loaded=await api('/admin/studio/bootstrap');
+  assert.equal(loaded.data.socialLinks.instagram,'https://instagram.com/test');
+  assert.equal(loaded.data.smtp.has_password,true);
+  assert.deepEqual(loaded.data.brand,bootstrap.data.brand);
+  const publicSocials=await api('/social-links','GET',null,null);
+  assert.deepEqual(publicSocials.data.socialLinks,socials.data.socialLinks);
+  assert.deepEqual(Object.keys(publicSocials.data),['socialLinks']);
+  const inherited=await api('/admin/studio/email-preview','POST',{config:{...email.config,social_mode:'brand'}});
+  assert.match(inherited.data.html,/https:\/\/instagram.com\/test/);
+  await api('/admin/studio/social-links','PUT',{socialLinks:{}});
+  const removed=await api('/admin/studio/email-preview','POST',{config:{...email.config,social_mode:'brand'}});
+  assert.doesNotMatch(removed.data.html,/instagram.com\/test/);
+  console.log('PASS: social links save, reload, clear, authorization and email inheritance');
+  assert.equal((await api('/pages/privacy-policy','GET',null,null)).status,404);
+  const policy=await api('/admin/studio/pages/privacy-policy','PUT',{title:'Privacy Policy',body:'<p>Test content</p><script>alert(1)</script>',published:true});assert.equal(policy.status,200);assert.doesNotMatch(policy.data.page.body,/<script/);
+  assert.equal((await api('/pages/privacy-policy','GET',null,null)).status,200);
+  assert.equal((await api('/pages','GET',null,null)).data.pages.length,1);
+  await api('/admin/studio/pages/privacy-policy','PUT',{title:'Privacy Policy',body:'<p>Test content</p>',published:false});assert.equal((await api('/pages/privacy-policy','GET',null,null)).status,404);
+  console.log('PASS: policy publish / unpublish, public visibility, HTML sanitization');
+}
+run().catch(err=>{console.error(err);process.exitCode=1;}).finally(async()=>{if(child){child.kill('SIGTERM');await new Promise(resolve=>child.once('exit',resolve));}if(connection)await connection.end();const cleanup=await mysql.createConnection(connOptions);await cleanup.query(`DROP DATABASE IF EXISTS \`${name}\``);await cleanup.end();console.log('Isolated test database removed.');});

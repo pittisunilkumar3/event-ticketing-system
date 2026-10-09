@@ -16,6 +16,11 @@ const empty = {
   status: 'draft',
 };
 
+function toInput(dt) {
+    // "2026-11-08 18:00:00" → datetime-local format
+    return dt ? String(dt).replace(' ', 'T').slice(0, 16) : '';
+  }
+
 export default function EventForm() {
   const { id } = useParams();
   const isEdit = Boolean(id);
@@ -47,12 +52,8 @@ export default function EventForm() {
       })
       .catch((err) => setError(err.response?.data?.message || 'Failed to load event'))
       .finally(() => setLoading(false));
-  }, [id]);
+  }, [id, isEdit]);
 
-  function toInput(dt) {
-    // "2026-11-08 18:00:00" → datetime-local format
-    return dt ? String(dt).slice(0, 16) : '';
-  }
 
   function setField(e) {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -72,6 +73,10 @@ export default function EventForm() {
       setError('Title and start date/time are required.');
       return;
     }
+    if (form.end_datetime && form.end_datetime <= form.start_datetime) {
+      setError('End time must be after the start time.');
+      return;
+    }
     setSaving(true);
 
     const payload = new FormData();
@@ -80,11 +85,12 @@ export default function EventForm() {
 
     try {
       if (isEdit) {
-        await api.put(`/admin/events/${id}`, payload);
+        await api.put(`/admin/events/${id}`, payload, { headers: { 'Content-Type': 'multipart/form-data' } });
+        navigate(`/admin/events/${id}`);
       } else {
-        await api.post('/admin/events', payload);
+        const { data } = await api.post('/admin/events', payload, { headers: { 'Content-Type': 'multipart/form-data' } });
+        navigate(`/admin/events/${data.data.event.id}`);
       }
-      navigate(`/admin/events${isEdit ? `/${id}` : ''}`);
     } catch (err) {
       setError(err.response?.data?.message || 'Save failed');
       setSaving(false);
@@ -95,10 +101,11 @@ export default function EventForm() {
 
   return (
     <div className="mx-auto max-w-3xl space-y-5">
-      <Link to={isEdit ? `/admin/events/${id}` : '/admin/events'} className="text-sm font-medium text-slate-500 hover:text-indigo-700">
+      <Link to={isEdit ? `/admin/events/${id}` : '/admin/events'} className="text-sm font-medium text-slate-500 hover:text-orange-700">
         ← Back
       </Link>
       <h1 className="text-2xl font-extrabold text-slate-900">{isEdit ? 'Edit Event' : 'Create Event'}</h1>
+      {!isEdit && <p className="text-sm text-slate-500">Step 1 of 2 · Set up your event. Next, add ticket types, prices, capacity and a ticket design.</p>}
 
       <form onSubmit={handleSubmit} className="space-y-5 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
         {error && <Alert>{error}</Alert>}
@@ -121,14 +128,14 @@ export default function EventForm() {
               </button>
             </div>
           ) : (
-            <label className="flex h-32 cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-300 text-slate-400 hover:border-indigo-400 hover:text-indigo-500">
+            <label className="flex h-32 cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-300 text-slate-400 hover:border-orange-400 hover:text-orange-500">
               <span className="text-2xl">🖼️</span>
               <span className="mt-1 text-sm">Click to upload (jpg/png/webp, max 5MB)</span>
               <input type="file" accept="image/*" onChange={handleBanner} className="hidden" />
             </label>
           )}
           {bannerPreview && (
-            <label className="mt-2 block text-center text-xs font-semibold text-indigo-700 hover:underline">
+            <label className="mt-2 block text-center text-xs font-semibold text-orange-700 hover:underline">
               <input type="file" accept="image/*" onChange={handleBanner} className="hidden" />
               Replace image
             </label>
@@ -182,7 +189,7 @@ export default function EventForm() {
           <button
             type="submit"
             disabled={saving}
-            className="rounded-xl bg-indigo-600 px-6 py-2.5 text-sm font-bold text-white shadow transition hover:bg-indigo-700 disabled:opacity-60"
+            className="rounded-xl bg-orange-600 px-6 py-2.5 text-sm font-bold text-white shadow transition hover:bg-orange-700 disabled:opacity-60"
           >
             {saving ? 'Saving…' : isEdit ? 'Save changes' : 'Create event'}
           </button>
@@ -200,7 +207,7 @@ export default function EventForm() {
 }
 
 const inputCls =
-  'w-full rounded-lg border border-slate-300 px-3.5 py-2.5 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-100';
+  'w-full rounded-lg border border-slate-300 px-3.5 py-2.5 text-sm focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-100';
 
 function Field({ label, required, children }) {
   return (

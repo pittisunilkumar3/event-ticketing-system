@@ -6,8 +6,11 @@ import EventDetail from './pages/EventDetail';
 import Checkout from './pages/Checkout';
 import Confirmation from './pages/Confirmation';
 import MyBookings from './pages/MyBookings';
-import AdminApp from './admin/AdminApp';
+import { lazy, Suspense } from 'react';
+const AdminApp = lazy(() => import('./admin/AdminApp'));
+
 import NotFound from './pages/NotFound';
+import PolicyPage from './pages/PolicyPage';
 
 export default function App() {
   return (
@@ -15,7 +18,7 @@ export default function App() {
       <div className="flex min-h-screen flex-col">
         <Routes>
           {/* Admin has its own full-screen layout */}
-          <Route path="/admin/*" element={<AdminApp />} />
+          <Route path="/admin/*" element={<Suspense fallback={<div className="p-12 text-center">Opening workspace…</div>}><AdminApp /></Suspense>} />
 
           {/* Customer site */}
           <Route
@@ -30,6 +33,7 @@ export default function App() {
                     <Route path="/checkout/:slug" element={<Checkout />} />
                     <Route path="/confirmation/:ref" element={<Confirmation />} />
                     <Route path="/my-bookings" element={<MyBookings />} />
+                    <Route path="/pages/:slug" element={<PolicyPage />} />
                     <Route path="*" element={<NotFound />} />
                   </Routes>
                 </div>

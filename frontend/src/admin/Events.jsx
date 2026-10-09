@@ -52,7 +52,7 @@ export default function Events() {
         <h1 className="text-2xl font-extrabold text-slate-900">Events</h1>
         <Link
           to="/admin/events/new"
-          className="rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-bold text-white shadow transition hover:bg-indigo-700"
+          className="rounded-xl bg-orange-600 px-4 py-2.5 text-sm font-bold text-white shadow transition hover:bg-orange-700"
         >
           + New Event
         </Link>
@@ -67,7 +67,7 @@ export default function Events() {
             setPagination((p) => ({ ...p, page: 1 }));
           }}
           placeholder="🔍 Search events…"
-          className="w-64 rounded-lg border border-slate-300 px-3.5 py-2 text-sm focus:border-indigo-500 focus:outline-none"
+          className="w-64 rounded-lg border border-slate-300 px-3.5 py-2 text-sm focus:border-orange-500 focus:outline-none"
         />
         <select
           value={status}
@@ -75,7 +75,7 @@ export default function Events() {
             setStatus(e.target.value);
             setPagination((p) => ({ ...p, page: 1 }));
           }}
-          className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none"
+          className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:border-orange-500 focus:outline-none"
         >
           <option value="">All statuses</option>
           <option value="published">Published</option>
@@ -91,7 +91,7 @@ export default function Events() {
         <Spinner />
       ) : events.length === 0 ? (
         <EmptyState title="No events found" subtitle="Create your first event to start selling tickets.">
-          <Link to="/admin/events/new" className="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-bold text-white">
+          <Link to="/admin/events/new" className="rounded-xl bg-orange-600 px-4 py-2 text-sm font-bold text-white">
             + Create event
           </Link>
         </EmptyState>
@@ -117,7 +117,7 @@ export default function Events() {
                         {event.banner_image && <img src={event.banner_image} alt="" className="h-full w-full object-cover" />}
                       </div>
                       <div className="min-w-0">
-                        <Link to={`/admin/events/${event.id}`} className="font-semibold text-slate-800 hover:text-indigo-700">
+                        <Link to={`/admin/events/${event.id}`} className="font-semibold text-slate-800 hover:text-orange-700">
                           {event.title}
                         </Link>
                         <p className="text-xs text-slate-500">
@@ -128,7 +128,7 @@ export default function Events() {
                   </td>
                   <td className="px-3 py-3 text-xs text-slate-600">{formatDateTime(event.start_datetime)}</td>
                   <td className="px-3 py-3 text-slate-600">{event.ticket_type_count}</td>
-                  <td className="px-3 py-3 font-semibold text-indigo-700">{formatCurrency(event.revenue)}</td>
+                  <td className="px-3 py-3 font-semibold text-orange-700">{formatCurrency(event.revenue)}</td>
                   <td className="px-3 py-3">
                     <StatusBadge status={event.status} />
                   </td>
@@ -137,7 +137,7 @@ export default function Events() {
                       <Link to={`/admin/events/${event.id}`} className="rounded-lg bg-slate-100 px-2.5 py-1.5 text-slate-600 hover:bg-slate-200">
                         View
                       </Link>
-                      <Link to={`/admin/events/${event.id}/edit`} className="rounded-lg bg-indigo-50 px-2.5 py-1.5 text-indigo-700 hover:bg-indigo-100">
+                      <Link to={`/admin/events/${event.id}/edit`} className="rounded-lg bg-orange-50 px-2.5 py-1.5 text-orange-700 hover:bg-orange-100">
                         Edit
                       </Link>
                       <button
@@ -164,7 +164,7 @@ export default function Events() {
               key={p}
               onClick={() => setPagination((prev) => ({ ...prev, page: p }))}
               className={`h-9 w-9 rounded-lg text-sm font-semibold ${
-                p === pagination.page ? 'bg-indigo-600 text-white' : 'bg-white text-slate-600 ring-1 ring-slate-300 hover:bg-slate-50'
+                p === pagination.page ? 'bg-orange-600 text-white' : 'bg-white text-slate-600 ring-1 ring-slate-300 hover:bg-slate-50'
               }`}
             >
               {p}

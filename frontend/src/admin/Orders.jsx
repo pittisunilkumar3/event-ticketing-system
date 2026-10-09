@@ -45,7 +45,7 @@ export default function Orders() {
             setPagination((p) => ({ ...p, page: 1 }));
           }}
           placeholder="🔍 Search ref, name, email…"
-          className="w-72 rounded-lg border border-slate-300 px-3.5 py-2 text-sm focus:border-indigo-500 focus:outline-none"
+          className="w-72 rounded-lg border border-slate-300 px-3.5 py-2 text-sm focus:border-orange-500 focus:outline-none"
         />
         <select
           value={status}
@@ -53,7 +53,7 @@ export default function Orders() {
             setStatus(e.target.value);
             setPagination((p) => ({ ...p, page: 1 }));
           }}
-          className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none"
+          className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:border-orange-500 focus:outline-none"
         >
           <option value="">All statuses</option>
           <option value="paid">Paid</option>
@@ -88,7 +88,7 @@ export default function Orders() {
               {orders.map((o) => (
                 <tr key={o.id} className="cursor-pointer hover:bg-slate-50">
                   <td className="px-5 py-3">
-                    <Link to={`/admin/orders/${o.id}`} className="font-mono text-xs font-bold text-indigo-700 hover:underline">
+                    <Link to={`/admin/orders/${o.id}`} className="font-mono text-xs font-bold text-orange-700 hover:underline">
                       {o.booking_ref}
                     </Link>
                   </td>
@@ -117,7 +117,7 @@ export default function Orders() {
               key={p}
               onClick={() => setPagination((prev) => ({ ...prev, page: p }))}
               className={`h-9 w-9 rounded-lg text-sm font-semibold ${
-                p === pagination.page ? 'bg-indigo-600 text-white' : 'bg-white text-slate-600 ring-1 ring-slate-300 hover:bg-slate-50'
+                p === pagination.page ? 'bg-orange-600 text-white' : 'bg-white text-slate-600 ring-1 ring-slate-300 hover:bg-slate-50'
               }`}
             >
               {p}

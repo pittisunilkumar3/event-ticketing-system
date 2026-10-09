@@ -1,11 +1,11 @@
 const db = require('../config/db');
 
 const TicketType = {
-  async create({ event_id, name, description, price, quantity, sales_start, sales_end }) {
+  async create({ event_id, name, description, price, quantity, sales_start, sales_end, template_id }) {
     const [result] = await db.query(
-      `INSERT INTO ticket_types (event_id, name, description, price, quantity, sales_start, sales_end)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      [event_id, name, description || null, price, quantity, sales_start || null, sales_end || null]
+      `INSERT INTO ticket_types (event_id, name, description, price, quantity, sales_start, sales_end, template_id)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [event_id, name, description || null, price, quantity, sales_start || null, sales_end || null, template_id || null]
     );
     return this.findById(result.insertId);
   },
@@ -21,7 +21,7 @@ const TicketType = {
   },
 
   async update(id, fields) {
-    const allowed = ['name', 'description', 'price', 'quantity', 'sales_start', 'sales_end'];
+    const allowed = ['name', 'description', 'price', 'quantity', 'sales_start', 'sales_end', 'template_id'];
     const sets = [];
     const params = [];
     for (const key of allowed) {

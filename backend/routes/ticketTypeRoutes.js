@@ -3,6 +3,10 @@ const controller = require('../controllers/ticketTypeController');
 const { verifyToken } = require('../middleware/auth');
 
 router.use(verifyToken);
+router.get('/designs', require('../middleware/errorHandler').asyncHandler(async (req, res) => {
+  const templates = (await require('../models/Studio').templates('ticket')).filter(t => t.active);
+  res.json({ success: true, data: { templates } });
+}));
 
 router.get('/', controller.list);
 router.post('/', controller.create);

@@ -1,6 +1,15 @@
 import { Link } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import api from '../api/client';
+import { socialNetworks } from '../utils/social';
 
 export default function Footer() {
+  const [pages,setPages]=useState([]);
+  const [socialLinks,setSocialLinks]=useState({});
+  useEffect(()=>{
+    api.get('/pages').then(({data})=>setPages(data.data.pages)).catch(()=>{});
+    api.get('/social-links').then(({data})=>setSocialLinks(data.data.socialLinks)).catch(()=>{});
+  },[]);
   return (
     <footer className="no-print relative border-t border-white/5 bg-slate-950">
       <div className="mx-auto grid max-w-6xl gap-10 px-4 py-14 sm:grid-cols-3">
@@ -16,6 +25,7 @@ export default function Footer() {
           <p className="mt-3 max-w-xs text-sm leading-relaxed text-slate-500">
             Discover events, book in seconds, and get your e-tickets instantly — all in one place.
           </p>
+          <nav aria-label="Social media" className="mt-5 flex flex-wrap gap-x-4 gap-y-2 text-sm">{socialNetworks.filter(({key})=>socialLinks[key]).map(({key,name})=><a key={key} href={socialLinks[key]} target="_blank" rel="noopener noreferrer" className="text-slate-400 transition hover:text-orange-400">{name} ↗</a>)}</nav>
         </div>
 
         <div>
@@ -27,14 +37,8 @@ export default function Footer() {
         </div>
 
         <div>
-          <h4 className="text-xs font-bold uppercase tracking-widest text-slate-500">Built with</h4>
-          <div className="mt-4 flex flex-wrap gap-2">
-            {['React', 'Vite', 'Tailwind', 'Express', 'MySQL', 'XAMPP'].map((t) => (
-              <span key={t} className="rounded-full bg-white/5 px-3 py-1 text-xs font-medium text-slate-400 ring-1 ring-white/10">
-                {t}
-              </span>
-            ))}
-          </div>
+          <h4 className="text-xs font-bold uppercase tracking-widest text-slate-500">Information</h4>
+          <ul className="mt-4 space-y-2.5 text-sm">{pages.map(page=><li key={page.slug}><Link to={`/pages/${page.slug}`} className="text-slate-400 transition hover:text-white">{page.title}</Link></li>)}</ul>
         </div>
       </div>
 

@@ -9,6 +9,22 @@ const Order = require('../models/Order');
 const Ticket = require('../models/Ticket');
 const orderController = require('../controllers/orderController');
 const { asyncHandler } = require('../middleware/errorHandler');
+const Studio = require('../models/Studio');
+const { socialLinks } = require('../services/studioValidation');
+
+router.get('/social-links', asyncHandler(async (req, res) => {
+  res.json({ success: true, data: { socialLinks: socialLinks(await Studio.getSetting('social_links')) } });
+}));
+
+router.get('/pages', asyncHandler(async (req, res) => {
+  const pages = (await Studio.pages(true)).map(({ slug, title }) => ({ slug, title }));
+  res.json({ success: true, data: { pages } });
+}));
+router.get('/pages/:slug', asyncHandler(async (req, res) => {
+  const page = (await Studio.pages(true)).find(p => p.slug === req.params.slug);
+  if (!page) return res.status(404).json({ success: false, message: 'This page has not been published yet.' });
+  res.json({ success: true, data: { page } });
+}));
 
 // GET /api/events — browse published events
 router.get(

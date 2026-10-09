@@ -32,17 +32,17 @@ export default function Login() {
   return (
     <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-slate-950 px-4">
       {/* glow orbs */}
-      <div className="pointer-events-none absolute -top-32 left-[15%] h-96 w-96 rounded-full bg-indigo-600/20 blur-3xl" />
-      <div className="pointer-events-none absolute bottom-0 right-[10%] h-96 w-96 rounded-full bg-fuchsia-600/15 blur-3xl" />
+      <div className="pointer-events-none absolute -top-32 left-[15%] h-96 w-96 rounded-full bg-orange-600/20 blur-3xl" />
+      <div className="pointer-events-none absolute bottom-0 right-[10%] h-96 w-96 rounded-full bg-orange-600/15 blur-3xl" />
       <div className="dot-grid absolute inset-0" aria-hidden="true" />
 
       <div className="relative w-full max-w-md">
         <div className="text-center">
-          <span className="inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-500 text-3xl shadow-xl shadow-indigo-500/30">
+          <span className="inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-orange-500 to-amber-500 text-3xl shadow-xl shadow-orange-500/30">
             🎟️
           </span>
           <h1 className="mt-5 font-display text-2xl font-extrabold text-white">
-            Ticket<span className="text-indigo-400">Flow</span> Admin
+            Ticket<span className="text-orange-400">Flow</span> Admin
           </h1>
           <p className="mt-1.5 text-sm text-slate-500">Sign in to manage your events</p>
         </div>
@@ -57,7 +57,7 @@ export default function Login() {
               value={form.email}
               onChange={(e) => setForm({ ...form, email: e.target.value })}
               placeholder="admin@ticketing.com"
-              className="w-full rounded-xl bg-white/[0.05] px-4 py-3 text-sm text-white placeholder-slate-600 ring-1 ring-white/10 transition focus:bg-white/[0.08] focus:outline-none focus:ring-2 focus:ring-indigo-400/60"
+              className="w-full rounded-xl bg-white/[0.05] px-4 py-3 text-sm text-white placeholder-slate-600 ring-1 ring-white/10 transition focus:bg-white/[0.08] focus:outline-none focus:ring-2 focus:ring-orange-400/60"
             />
           </div>
           <div>
@@ -68,13 +68,13 @@ export default function Login() {
               value={form.password}
               onChange={(e) => setForm({ ...form, password: e.target.value })}
               placeholder="••••••••"
-              className="w-full rounded-xl bg-white/[0.05] px-4 py-3 text-sm text-white placeholder-slate-600 ring-1 ring-white/10 transition focus:bg-white/[0.08] focus:outline-none focus:ring-2 focus:ring-indigo-400/60"
+              className="w-full rounded-xl bg-white/[0.05] px-4 py-3 text-sm text-white placeholder-slate-600 ring-1 ring-white/10 transition focus:bg-white/[0.08] focus:outline-none focus:ring-2 focus:ring-orange-400/60"
             />
           </div>
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-xl bg-gradient-to-r from-indigo-500 to-violet-500 py-3.5 font-display font-bold text-white shadow-[0_12px_40px_-10px_rgba(139,92,246,0.6)] transition hover:opacity-90 disabled:opacity-60"
+            className="w-full rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 py-3.5 font-display font-bold text-white shadow-[0_12px_40px_-10px_rgba(139,92,246,0.6)] transition hover:opacity-90 disabled:opacity-60"
           >
             {loading ? (
               <span className="inline-flex items-center gap-2">

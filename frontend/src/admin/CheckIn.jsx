@@ -61,19 +61,19 @@ export default function CheckIn() {
             value={code}
             onChange={(e) => setCode(e.target.value)}
             placeholder="TCK-XXXX-XXXX-XXXX"
-            className="w-full rounded-lg border border-slate-300 px-4 py-3 font-mono text-sm uppercase tracking-wider focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-100"
+            className="w-full rounded-lg border border-slate-300 px-4 py-3 font-mono text-sm uppercase tracking-wider focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-100"
             autoFocus
           />
           <button
             type="submit"
             disabled={loading}
-            className="rounded-lg bg-indigo-600 px-5 font-bold text-white hover:bg-indigo-700 disabled:opacity-60"
+            className="rounded-lg bg-orange-600 px-5 font-bold text-white hover:bg-orange-700 disabled:opacity-60"
           >
             {loading ? '…' : 'Lookup'}
           </button>
         </div>
         {ticket && (
-          <button type="button" onClick={reset} className="mt-2 text-xs font-semibold text-slate-400 hover:text-indigo-700">
+          <button type="button" onClick={reset} className="mt-2 text-xs font-semibold text-slate-400 hover:text-orange-700">
             ✕ Clear
           </button>
         )}
@@ -111,7 +111,7 @@ export default function CheckIn() {
               <button
                 onClick={checkIn}
                 disabled={loading}
-                className="w-full rounded-xl bg-indigo-600 py-3.5 font-bold text-white transition hover:bg-indigo-500 disabled:opacity-60"
+                className="w-full rounded-xl bg-orange-600 py-3.5 font-bold text-white transition hover:bg-orange-500 disabled:opacity-60"
               >
                 {loading ? 'Processing…' : '✅ Check in this ticket'}
               </button>

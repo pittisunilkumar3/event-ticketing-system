@@ -72,7 +72,9 @@ const changePassword = asyncHandler(async (req, res) => {
     return res.status(400).json({ success: false, message: 'New password must be at least 6 characters.' });
   }
 
-  const admin = await Admin.findByEmail(req.admin.email);
+  const identity = await Admin.findById(req.admin.id);
+  if (!identity) return res.status(404).json({ success: false, message: 'Admin not found.' });
+  const admin = await Admin.findByEmail(identity.email);
   const isMatch = await bcrypt.compare(current_password, admin.password_hash);
   if (!isMatch) {
     return res.status(401).json({ success: false, message: 'Current password is incorrect.' });

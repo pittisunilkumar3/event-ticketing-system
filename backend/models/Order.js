@@ -2,6 +2,9 @@ const crypto = require('crypto');
 const db = require('../config/db');
 const TicketType = require('./TicketType');
 const Ticket = require('./Ticket');
+const Studio = require('./Studio');
+const { enqueue } = require('../services/mailer');
+const defaultTicketDesign = require('../services/studioDefaults').ticket;
 
 function generateBookingRef() {
   return 'TKT-' + crypto.randomBytes(4).toString('hex').toUpperCase(); // e.g. TKT-8F3K2A91
@@ -82,12 +85,15 @@ const Order = {
       // 4. Issue tickets
       const tickets = [];
       for (const { ticketType, qty } of resolvedItems) {
+        const template = ticketType.template_id ? await Studio.template(ticketType.template_id, conn) : null;
+        const design = { ...(template?.active && template.kind === 'ticket' ? template.config : defaultTicketDesign), type_name: ticketType.name, price: ticketType.price };
         for (let i = 0; i < qty; i++) {
           const ticket = await Ticket.create(
             {
               order_id: orderId,
               ticket_type_id: ticketType.id,
               attendee_name: customer_name,
+              design_snapshot: design,
             },
             conn
           );
@@ -95,10 +101,11 @@ const Order = {
         }
       }
 
+      await enqueue(conn, orderId, 'booking_confirmed');
       await conn.commit();
 
       const order = await this.findById(orderId);
-      return { order, tickets };
+      return { order, tickets: await Ticket.findByOrderId(orderId) };
     } catch (err) {
       await conn.rollback();
       throw err;
@@ -186,6 +193,7 @@ const Order = {
     try {
       await conn.beginTransaction();
 
+      await conn.query('SELECT id FROM orders WHERE id=? FOR UPDATE', [id]);
       const order = await this.findById(id, conn);
       if (!order) {
         const err = new Error('Order not found');
@@ -216,6 +224,7 @@ const Order = {
 
       // 3. Update order status
       await conn.query('UPDATE orders SET status = ? WHERE id = ?', [newStatus, id]);
+      await enqueue(conn, id, newStatus === 'refunded' ? 'booking_refunded' : 'booking_cancelled');
 
       await conn.commit();
       return this.findById(id);

@@ -9,7 +9,7 @@ const { errorHandler, notFound } = require('./middleware/errorHandler');
 
 // ---- Middleware ----
 app.use(cors()); // allow frontend (Vite :5173) to call the API
-app.use(express.json());
+app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true }));
 
 // Serve uploaded banners: http://localhost:5001/uploads/<file>
@@ -32,12 +32,14 @@ app.use('/api/admin/events', require('./routes/eventRoutes'));
 app.use('/api/admin/ticket-types', require('./routes/ticketTypeRoutes'));
 app.use('/api/admin/orders', require('./routes/orderRoutes'));
 app.use('/api/admin/tickets', require('./routes/ticketRoutes'));
+app.use('/api/admin/studio', require('./routes/studioRoutes'));
+require('./services/mailer').startWorker();
 
 // ---- Errors ----
 app.use(notFound);
 app.use(errorHandler);
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5001;
 app.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
   console.log(`   Environment: ${process.env.NODE_ENV || 'development'}`);

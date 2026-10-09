@@ -48,7 +48,7 @@ export default function AdminEventDetail() {
 
   return (
     <div className="space-y-6">
-      <Link to="/admin/events" className="text-sm font-medium text-slate-500 hover:text-indigo-700">
+      <Link to="/admin/events" className="text-sm font-medium text-slate-500 hover:text-orange-700">
         ← All events
       </Link>
 
@@ -71,7 +71,7 @@ export default function AdminEventDetail() {
           <div className="flex items-end justify-end gap-2">
             <Link
               to={`/admin/events/${id}/edit`}
-              className="rounded-lg bg-indigo-50 px-3 py-2 text-sm font-bold text-indigo-700 hover:bg-indigo-100"
+              className="rounded-lg bg-orange-50 px-3 py-2 text-sm font-bold text-orange-700 hover:bg-orange-100"
             >
               ✏️ Edit event
             </Link>
@@ -94,10 +94,10 @@ export default function AdminEventDetail() {
       {/* Ticket types */}
       <div className="rounded-2xl bg-white shadow-sm ring-1 ring-slate-200">
         <div className="flex items-center justify-between border-b border-slate-100 p-5">
-          <h2 className="font-bold text-slate-900">Ticket types</h2>
+          <div><h2 className="font-bold text-slate-900">Ticket types & designs</h2><p className="mt-1 text-xs text-slate-500">Choose what to sell, set capacity, and assign a ticket design.</p></div>
           <button
             onClick={() => setModal({ mode: 'add', values: emptyType })}
-            className="rounded-lg bg-indigo-600 px-3.5 py-2 text-sm font-bold text-white hover:bg-indigo-700"
+            className="rounded-lg bg-orange-600 px-3.5 py-2 text-sm font-bold text-white hover:bg-orange-700"
           >
             + Add type
           </button>
@@ -108,7 +108,7 @@ export default function AdminEventDetail() {
             No ticket types yet — add one to start selling.
           </p>
         ) : (
-          <table className="w-full text-sm">
+          <div className="overflow-x-auto"><table className="w-full text-sm">
             <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
               <tr>
                 <th className="px-5 py-3">Name</th>
@@ -128,11 +128,11 @@ export default function AdminEventDetail() {
                       <p className="font-semibold text-slate-800">{tt.name}</p>
                       {tt.description && <p className="text-xs text-slate-500">{tt.description}</p>}
                     </td>
-                    <td className="px-3 py-3 font-bold text-indigo-700">{formatCurrency(tt.price)}</td>
+                    <td className="px-3 py-3 font-bold text-orange-700">{formatCurrency(tt.price)}</td>
                     <td className="px-3 py-3">
                       <div className="flex items-center gap-2">
                         <div className="h-2 w-24 overflow-hidden rounded-full bg-slate-200">
-                          <div className="h-full rounded-full bg-indigo-500" style={{ width: `${pct}%` }} />
+                          <div className="h-full rounded-full bg-orange-500" style={{ width: `${pct}%` }} />
                         </div>
                         <span className="text-xs text-slate-500">
                           {tt.sold}/{tt.quantity}
@@ -155,7 +155,7 @@ export default function AdminEventDetail() {
                       <div className="flex justify-end gap-2 text-xs font-semibold">
                         <button
                           onClick={() => setModal({ mode: 'edit', values: toFormValues(tt) })}
-                          className="rounded-lg bg-indigo-50 px-2.5 py-1.5 text-indigo-700 hover:bg-indigo-100"
+                          className="rounded-lg bg-orange-50 px-2.5 py-1.5 text-orange-700 hover:bg-orange-100"
                         >
                           Edit
                         </button>
@@ -172,7 +172,7 @@ export default function AdminEventDetail() {
                 );
               })}
             </tbody>
-          </table>
+          </table></div>
         )}
       </div>
 
@@ -199,10 +199,11 @@ const emptyType = {
   quantity: '',
   sales_start: '',
   sales_end: '',
+  template_id: '',
 };
 
 function toFormValues(tt) {
-  const toInput = (dt) => (dt ? String(dt).slice(0, 16) : '');
+  const toInput = (dt) => (dt ? String(dt).replace(' ', 'T').slice(0, 16) : '');
   return {
     id: tt.id,
     name: tt.name,
@@ -211,6 +212,7 @@ function toFormValues(tt) {
     quantity: tt.quantity,
     sales_start: toInput(tt.sales_start),
     sales_end: toInput(tt.sales_end),
+    template_id: tt.template_id || '',
   };
 }
 
@@ -219,6 +221,11 @@ function TypeModal({ eventId, modal, onClose, onSaved }) {
   const [values, setValues] = useState(modal.values);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [designs, setDesigns] = useState([]);
+  const [designError, setDesignError] = useState('');
+  useEffect(() => {
+    api.get('/admin/ticket-types/designs').then(({data}) => setDesigns(data.data.templates)).catch(() => setDesignError('Could not load ticket designs. You can still use the default design.'));
+  }, []);
 
   function setField(e) {
     setValues({ ...values, [e.target.name]: e.target.value });
@@ -240,6 +247,7 @@ function TypeModal({ eventId, modal, onClose, onSaved }) {
       quantity: Number(values.quantity),
       sales_start: values.sales_start || null,
       sales_end: values.sales_end || null,
+      template_id: values.template_id ? Number(values.template_id) : null,
     };
     try {
       if (isEdit) await api.put(`/admin/ticket-types/${values.id}`, payload);
@@ -256,14 +264,16 @@ function TypeModal({ eventId, modal, onClose, onSaved }) {
       <form
         onClick={(e) => e.stopPropagation()}
         onSubmit={handleSubmit}
-        className="w-full max-w-lg space-y-4 rounded-2xl bg-white p-6 shadow-2xl"
+        role="dialog" aria-modal="true" aria-label={isEdit ? 'Edit ticket type' : 'Add ticket type'}
+        className="max-h-[90dvh] w-full max-w-lg space-y-4 overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl"
       >
         <h3 className="text-lg font-bold text-slate-900">{isEdit ? 'Edit ticket type' : 'Add ticket type'}</h3>
         {error && <Alert>{error}</Alert>}
+        {!isEdit && <div className="flex flex-wrap gap-2">{['General Admission','VIP','Early Bird','Student','Workshop','Free Pass'].map(name=><button key={name} type="button" className="rounded-full bg-orange-50 px-3 py-1.5 text-xs font-semibold text-orange-700" onClick={()=>setValues({...values,name,price:name==='Free Pass'?0:values.price})}>{name}</button>)}</div>}
 
         <div>
-          <label className={labelCls}>Name *</label>
-          <input name="name" value={values.name} onChange={setField} className={inputCls} placeholder="VIP" />
+          <label htmlFor="type-name" className={labelCls}>Name *</label>
+          <input id="type-name" name="name" required value={values.name} onChange={setField} className={inputCls} placeholder="VIP" />
         </div>
         <div>
           <label className={labelCls}>Description</label>
@@ -290,11 +300,21 @@ function TypeModal({ eventId, modal, onClose, onSaved }) {
           </div>
         </div>
 
+        <div>
+          <label htmlFor="ticket-design" className={labelCls}>Ticket design</label>
+          <select id="ticket-design" name="template_id" value={values.template_id} onChange={setField} className={inputCls}>
+            <option value="">Default TicketFlow design</option>
+            {values.template_id && !designs.some(t=>t.id===Number(values.template_id)) && <option value={values.template_id}>Previously assigned design (unavailable)</option>}
+            {designs.map(t=><option key={t.id} value={t.id}>{t.name} · {t.config.layout}</option>)}
+          </select>
+          <p className="mt-2 text-xs text-slate-500">{designError || 'New bookings receive this design. Existing tickets keep their original design.'}</p>
+          <Link to="/admin/ticket-designs" className="mt-2 inline-block text-xs font-semibold text-orange-600">Open ticket design studio →</Link>
+        </div>
         <div className="flex justify-end gap-3 border-t border-slate-100 pt-4">
           <button type="button" onClick={onClose} className="rounded-xl px-5 py-2.5 text-sm font-bold text-slate-600 ring-1 ring-slate-300 hover:bg-slate-50">
             Cancel
           </button>
-          <button type="submit" disabled={saving} className="rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-indigo-700 disabled:opacity-60">
+          <button type="submit" disabled={saving} className="rounded-xl bg-orange-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-orange-700 disabled:opacity-60">
             {saving ? 'Saving…' : isEdit ? 'Save changes' : 'Add type'}
           </button>
         </div>
@@ -313,5 +333,5 @@ function Meta({ label, value }) {
 }
 
 const inputCls =
-  'w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-100';
+  'w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-100';
 const labelCls = 'mb-1 block text-sm font-semibold text-slate-700';

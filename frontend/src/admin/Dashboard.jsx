@@ -42,8 +42,8 @@ export default function Dashboard() {
 
       {/* KPI cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <Kpi label="Total Revenue" value={formatCurrency(kpi.total_revenue)} icon="💰" accent="from-indigo-500 to-violet-500" sub={`${kpi.paid_orders} paid orders`} />
-        <Kpi label="Active Events" value={kpi.active_events} icon="🎪" accent="from-indigo-500 to-violet-500" sub={`${kpi.draft_events} drafts`} />
+        <Kpi label="Total Revenue" value={formatCurrency(kpi.total_revenue)} icon="💰" accent="from-orange-500 to-amber-500" sub={`${kpi.paid_orders} paid orders`} />
+        <Kpi label="Active Events" value={kpi.active_events} icon="🎪" accent="from-orange-500 to-amber-500" sub={`${kpi.draft_events} drafts`} />
         <Kpi label="Tickets Sold" value={kpi.valid_tickets + kpi.checked_in_tickets} icon="🎟️" accent="from-orange-400 to-rose-500" sub={`${kpi.checked_in_tickets} checked in`} />
         <Kpi label="Cancelled / Refunded" value={kpi.cancelled_orders} icon="↩️" accent="from-slate-500 to-slate-700" sub={`${kpi.pending_orders} pending`} />
       </div>
@@ -56,7 +56,7 @@ export default function Dashboard() {
               <h3 className="font-display font-bold text-slate-900">Sales trend</h3>
               <p className="text-xs text-slate-400">Revenue · last 14 days</p>
             </div>
-            <span className="rounded-full bg-indigo-50 px-3 py-1 text-xs font-bold text-indigo-700">📈 Live</span>
+            <span className="rounded-full bg-orange-50 px-3 py-1 text-xs font-bold text-orange-700">📈 Live</span>
           </div>
           {salesTrend.length === 0 ? (
             <p className="py-20 text-center text-sm text-slate-400">No sales in the last 14 days</p>
@@ -66,15 +66,15 @@ export default function Dashboard() {
                 <AreaChart data={salesTrend}>
                   <defs>
                     <linearGradient id="revGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#6366f1" stopOpacity={0.4} />
-                      <stop offset="100%" stopColor="#a78bfa" stopOpacity={0} />
+                      <stop offset="0%" stopColor="#e76529" stopOpacity={0.4} />
+                      <stop offset="100%" stopColor="#efb773" stopOpacity={0} />
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
                   <XAxis dataKey="date" tick={{ fontSize: 11, fill: '#94a3b8' }} tickFormatter={(d) => d.slice(5)} axisLine={false} tickLine={false} />
                   <YAxis tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
                   <Tooltip contentStyle={tooltipStyle} formatter={(v, name) => (name === 'revenue' ? [formatCurrency(v), 'Revenue'] : [v, 'Orders'])} />
-                  <Area type="monotone" dataKey="revenue" stroke="#6366f1" strokeWidth={2.5} fill="url(#revGrad)" />
+                  <Area type="monotone" dataKey="revenue" stroke="#e76529" strokeWidth={2.5} fill="url(#revGrad)" />
                 </AreaChart>
               </ResponsiveContainer>
             </div>
@@ -96,8 +96,8 @@ export default function Dashboard() {
                 <BarChart data={topEvents} layout="vertical" margin={{ left: 10 }}>
                   <defs>
                     <linearGradient id="barGrad" x1="0" y1="0" x2="1" y2="0">
-                      <stop offset="0%" stopColor="#6366f1" />
-                      <stop offset="100%" stopColor="#a78bfa" />
+                      <stop offset="0%" stopColor="#e76529" />
+                      <stop offset="100%" stopColor="#efb773" />
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" horizontal={false} />
@@ -129,7 +129,7 @@ export default function Dashboard() {
               <h3 className="font-display font-bold text-slate-900">Recent orders</h3>
               <p className="text-xs text-slate-400">Latest bookings</p>
             </div>
-            <Link to="/admin/orders" className="text-sm font-semibold text-indigo-700 hover:underline">
+            <Link to="/admin/orders" className="text-sm font-semibold text-orange-700 hover:underline">
               View all →
             </Link>
           </div>
@@ -138,7 +138,7 @@ export default function Dashboard() {
               {recentOrders.map((o) => (
                 <tr key={o.id} className="transition hover:bg-slate-50">
                   <td className="px-5 py-3.5">
-                    <Link to={`/admin/orders/${o.id}`} className="font-mono text-xs font-bold text-indigo-700 hover:underline">
+                    <Link to={`/admin/orders/${o.id}`} className="font-mono text-xs font-bold text-orange-700 hover:underline">
                       {o.booking_ref}
                     </Link>
                     <p className="mt-0.5 text-xs text-slate-500">{o.customer_name}</p>
@@ -161,7 +161,7 @@ export default function Dashboard() {
               <h3 className="font-display font-bold text-slate-900">Upcoming events</h3>
               <p className="text-xs text-slate-400">Next on the calendar</p>
             </div>
-            <Link to="/admin/events" className="text-sm font-semibold text-indigo-700 hover:underline">
+            <Link to="/admin/events" className="text-sm font-semibold text-orange-700 hover:underline">
               Manage →
             </Link>
           </div>
@@ -170,14 +170,14 @@ export default function Dashboard() {
               {upcoming.map((e) => (
                 <tr key={e.id} className="transition hover:bg-slate-50">
                   <td className="px-5 py-3.5">
-                    <Link to={`/admin/events/${e.id}`} className="font-semibold text-slate-800 transition hover:text-indigo-700">
+                    <Link to={`/admin/events/${e.id}`} className="font-semibold text-slate-800 transition hover:text-orange-700">
                       {e.title}
                     </Link>
                     <p className="mt-0.5 text-xs text-slate-500">📍 {e.venue}, {e.city}</p>
                   </td>
                   <td className="px-2 py-3.5 text-xs text-slate-500">{formatDateTime(e.start_datetime)}</td>
                   <td className="px-5 py-3.5 text-right">
-                    <span className="rounded-full bg-gradient-to-r from-indigo-500 to-violet-500 px-3 py-1 text-xs font-bold text-white shadow-sm shadow-indigo-500/30">
+                    <span className="rounded-full bg-gradient-to-r from-orange-500 to-amber-500 px-3 py-1 text-xs font-bold text-white shadow-sm shadow-orange-500/30">
                       {e.tickets_sold} sold
                     </span>
                   </td>
