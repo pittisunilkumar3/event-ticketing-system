@@ -23,7 +23,6 @@ export default function Footer() {
           <ul className="mt-4 space-y-2.5 text-sm">
             <li><Link to="/" className="text-slate-400 transition hover:text-white">Browse events</Link></li>
             <li><Link to="/my-bookings" className="text-slate-400 transition hover:text-white">Find my booking</Link></li>
-            <li><Link to="/admin/login" className="text-slate-400 transition hover:text-white">Admin panel</Link></li>
           </ul>
         </div>
 

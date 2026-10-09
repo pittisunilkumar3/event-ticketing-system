@@ -25,12 +25,6 @@ export default function Navbar() {
           <NavLink to="/my-bookings" className={linkClass}>
             My Bookings
           </NavLink>
-          <Link
-            to="/admin/login"
-            className="ml-2 rounded-full bg-gradient-to-r from-indigo-500 to-fuchsia-500 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-indigo-500/25 transition hover:opacity-90"
-          >
-            Admin
-          </Link>
         </nav>
       </div>
     </header>
