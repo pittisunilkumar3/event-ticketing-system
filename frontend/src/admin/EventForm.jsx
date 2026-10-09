@@ -95,7 +95,7 @@ export default function EventForm() {
 
   return (
     <div className="mx-auto max-w-3xl space-y-5">
-      <Link to={isEdit ? `/admin/events/${id}` : '/admin/events'} className="text-sm font-medium text-slate-500 hover:text-emerald-700">
+      <Link to={isEdit ? `/admin/events/${id}` : '/admin/events'} className="text-sm font-medium text-slate-500 hover:text-indigo-700">
         ← Back
       </Link>
       <h1 className="text-2xl font-extrabold text-slate-900">{isEdit ? 'Edit Event' : 'Create Event'}</h1>
@@ -121,14 +121,14 @@ export default function EventForm() {
               </button>
             </div>
           ) : (
-            <label className="flex h-32 cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-300 text-slate-400 hover:border-emerald-400 hover:text-emerald-500">
+            <label className="flex h-32 cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-300 text-slate-400 hover:border-indigo-400 hover:text-indigo-500">
               <span className="text-2xl">🖼️</span>
               <span className="mt-1 text-sm">Click to upload (jpg/png/webp, max 5MB)</span>
               <input type="file" accept="image/*" onChange={handleBanner} className="hidden" />
             </label>
           )}
           {bannerPreview && (
-            <label className="mt-2 block text-center text-xs font-semibold text-emerald-700 hover:underline">
+            <label className="mt-2 block text-center text-xs font-semibold text-indigo-700 hover:underline">
               <input type="file" accept="image/*" onChange={handleBanner} className="hidden" />
               Replace image
             </label>
@@ -182,7 +182,7 @@ export default function EventForm() {
           <button
             type="submit"
             disabled={saving}
-            className="rounded-xl bg-emerald-600 px-6 py-2.5 text-sm font-bold text-white shadow transition hover:bg-emerald-700 disabled:opacity-60"
+            className="rounded-xl bg-indigo-600 px-6 py-2.5 text-sm font-bold text-white shadow transition hover:bg-indigo-700 disabled:opacity-60"
           >
             {saving ? 'Saving…' : isEdit ? 'Save changes' : 'Create event'}
           </button>
@@ -200,7 +200,7 @@ export default function EventForm() {
 }
 
 const inputCls =
-  'w-full rounded-lg border border-slate-300 px-3.5 py-2.5 text-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100';
+  'w-full rounded-lg border border-slate-300 px-3.5 py-2.5 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-100';
 
 function Field({ label, required, children }) {
   return (

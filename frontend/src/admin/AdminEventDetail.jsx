@@ -48,7 +48,7 @@ export default function AdminEventDetail() {
 
   return (
     <div className="space-y-6">
-      <Link to="/admin/events" className="text-sm font-medium text-slate-500 hover:text-emerald-700">
+      <Link to="/admin/events" className="text-sm font-medium text-slate-500 hover:text-indigo-700">
         ← All events
       </Link>
 
@@ -71,7 +71,7 @@ export default function AdminEventDetail() {
           <div className="flex items-end justify-end gap-2">
             <Link
               to={`/admin/events/${id}/edit`}
-              className="rounded-lg bg-emerald-50 px-3 py-2 text-sm font-bold text-emerald-700 hover:bg-emerald-100"
+              className="rounded-lg bg-indigo-50 px-3 py-2 text-sm font-bold text-indigo-700 hover:bg-indigo-100"
             >
               ✏️ Edit event
             </Link>
@@ -97,7 +97,7 @@ export default function AdminEventDetail() {
           <h2 className="font-bold text-slate-900">Ticket types</h2>
           <button
             onClick={() => setModal({ mode: 'add', values: emptyType })}
-            className="rounded-lg bg-emerald-600 px-3.5 py-2 text-sm font-bold text-white hover:bg-emerald-700"
+            className="rounded-lg bg-indigo-600 px-3.5 py-2 text-sm font-bold text-white hover:bg-indigo-700"
           >
             + Add type
           </button>
@@ -128,11 +128,11 @@ export default function AdminEventDetail() {
                       <p className="font-semibold text-slate-800">{tt.name}</p>
                       {tt.description && <p className="text-xs text-slate-500">{tt.description}</p>}
                     </td>
-                    <td className="px-3 py-3 font-bold text-emerald-700">{formatCurrency(tt.price)}</td>
+                    <td className="px-3 py-3 font-bold text-indigo-700">{formatCurrency(tt.price)}</td>
                     <td className="px-3 py-3">
                       <div className="flex items-center gap-2">
                         <div className="h-2 w-24 overflow-hidden rounded-full bg-slate-200">
-                          <div className="h-full rounded-full bg-emerald-500" style={{ width: `${pct}%` }} />
+                          <div className="h-full rounded-full bg-indigo-500" style={{ width: `${pct}%` }} />
                         </div>
                         <span className="text-xs text-slate-500">
                           {tt.sold}/{tt.quantity}
@@ -155,7 +155,7 @@ export default function AdminEventDetail() {
                       <div className="flex justify-end gap-2 text-xs font-semibold">
                         <button
                           onClick={() => setModal({ mode: 'edit', values: toFormValues(tt) })}
-                          className="rounded-lg bg-emerald-50 px-2.5 py-1.5 text-emerald-700 hover:bg-emerald-100"
+                          className="rounded-lg bg-indigo-50 px-2.5 py-1.5 text-indigo-700 hover:bg-indigo-100"
                         >
                           Edit
                         </button>
@@ -294,7 +294,7 @@ function TypeModal({ eventId, modal, onClose, onSaved }) {
           <button type="button" onClick={onClose} className="rounded-xl px-5 py-2.5 text-sm font-bold text-slate-600 ring-1 ring-slate-300 hover:bg-slate-50">
             Cancel
           </button>
-          <button type="submit" disabled={saving} className="rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-emerald-700 disabled:opacity-60">
+          <button type="submit" disabled={saving} className="rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-indigo-700 disabled:opacity-60">
             {saving ? 'Saving…' : isEdit ? 'Save changes' : 'Add type'}
           </button>
         </div>
@@ -313,5 +313,5 @@ function Meta({ label, value }) {
 }
 
 const inputCls =
-  'w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100';
+  'w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-100';
 const labelCls = 'mb-1 block text-sm font-semibold text-slate-700';

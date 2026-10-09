@@ -42,7 +42,7 @@ export default function OrderDetail() {
 
   return (
     <div className="mx-auto max-w-4xl space-y-5">
-      <Link to="/admin/orders" className="text-sm font-medium text-slate-500 hover:text-emerald-700">
+      <Link to="/admin/orders" className="text-sm font-medium text-slate-500 hover:text-indigo-700">
         ← All orders
       </Link>
 
@@ -74,7 +74,7 @@ export default function OrderDetail() {
       <div className="rounded-2xl bg-white shadow-sm ring-1 ring-slate-200">
         <div className="flex items-center justify-between border-b border-slate-100 p-5">
           <h3 className="font-bold text-slate-900">Tickets ({tickets.length})</h3>
-          <p className="text-lg font-extrabold text-emerald-700">{formatCurrency(order.total_amount)}</p>
+          <p className="text-lg font-extrabold text-indigo-700">{formatCurrency(order.total_amount)}</p>
         </div>
         <table className="w-full text-sm">
           <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">

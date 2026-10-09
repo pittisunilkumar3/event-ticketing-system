@@ -44,7 +44,7 @@ function ProfileCard({ admin }) {
           <input
             value={form.name}
             onChange={(e) => setForm({ ...form, name: e.target.value })}
-            className="w-full rounded-lg border border-slate-300 px-3.5 py-2.5 text-sm focus:border-emerald-500 focus:outline-none"
+            className="w-full rounded-lg border border-slate-300 px-3.5 py-2.5 text-sm focus:border-indigo-500 focus:outline-none"
           />
         </div>
         <div>
@@ -53,14 +53,14 @@ function ProfileCard({ admin }) {
             type="email"
             value={form.email}
             onChange={(e) => setForm({ ...form, email: e.target.value })}
-            className="w-full rounded-lg border border-slate-300 px-3.5 py-2.5 text-sm focus:border-emerald-500 focus:outline-none"
+            className="w-full rounded-lg border border-slate-300 px-3.5 py-2.5 text-sm focus:border-indigo-500 focus:outline-none"
           />
         </div>
       </div>
       <button
         type="submit"
         disabled={saving}
-        className="rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-emerald-700 disabled:opacity-60"
+        className="rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-indigo-700 disabled:opacity-60"
       >
         {saving ? 'Saving…' : 'Save profile'}
       </button>
@@ -100,7 +100,7 @@ function PasswordCard() {
             required
             value={form.current_password}
             onChange={(e) => setForm({ ...form, current_password: e.target.value })}
-            className="w-full rounded-lg border border-slate-300 px-3.5 py-2.5 text-sm focus:border-emerald-500 focus:outline-none"
+            className="w-full rounded-lg border border-slate-300 px-3.5 py-2.5 text-sm focus:border-indigo-500 focus:outline-none"
           />
         </div>
         <div>
@@ -111,7 +111,7 @@ function PasswordCard() {
             minLength={6}
             value={form.new_password}
             onChange={(e) => setForm({ ...form, new_password: e.target.value })}
-            className="w-full rounded-lg border border-slate-300 px-3.5 py-2.5 text-sm focus:border-emerald-500 focus:outline-none"
+            className="w-full rounded-lg border border-slate-300 px-3.5 py-2.5 text-sm focus:border-indigo-500 focus:outline-none"
           />
         </div>
       </div>
