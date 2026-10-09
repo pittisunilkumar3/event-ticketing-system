@@ -31,6 +31,8 @@ export default function CkEditor({ data, onChange }) {
   const isInternalChange = useRef(false);
   const onChangeRef = useRef(onChange);
   const initialDataRef = useRef(data);
+  // Unique id per instance so multiple editors / remounts never collide.
+  const instanceId = useRef('cke_' + Math.random().toString(36).slice(2, 10));
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
@@ -136,7 +138,7 @@ export default function CkEditor({ data, onChange }) {
       )}
       <textarea
         ref={textareaRef}
-        id="ckeditor4-instance"
+        id={instanceId.current}
         defaultValue={data || ''}
         style={{ display: ready ? 'none' : 'block' }}
       />

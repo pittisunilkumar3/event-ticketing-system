@@ -1,5 +1,12 @@
 import { useEffect, useState } from 'react';
-export { default as RichEditor } from './CKEditor4';
+import CkEditor from '../CkEditor';
+
+// The studio rich editor is the hostel-reference CKEditor 4 (full toolbar,
+// self-hosted in /public/ckeditor4/). Adapter maps the RichEditor prop
+// contract (value/onChange) onto CkEditor's (data/onChange).
+export function RichEditor({ value, onChange }) {
+  return <CkEditor data={value} onChange={onChange} />;
+}
 import api from '../../api/client';
 
 export { default as Icon } from '../../components/Icon';
