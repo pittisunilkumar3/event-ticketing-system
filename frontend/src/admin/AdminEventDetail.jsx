@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import api from '../api/client';
+import { siteBase } from '../saas/context';
 import Icon from '../components/Icon';
 import { formatDateTime, formatCurrency } from '../utils/format';
 import './events.css';
@@ -95,6 +96,15 @@ export default function AdminEventDetail() {
     archived = ticketTypes.filter((t) => t.archived_at),
     sold = ticketTypes.reduce((s, t) => s + t.sold, 0),
     capacity = types.reduce((s, t) => s + t.quantity, 0);
+  const eventUrl = event.slug ? new URL(`${siteBase}/events/${encodeURIComponent(event.slug)}`, window.location.origin).href : '';
+  async function copyEventLink() {
+    try {
+      await navigator.clipboard.writeText(eventUrl);
+      setNotice('Event link copied.');
+    } catch {
+      setError('Unable to copy automatically. Select and copy the event link below.');
+    }
+  }
   function edit(type) {
     setModal({
       ...type,
@@ -158,16 +168,6 @@ export default function AdminEventDetail() {
               <Link className="ea-button" to={'/admin/events/' + id + '/edit'}>
                 Edit event
               </Link>
-              {event.status === 'published' && (
-                <a
-                  className="ea-button"
-                  href={window.location.pathname.startsWith('/o/')?window.location.pathname.split('/admin')[0]+'/events/'+event.slug:'/events/'+event.slug}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  View booking page ↗
-                </a>
-              )}
               <button
                 className="ea-text danger"
                 onClick={() =>
@@ -189,6 +189,19 @@ export default function AdminEventDetail() {
             : 'This event is hidden from new bookings.'}
         </small>
       </div>
+      {eventUrl && (
+        <section className="ea-public-link" aria-label="Organizer event link">
+          <div>
+            <strong>Organizer event link</strong>
+            <a href={eventUrl} target="_blank" rel="noopener noreferrer">{eventUrl}</a>
+            {(event.archived_at || event.status !== 'published') && <small>Publish this event to make it available to visitors.</small>}
+          </div>
+          <div className="ea-actions">
+            <button className="ea-button" onClick={copyEventLink}>Copy link</button>
+            {!event.archived_at && event.status === 'published' && <a className="ea-button" href={eventUrl} target="_blank" rel="noopener noreferrer">Open event ↗</a>}
+          </div>
+        </section>
+      )}
       {error && (
         <div className="ea-alert" role="alert">
           {error}

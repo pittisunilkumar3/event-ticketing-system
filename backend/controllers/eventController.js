@@ -1,7 +1,7 @@
 const Event = require('../models/Event');
 const TicketType = require('../models/TicketType');
 const Ticket = require('../models/Ticket');
-const { eventFields } = require('../services/eventValidation');
+const { eventFields, availability } = require('../services/eventValidation');
 const { fail } = require('../services/studioValidation');
 const { asyncHandler } = require('../middleware/errorHandler');
 
@@ -34,7 +34,11 @@ const detail = asyncHandler(async (req, res) => {
   if (!event) {
     return res.status(404).json({ success: false, message: 'Event not found' });
   }
-  const ticketTypes = await TicketType.findByEventId(event.id);
+  const now = new Date();
+  const ticketTypes = (await TicketType.findByEventId(event.id)).map(type=>({
+    ...type, available:Math.max(type.quantity-type.sold,0),
+    sale_status:availability(event,type,now), is_on_sale:availability(event,type,now)==='on_sale',
+  }));
   const ticketStats = await Ticket.countByStatus(event.id);
   res.json({ success: true, data: { event, ticketTypes, ticketStats, summary: await Event.summary(event.id) } });
 });

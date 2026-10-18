@@ -20,7 +20,7 @@ try {
  assert.equal((html.match(/name="person_[0-9]+_[0-9]+_name"/g)||[]).length,5);
  for(const field of ['name','email','phone']){const inputs=html.match(new RegExp('<input[^>]*name="person_[0-9]+_[0-9]+_'+field+'"[^>]*>','g'))||[];assert.equal(inputs.length,5);assert.ok(inputs.every(input=>input.includes('required=""')));}
  assert.doesNotMatch(html,/\(optional\)/);
- assert.equal((html.match(/Use booking contact details/g)||[]).length,1);
+ assert.doesNotMatch(html,/Use booking contact details/);
  assert.match(html,/Attendee 2 of 2/);assert.match(html,/Attendee 3 of 3/);
  const ids=[...html.matchAll(/\sid="([^"]+)"/g)].map(m=>m[1]);assert.equal(new Set(ids).size,ids.length);
  const radioNames=new Set([...html.matchAll(/type="radio"[^>]*name="([^"]+)"/g)].map(m=>m[1]));assert.equal(radioNames.size,5);
@@ -51,6 +51,7 @@ try {
  const emptyItems=ownItems.map(i=>({...i,type:{...i.type,registrationForm:{config:{...ownConfig,fields:[]}}}}));
  assert.equal(renderToStaticMarkup(React.createElement(CheckoutAttendees,{items:emptyItems,people:{},config,contact:{}})),'');
  const {readFileSync}=await import('node:fs');
+ const checkoutSource=readFileSync('src/pages/Checkout.jsx','utf8');assert.doesNotMatch(checkoutSource,/Booking contact|Your confirmation will be sent here|contact=\{form\}|setForm|customer_name: form/);assert.match(checkoutSource,/contact_source: 'attendee'/);
  const builder=readFileSync('src/admin/EventRegistrationForm.jsx','utf8');
  assert.doesNotMatch(builder,/rf-standard|Collected separately for every attendee|Required attendee name/);assert.match(builder,/>Required<\/label>/);
  console.log('PASS custom attendee fields: required versus optional controls, no default contact inputs, empty forms and stale identity excluded.');

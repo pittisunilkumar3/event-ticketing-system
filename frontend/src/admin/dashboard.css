@@ -9,3 +9,19 @@
 @media(max-width:1100px){.dash-heading{align-items:flex-start}.dash-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.dash-main-grid,.dash-bottom-grid{grid-template-columns:minmax(0,1.3fr) minmax(0,1fr)}.dash-orders th,.dash-orders td{padding-left:14px;padding-right:14px}.dash-heading-actions .dash-secondary{padding:11px}.dash-quick-actions a{padding:17px 13px;gap:9px}.dash-metric>p{margin-bottom:15px}}
 @media(max-width:850px){.dash-main-grid,.dash-bottom-grid{grid-template-columns:1fr}.dash-heading{flex-direction:column;gap:17px}.dash-heading-actions{align-self:stretch}.dash-heading-actions .dash-primary{margin-left:auto}.dash-chart{height:230px}.dash-event-list{display:grid;grid-template-columns:1fr 1fr;gap:0 20px}.dash-event-first{padding:17px 0}.dash-event:nth-child(2){border-top:0}.dash-quick-actions{grid-template-columns:1fr}.dash-quick-actions a+a{border-left:0;border-top:1px solid #e4dacf}.dash-quick-actions a{padding:17px 20px}.dash-quick-actions strong{font-size:12px}.dash-quick-actions small{font-size:10px}}
 @media(max-width:480px){.dash-heading h1{font-size:29px}.dash-context{font-size:9px;gap:8px}.dash-context-dot{padding:0 5px}.dash-metrics{gap:10px}.dash-metric{padding:17px 14px}.dash-metric-label{font-size:10px}.dash-metric>strong{font-size:28px}.dash-metric-label svg{width:16px}.dash-metric>p{font-size:9px}.dash-metric-link{font-size:9px}.dash-panel-head{padding:19px 17px 17px}.dash-sales-total{padding-left:17px;padding-right:17px}.dash-panel-foot{padding:14px 17px;flex-wrap:wrap}.dash-event-list{display:block;padding:0 17px}.dash-event:nth-child(2){border-top:1px solid #f1ece6}.dash-orders{min-width:380px}.dash-chart-empty h3{font-size:11px}.dash-chart-empty p{font-size:9px}}
+.dash-website-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding: 18px 20px;
+  margin-bottom: 20px;
+  border: 1px solid #e5ded6;
+  border-radius: 12px;
+  background: #fff;
+}
+.dash-website-link > div:first-child { flex: 1 1 260px; min-width: 0; }
+.dash-website-link strong { display: block; font-size: 12px; margin-bottom: 8px; }
+.dash-website-link > div > a { font-size: 13px; color: #925326; overflow-wrap: anywhere; }
+.dash-website-link small { display: block; margin-top: 8px; color: #746957; }

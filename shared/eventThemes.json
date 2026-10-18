@@ -1,0 +1,77 @@
+[
+  {
+    "id": "marquee",
+    "name": "Marquee",
+    "description": "An oversized orange masthead, panoramic artwork and a vertical event guide."
+  },
+  {
+    "id": "atelier",
+    "name": "Atelier",
+    "description": "A burgundy invitation with framed artwork, refined type and numbered pass cards."
+  },
+  {
+    "id": "horizon",
+    "name": "Horizon",
+    "description": "An airy blue cover with centered headlines, wide artwork and a floating details panel."
+  },
+  {
+    "id": "pulse",
+    "name": "Pulse",
+    "description": "Electric lime, a bold side headline and a graphic poster with a date rail."
+  },
+  {
+    "id": "premiere",
+    "name": "Premiere",
+    "description": "A bold cover, complete artwork, pass cards and a contrasting booking panel."
+  },
+  {
+    "id": "classic",
+    "name": "Classic",
+    "description": "Soft greens, rounded cards and a full-width cover."
+  },
+  {
+    "id": "cinema",
+    "name": "Cinema",
+    "description": "Midnight tones and gold accents for a premiere feel."
+  },
+  {
+    "id": "poster",
+    "name": "Poster",
+    "description": "Your complete banner above a bold, warm event page."
+  },
+  {
+    "id": "editorial",
+    "name": "Editorial",
+    "description": "A split cover, serif headlines and clean white cards."
+  },
+  {
+    "id": "aurora",
+    "name": "Aurora",
+    "description": "Purple night skies, a centered cover and luminous accents."
+  },
+  {
+    "id": "summit",
+    "name": "Summit",
+    "description": "A blue conference layout with artwork beside the details."
+  },
+  {
+    "id": "festival",
+    "name": "Festival",
+    "description": "Playful coral, lilac cards and oversized bold headlines."
+  },
+  {
+    "id": "gala",
+    "name": "Gala",
+    "description": "Ivory and gold, elegant serif titles and a framed banner."
+  },
+  {
+    "id": "blueprint",
+    "name": "Blueprint",
+    "description": "Navy and cyan with technical lines and sharp cards."
+  },
+  {
+    "id": "gallery",
+    "name": "Gallery",
+    "description": "A quiet white layout that gives your artwork room."
+  }
+]

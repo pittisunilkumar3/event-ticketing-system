@@ -2,6 +2,7 @@ import {useEffect,useMemo,useState} from 'react';
 import {Link} from 'react-router-dom';
 import {AreaChart,Area,XAxis,YAxis,CartesianGrid,Tooltip,ResponsiveContainer} from 'recharts';
 import api from '../api/client';
+import {siteBase} from '../saas/context';
 import Icon from '../components/Icon';
 import {Spinner,Alert} from '../components/ui';
 import {formatCurrency,formatDate,formatTime,StatusBadge} from '../utils/format';
@@ -12,6 +13,12 @@ const compactMoney=value=>new Intl.NumberFormat('en-IN',{style:'currency',curren
 const tooltipStyle={background:'#fff',border:'1px solid #e5ded6',borderRadius:12,color:'#292621',fontSize:12,boxShadow:'0 8px 24px #26201615'};
 
 export default function Dashboard(){
+ const websiteUrl=window.location.origin+siteBase;
+ const [copyStatus,setCopyStatus]=useState('');
+ async function copyWebsiteLink(){
+  try{await navigator.clipboard.writeText(websiteUrl);setCopyStatus('Website link copied.');}
+  catch{setCopyStatus('Unable to copy automatically. Select and copy the website link.');}
+ }
  const [data,setData]=useState(null),[days,setDays]=useState(14),[error,setError]=useState(''),[refresh,setRefresh]=useState(0),[loading,setLoading]=useState(true),[updatedAt,setUpdatedAt]=useState(null);
  useEffect(()=>{
   const controller=new AbortController();let running=false;
@@ -36,6 +43,10 @@ export default function Dashboard(){
  return <div className="event-dashboard">
   <header className="dash-heading"><div><p className="dash-eyebrow">YOUR ORGANIZER WORKSPACE</p><h1>Your events, at a glance.</h1><p>Live database totals · Updates every 15 seconds</p></div><div className="dash-heading-actions"><button className="dash-button dash-secondary" disabled={loading} onClick={()=>setRefresh(n=>n+1)}><Icon name="clock" size={16}/>{loading?'Updating…':'Refresh'}</button><Link className="dash-button dash-primary" to="/admin/events/new"><Icon name="plus" size={17}/>Create event</Link></div></header>
   {error&&<Alert>{error}</Alert>}
+  <section className="dash-website-link" aria-label="Your organization website">
+   <div><strong>Your organization website</strong><a href={websiteUrl} target="_blank" rel="noopener noreferrer">{websiteUrl}</a>{copyStatus&&<small role="status">{copyStatus}</small>}</div>
+   <div className="dash-heading-actions"><button className="dash-button dash-secondary" onClick={copyWebsiteLink}>Copy link</button><a className="dash-button dash-secondary" href={websiteUrl} target="_blank" rel="noopener noreferrer">Open website ↗</a></div>
+  </section>
   <div className="dash-context"><span><Icon name="calendar" size={14}/>{new Date(data.today+'T12:00:00').toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}</span><span>Real bookings · All-time totals{updatedAt&&<><span className="dash-context-dot">·</span>{error?'Last successful update':'Updated'} {updatedAt.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',second:'2-digit'})}</>}</span></div>
   <section className="dash-metrics" aria-label="Event overview">
    <Link to="/admin/orders" className="dash-metric dash-revenue"><div className="dash-metric-label"><span>Booking revenue</span><Icon name="credit-card" size={19}/></div><strong>{formatCurrency(kpi.total_revenue)}</strong><p>{kpi.inr_paid_orders} paid {Number(kpi.inr_paid_orders)===1?'booking':'bookings'} · INR</p><span className="dash-metric-link">View bookings <Icon name="arrow" size={14}/></span></Link>

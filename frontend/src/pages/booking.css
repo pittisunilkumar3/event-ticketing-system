@@ -439,35 +439,6 @@
   margin-top: 6px;
   line-height: 1.7;
 }
-.checkout-fields {
-  display: grid;
-  gap: 20px;
-  margin: 30px 0 38px;
-}
-.checkout-fields label {
-  font-size: 11px;
-  font-weight: 600;
-  color: #766756;
-}
-.checkout-fields input {
-  display: block;
-  width: 100%;
-  padding: 14px;
-  border: 1px solid #ded6cb;
-  background: #fff;
-  border-radius: 7px;
-  font-size: 13px;
-  color: #312b25;
-  margin-top: 9px;
-  outline: none;
-}
-.checkout-fields input::placeholder {
-  color: #b5ad9f;
-}
-.checkout-fields input:focus {
-  border-color: #cb8a5c;
-  box-shadow: 0 0 0 3px #f9ecdf;
-}
 .demo-payment {
   display: flex;
   gap: 14px;
@@ -758,9 +729,6 @@
 .booking-page .booking-steps { color: #748066; }
 .booking-page .event-stage-art { background: #2e3c31; }
 .booking-page .event-section-nav a:hover { color: #b8532d; }
-.booking-page .checkout-fields input { background: #fffefa; border-color: #ced7c1; }
-.booking-page .checkout-fields input:focus { border-color: #819669; box-shadow: 0 0 0 3px #e9efdf; }
-.booking-page .checkout-fields input::placeholder { color: #8a947c; }
 .booking-page .checkout-intro em, .booking-page .event-story h2 em { font-family: var(--font-display); font-style: normal; font-weight: 600; }
 @media (max-width: 480px) {
   .booking-page .booking-primary { min-height: 48px; }

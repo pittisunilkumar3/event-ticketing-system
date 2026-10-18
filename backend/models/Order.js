@@ -18,7 +18,7 @@ const Order = {
    * Create order + issue tickets inside a DB transaction.
    * items: [{ ticket_type_id, qty }]
    */
-  async createWithTickets({ event_id, customer_name, email, phone, items, registration_answers, form_revision, registration_files=[], payment=null }) {
+  async createWithTickets({ event_id, customer_name, email, phone, contact_source, items, registration_answers, form_revision, registration_files=[], payment=null }) {
     const conn = await db.getConnection();
 
     try {
@@ -40,9 +40,10 @@ const Order = {
       const registrationForm=await forms.get(event_id,conn);
       const ticketForms=await forms.forTickets(event_id,conn);
       forms.checkVersions(items,ticketForms,registrationForm,form_revision);
-      const perAttendee = Boolean(payment) || items.some(item=>item.attendees!==undefined);
+      const perAttendee = contact_source==='attendee' || Boolean(payment) || items.some(item=>item.attendees!==undefined);
       if(!perAttendee&&items.some(item=>ticketForms.get(Number(item.ticket_type_id))?.source==='ticket'))fail('Enter one attendee for every selected ticket.');
       const attendees = perAttendee ? require('../services/attendees').validate(items,ticketForms,registration_files) : null;
+      if(contact_source==='attendee')({customer_name,email,phone}=require('../services/attendees').bookingContact(attendees));
       const answers = perAttendee ? [] : forms.answersFor(registrationForm.config,registration_answers,registration_files);
 
       // 2. Validate ticket types belong to event, are on sale, reserve inventory

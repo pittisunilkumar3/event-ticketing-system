@@ -23,8 +23,7 @@ export default function Checkout() {
     [loadError, setLoadError] = useState(''),
     [error, setError] = useState(''),
     [pages, setPages] = useState([]);
-  const [form, setForm] = useState({ customer_name: '', email: '', phone: '' }),
-    [busy, setBusy] = useState(false);
+  const [busy, setBusy] = useState(false);
   const [pending,setPending]=useState(null);
   const [people,setPeople]=useState({});
   useEffect(()=>{setPeople({});setPending(null);},[slug]);
@@ -115,9 +114,7 @@ export default function Checkout() {
       const payload={
         event_id: event.id,
         request_key:requestKey,
-        customer_name: form.customer_name.trim(),
-        email: form.email.trim(),
-        phone: form.phone.trim() || null,
+        contact_source: 'attendee',
         items: attendeeData.items,
         form_revision:data.registrationForm?.revision||0,
       };
@@ -162,54 +159,9 @@ export default function Checkout() {
         </div>
         <div className="checkout-grid">
           <form onSubmit={book} className="checkout-form">
+            <CheckoutAttendees items={items} people={people} config={data.registrationForm?.config} disabled={busy||Boolean(pending)} saved={pending?.attendees} onChange={(key,person)=>setPeople(p=>({...p,[key]:person}))}/>
             <div className="checkout-section-title">
-              <span>01</span>
-              <div>
-                <h2>Booking contact</h2>
-                <p>Your confirmation will be sent here and to any attendee email addresses provided.</p>
-              </div>
-            </div>
-            <div className="checkout-fields">
-              {[
-                [
-                  'customer_name',
-                  'Full name',
-                  'text',
-                  'name',
-                  'Your full name',
-                ],
-                ['email', 'Email address', 'email', 'email', 'you@example.com'],
-                [
-                  'phone',
-                  'Phone number',
-                  'tel',
-                  'tel',
-                  'Your contact number',
-                ],
-              ].map(([key, label, type, auto, placeholder]) => (
-                <label key={key}>
-                  {label}
-                  <input
-                    name={key}
-                    disabled={busy||Boolean(pending)}
-                    type={type}
-                    autoComplete={auto}
-                    maxLength={
-                      key === 'customer_name' ? 150 : key === 'email' ? 254 : 40
-                    }
-                    required
-                    placeholder={placeholder}
-                    value={form[key]}
-                    onChange={(e) =>
-                      setForm({ ...form, [key]: e.target.value })
-                    }
-                  />
-                </label>
-              ))}
-            </div>
-            <CheckoutAttendees items={items} people={people} config={data.registrationForm?.config} contact={form} disabled={busy||Boolean(pending)} saved={pending?.attendees} onChange={(key,person)=>setPeople(p=>({...p,[key]:person}))}/>
-            <div className="checkout-section-title">
-              <span>03</span>
+              <span>02</span>
               <div>
                 <h2>Review & confirm</h2>
                 <p>Check your ticket choices and the total before booking.</p>

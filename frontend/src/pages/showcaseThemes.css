@@ -1,0 +1,91 @@
+.event-theme-marquee { --theme-paper:#f6f2e9; --theme-card:#fffdf7; --theme-ink:#282922; --theme-muted:#646458; --theme-line:#d5d3c6; --theme-accent:#ac3c19; --theme-soft:#f8e5d9; }
+.event-theme-atelier { --theme-paper:#f7f1ea; --theme-card:#fffbf6; --theme-ink:#422329; --theme-muted:#796269; --theme-line:#deccc8; --theme-accent:#813b4a; --theme-soft:#f1e3df; }
+.event-theme-horizon { --theme-paper:#f2f7fa; --theme-card:#fff; --theme-ink:#17334a; --theme-muted:#577083; --theme-line:#d0e0e9; --theme-accent:#1d6089; --theme-soft:#e4f1f8; }
+.event-theme-pulse { --theme-paper:#171a1d; --theme-card:#22272a; --theme-ink:#f4f6ed; --theme-muted:#b4bdb7; --theme-line:#4b5350; --theme-accent:#d5f66b; --theme-soft:#333c2a; }
+.showcase-hero { overflow:hidden; color:var(--theme-ink); }
+.showcase-topline { display:flex; justify-content:space-between; align-items:center; gap:20px; padding:24px 0; border-bottom:1px solid currentColor; font-size:11px; }
+.showcase-topline a { color:inherit; padding:6px 0; }
+.showcase-topline>span { text-transform:uppercase; letter-spacing:.2em; }
+.showcase-grid { display:grid; gap:28px; padding:40px 0 48px; align-items:center; }
+.showcase-grid>* { min-width:0; }
+.showcase-title { grid-area:title; }
+.showcase-title>span { display:block; font-size:11px; text-transform:uppercase; letter-spacing:.18em; margin-bottom:18px; }
+.showcase-title h1 { font-family:var(--font-display); font-size:clamp(42px,5.5vw,78px); font-weight:650; letter-spacing:-.055em; line-height:1.02; margin:0; overflow-wrap:anywhere; text-wrap:balance; }
+.showcase-art { grid-area:art; margin:0; }
+.showcase-art img { display:block; width:100%; height:auto; object-fit:contain; }
+.showcase-invitation { grid-area:invite; }
+.showcase-invitation p { font-size:14px; line-height:1.8; margin:0 0 24px; max-width:600px; }
+.showcase-cta { display:inline-flex; justify-content:space-between; align-items:center; gap:24px; padding:18px 24px; background:var(--theme-ink); color:var(--theme-paper); font-size:13px; font-weight:700; }
+.showcase-cta:hover { filter:brightness(1.15); }
+.showcase-price { display:block; margin-top:14px; font-size:12px; }
+.showcase-facts { grid-area:facts; margin:0; display:flex; gap:32px; }
+.showcase-facts>div { flex:1; min-width:0; }
+.showcase-facts dt { display:flex; align-items:center; gap:8px; font-size:10px; letter-spacing:.08em; text-transform:uppercase; margin-bottom:12px; }
+.showcase-facts dd { margin:0; font-size:16px; line-height:1.5; overflow-wrap:anywhere; }
+.showcase-facts dd span { display:block; font-size:12px; margin-top:4px; }
+/* A full masthead over a poster and a narrow visitor guide. */
+.showcase-marquee { background:#ee9b67; }
+.showcase-marquee .showcase-grid { grid-template-columns:minmax(0,1fr) 260px; grid-template-areas:'title title' 'art facts' 'art invite'; align-items:start; gap:32px 40px; }
+.showcase-marquee .showcase-title { padding-bottom:6px; }
+.showcase-marquee h1 { text-transform:uppercase; font-weight:800; font-size:clamp(46px,7vw,100px); max-width:1100px; }
+.showcase-marquee .showcase-facts { flex-direction:column; gap:24px; border-top:2px solid; padding-top:22px; }
+.showcase-marquee .showcase-art { border:8px solid #282922; box-shadow:8px 8px 0 #c96740; }
+.event-theme-marquee :is(.event-pass,.experience-card,.event-booking-summary) { border-radius:0; }
+.event-theme-marquee .event-pass { border-left:5px solid var(--theme-accent); }
+/* A framed invitation: image on the left, flowing serif headline on the right. */
+.showcase-atelier { background:#532b36; color:#fff2e6; }
+.showcase-atelier .showcase-grid { grid-template-columns:1.1fr 1fr; grid-template-areas:'art title' 'art invite' 'facts facts'; gap:28px 56px; padding-top:50px; }
+.showcase-atelier .showcase-title h1 { font-family:Georgia,serif; font-weight:400; font-size:clamp(42px,5vw,68px); letter-spacing:-.04em; }
+.showcase-atelier .showcase-art { padding:14px; border:1px solid #ab7f80; outline:1px solid #ab7f80; outline-offset:7px; }
+.showcase-atelier .showcase-cta { background:#f2d9bf; color:#532b36; border-radius:40px; }
+.showcase-atelier .showcase-facts { border-top:1px solid #ab7f80; padding-top:28px; margin-top:16px; }
+.event-theme-atelier :is(.event-ticket-intro h2,.event-story h2,.event-pass-info h3) { font-family:Georgia,serif; font-weight:400; }
+.event-theme-atelier .event-ticket-list { counter-reset:pass; }
+.event-theme-atelier .event-pass { border-radius:0; border-width:1px 0; counter-increment:pass; }
+.event-theme-atelier .event-pass-icon { background:transparent !important; font-family:Georgia,serif; font-size:28px; }
+.event-theme-atelier .event-pass-icon svg { display:none; }
+.event-theme-atelier .event-pass-icon::before { content:counter(pass,decimal-leading-zero); }
+/* Centered, spacious cover, with a details panel overlapping the artwork edge. */
+.showcase-horizon { background:linear-gradient(180deg,#d4eaf4,#f2f7fa); }
+.showcase-horizon .showcase-grid { grid-template-columns:1fr 1fr; grid-template-areas:'title title' 'invite invite' 'art art' 'facts facts'; gap:28px; text-align:center; }
+.showcase-horizon .showcase-title { max-width:900px; margin:auto; }
+.showcase-horizon .showcase-invitation p { margin:0 auto 22px; }
+.showcase-horizon .showcase-cta { border-radius:40px; background:#1d6089; color:#fff; }
+.showcase-horizon .showcase-price { display:inline-block; margin:0 0 0 22px; }
+.showcase-horizon .showcase-art { max-width:960px; width:100%; margin:auto; border-radius:20px; overflow:hidden; padding-bottom:32px; background:#fff; }
+.showcase-horizon .showcase-facts { position:relative; background:#fff; padding:26px 38px; margin:-54px auto 0; width:80%; border:1px solid #d0e0e9; border-radius:14px; text-align:left; box-shadow:0 14px 28px #17334a0a; }
+.event-theme-horizon .event-pass { border-radius:18px; border-width:0; box-shadow:0 5px 25px #17334a08; }
+.event-theme-horizon .event-booking-summary { border-top:5px solid #1d6089; }
+/* Poster grid, date rail, and a bright headline block. */
+.showcase-pulse { background:#171a1d; color:#f4f6ed; }
+.showcase-pulse .showcase-grid { grid-template-columns:minmax(0,.85fr) minmax(0,1.15fr); grid-template-areas:'title art' 'invite art' 'facts facts'; gap:0 30px; align-items:stretch; }
+.showcase-pulse .showcase-title { background:#d5f66b; color:#202719; padding:32px 30px; }
+.showcase-pulse h1 { text-transform:uppercase; font-weight:800; font-size:clamp(42px,5.2vw,72px); }
+.showcase-pulse .showcase-invitation { padding:28px 30px; border:1px solid #4b5350; border-top:0; }
+.showcase-pulse .showcase-cta { background:#d5f66b; color:#202719; }
+.showcase-pulse .showcase-art { display:flex; align-items:center; border:1px solid #4b5350; padding:16px; background:repeating-linear-gradient(135deg,#202527 0 1px,#171a1d 1px 12px); }
+.showcase-pulse .showcase-facts { padding:24px 0 0; margin-top:30px; border-top:1px solid #4b5350; }
+.event-theme-pulse :is(.event-pass,.event-booking-summary,.experience-card,.event-quantity) { border-radius:0; }
+.event-theme-pulse .event-pass.is-selected { box-shadow:inset 4px 0 #d5f66b; }
+.event-theme-pulse .event-ticket-intro h2 { text-transform:uppercase; letter-spacing:-.04em; }
+.event-theme-pulse .event-pass-icon { border:1px solid #4b5350; }
+.showcase-grid.showcase-no-art { grid-template-columns:1fr 1fr; grid-template-areas:'title title' 'invite facts'; }
+.showcase-no-art .showcase-facts { width:100%; margin:0; }
+@media(max-width:900px) {
+ .showcase-marquee .showcase-grid,.showcase-atelier .showcase-grid,.showcase-pulse .showcase-grid { grid-template-columns:1fr; grid-template-areas:'title' 'art' 'invite' 'facts'; gap:28px; }
+ .showcase-marquee .showcase-facts { flex-direction:row; }
+ .showcase-atelier .showcase-art { margin:8px; }
+ .showcase-pulse .showcase-invitation { border-top:1px solid #4b5350; }
+ .showcase-grid.showcase-no-art { grid-template-columns:1fr; grid-template-areas:'title' 'invite' 'facts'; }
+}
+@media(max-width:560px) {
+ .showcase-grid { padding:28px 0 32px; }
+ .showcase-title h1,.showcase-marquee h1,.showcase-atelier .showcase-title h1,.showcase-pulse h1 { font-size:40px; }
+ .showcase-topline { font-size:10px; }
+ .showcase-facts,.showcase-marquee .showcase-facts { flex-direction:column; gap:20px; }
+ .showcase-horizon .showcase-grid { grid-template-columns:1fr; grid-template-areas:'title' 'invite' 'art' 'facts'; }
+ .showcase-horizon .showcase-price { display:block; margin:16px 0 0; }
+ .showcase-horizon .showcase-facts { margin:-42px auto 0; width:90%; padding:24px; }
+ .showcase-horizon .showcase-no-art .showcase-facts { margin:0; }
+ .showcase-pulse :is(.showcase-title,.showcase-invitation) { padding:24px; }
+}

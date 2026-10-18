@@ -107,3 +107,41 @@
  .event-pass-price { text-align:left; }
 }
 @media(prefers-reduced-motion:reduce) { .event-detail-page *, .event-detail-page *::before { transition:none!important; scroll-behavior:auto; } }
+
+/* Readable organizer-authored pass comparisons. */
+.event-detail-page .event-about-section { grid-column:1/-1; min-width:0; }
+.experience-description { color:#526057; font-size:14px; line-height:1.8; overflow-wrap:anywhere; }
+.experience-description p { margin:0 0 16px; }
+.experience-intro { max-width:760px; margin-bottom:28px; }
+.experience-intro p { margin-bottom:8px; }
+.experience-intro p:first-child { font-weight:650; color:#293d30; }
+.experience-pass-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:24px; }
+.experience-card { padding:28px; border:1px solid #dfe3da; border-radius:18px; background:#fff; }
+.experience-card header { display:flex; align-items:start; justify-content:space-between; gap:18px; padding-bottom:22px; margin-bottom:22px; border-bottom:1px solid #e8ebe2; }
+.experience-pass-number { font-size:10px; font-weight:700; letter-spacing:.16em; color:#7b856e; }
+.experience-card h3 { margin:7px 0 0; font-size:21px; line-height:1.35; font-weight:700; color:#283b2f; letter-spacing:-.03em; }
+.experience-pass-price { font-size:23px; font-weight:700; line-height:1.4; letter-spacing:-.04em; color:#334c32; white-space:nowrap; }
+.experience-description h4 { font-size:13px; font-weight:700; color:#344835; margin:22px 0 12px; }
+.experience-card-content > div > :first-child { margin-top:0; }
+.experience-description ul { padding:0; margin:0 0 22px; list-style:none; }
+.experience-description li { position:relative; padding-left:21px; margin:8px 0; }
+.experience-description li::before { content:'•'; position:absolute; left:2px; color:#8b9a72; font-weight:700; }
+.experience-card-content > div > :last-child,.experience-dinner > :last-child { margin-bottom:0; }
+.experience-card-featured { grid-column:1/-1; border-color:#d6c69e; background:linear-gradient(120deg,#fffefa,#faf7ee); }
+.experience-card-featured header { border-color:#e9dfc8; }
+.experience-card-featured .experience-pass-number,.experience-card-featured .experience-pass-price { color:#886728; }
+.experience-card-featured .experience-card-content { display:grid; grid-template-columns:1fr 1fr; gap:40px; align-items:start; }
+.experience-dinner { background:#f1ebdc; border:1px solid #e5dac3; border-radius:12px; padding:26px; color:#605942; }
+.experience-dinner-label { font-size:9px; letter-spacing:.14em; font-weight:750; color:#7b632b; }
+.experience-dinner h4 { font-size:18px; margin:12px 0 18px; color:#655023; line-height:1.5; }
+@media(max-width:800px) {
+ .experience-pass-grid { grid-template-columns:1fr; gap:18px; }
+ .experience-card { padding:23px; }
+ .experience-card-featured .experience-card-content { grid-template-columns:1fr; gap:24px; }
+ .experience-card h3 { font-size:19px; }
+ .experience-pass-price { font-size:21px; }
+}
+@media(max-width:400px) {
+ .experience-card header { flex-direction:column; gap:10px; }
+ .experience-dinner { padding:20px; }
+}

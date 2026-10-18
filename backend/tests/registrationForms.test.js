@@ -50,3 +50,9 @@ test('hidden and disabled identity fields are omitted; changed versions cannot b
  const eventForm={config:{...form.config,enabled:false},revision:3};
  assert.throws(()=>forms.checkVersions([{ticket_type_id:1}],new Map([[1,{...eventForm,source:'event',revision:0,version:'event:3:ticket:0'}]]),eventForm,2),/changed/);
 });
+test('booking contact uses one validated attendee without mixing identities or inventing contact values',()=>{
+ const first={name:'First',email:'',phone:'12345678'},second={name:'Second',email:'second@example.test',phone:''};
+ assert.deepEqual(attendees.bookingContact(new Map([[1,[first,second]]])),{customer_name:'Second',email:'second@example.test',phone:null});
+ assert.deepEqual(attendees.bookingContact(new Map([[1,[first]]])),{customer_name:'First',email:'',phone:'12345678'});
+ assert.throws(()=>attendees.bookingContact(new Map()),/attendee/);
+});

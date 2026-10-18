@@ -1,0 +1,76 @@
+.event-theme-premiere { --theme-paper:#f4f3ed; --theme-card:#fff; --theme-ink:#20271e; --theme-muted:#646b60; --theme-line:#dfe2d6; --theme-accent:#355c24; --theme-soft:#eef4e7; }
+.premiere-hero { background:#1c241f; color:#f7f7ee; padding:28px 0 0; overflow:hidden; }
+.premiere-back { color:#bac6b8; font-size:12px; display:inline-flex; padding:8px 0; }
+.premiere-back:hover { color:#d9ff9b; }
+.premiere-hero-grid { display:grid; grid-template-columns:minmax(0,.92fr) minmax(0,1.08fr); align-items:center; gap:48px; padding:42px 0 52px; }
+.premiere-intro { min-width:0; }
+.premiere-category { display:flex; align-items:center; gap:10px; color:#d6eeae; text-transform:uppercase; font-size:10px; font-weight:700; letter-spacing:.2em; }
+.premiere-category i { width:22px; height:2px; background:#d9ff9b; }
+.premiere-intro h1 { font-family:var(--font-display); font-weight:650; font-size:clamp(38px,4.6vw,66px); line-height:1.04; letter-spacing:-.055em; margin:22px 0; overflow-wrap:anywhere; text-wrap:balance; }
+.premiere-intro>p { font-size:14px; line-height:1.85; color:#bfcabb; max-width:440px; }
+.premiere-hero-actions { display:flex; align-items:center; gap:24px; flex-wrap:wrap; margin-top:30px; }
+.premiere-cta { display:inline-flex; align-items:center; justify-content:center; gap:24px; background:#d9ff9b; color:#202b18; font-size:13px; font-weight:700; border-radius:8px; padding:17px 22px; }
+.premiere-cta:hover { background:#e8ffc4; }
+.premiere-hero-actions>span { font-size:11px; color:#bfcabb; line-height:1.8; }
+.premiere-hero-actions strong { display:block; font-size:18px; font-weight:600; color:#f7f7ee; }
+.premiere-artwork { margin:0; padding:10px; background:#2c352d; border:1px solid #455040; border-radius:18px; box-shadow:0 24px 48px #0c130b55; transform:rotate(1deg); min-width:0; }
+.premiere-artwork img { display:block; width:100%; height:auto; border-radius:10px; object-fit:contain; background:#10150e; }
+.premiere-facts { display:grid; grid-template-columns:1fr 1fr 1fr; border-top:1px solid #414c3d; margin:0; padding:25px 0; gap:28px; }
+.premiere-facts>div { display:flex; align-items:start; gap:14px; min-width:0; }
+.premiere-facts>div+div { border-left:1px solid #414c3d; padding-left:28px; }
+.premiere-facts svg { color:#c7dfac; margin-top:3px; flex-shrink:0; }
+.premiere-facts dt { color:#acbaa5; font-size:9px; letter-spacing:.12em; text-transform:uppercase; margin-bottom:8px; }
+.premiere-facts dd { margin:0; font-size:13px; line-height:1.6; color:#f0f4e9; overflow-wrap:anywhere; }
+.premiere-facts dd span { display:block; font-size:11px; color:#bfcabb; margin-top:2px; }
+.premiere-no-art { grid-template-columns:1fr; }.premiere-no-art .premiere-intro { max-width:800px; }
+.event-theme-premiere .event-section-nav { position:relative; background:#f4f3ed; }
+.event-theme-premiere .event-section-nav>.booking-container { min-height:64px; }
+.event-theme-premiere .event-body { padding-top:48px; }
+.event-theme-premiere .event-ticket-intro h2,.event-theme-premiere .event-story h2 { font-size:clamp(28px,3.3vw,42px); letter-spacing:-.045em; font-weight:600; }
+.event-theme-premiere .event-ticket-layout { grid-template-columns:minmax(0,1fr) 310px; gap:28px; }
+.event-theme-premiere .event-ticket-list { grid-template-columns:repeat(2,minmax(0,1fr)); align-items:stretch; gap:18px; }
+.event-theme-premiere .event-pass { display:flex; flex-direction:column; padding:26px; border-radius:14px; gap:0; position:relative; box-shadow:0 5px 16px #20301b04; }
+.event-theme-premiere .event-pass-icon { display:none; }
+.event-theme-premiere .event-pass-status { font-size:9px; letter-spacing:.12em; margin-bottom:12px; }
+.event-theme-premiere .event-pass-info h3 { font-size:23px; line-height:1.2; letter-spacing:-.035em; margin-bottom:15px; }
+.event-theme-premiere .event-pass-info p { font-size:12px; line-height:1.8; }
+.event-theme-premiere .event-pass-info>small { font-size:10px; margin:18px 0 24px; }
+.event-theme-premiere .event-pass-action { margin-top:auto; padding-top:20px; border-top:1px dashed #cdd4c4; display:flex; flex-direction:row; align-items:center; gap:12px; }
+.event-theme-premiere .event-pass-price { text-align:left; font-size:25px; }
+.event-theme-premiere .event-quantity button { width:34px; height:38px; }
+.event-theme-premiere .event-quantity output { min-width:22px; }
+.event-theme-premiere .event-pass.is-selected { border-color:#557b36; box-shadow:inset 0 0 0 1px #557b36; }
+.event-theme-premiere .event-ticket-empty { grid-column:1/-1; }
+.event-detail-page.event-theme-premiere .event-booking-summary { background:#20291f; border-color:#20291f; color:#f4f8ed; border-radius:16px; box-shadow:0 18px 32px #1c2b1712; padding:26px; }
+.event-detail-page.event-theme-premiere .event-booking-summary :is(.event-summary-heading,.event-summary-total strong) { color:#f4f8ed; }
+.event-detail-page.event-theme-premiere .event-booking-summary :is(.event-summary-empty,.event-summary-empty span,.event-summary-items span,.event-summary-total small,.event-summary-note) { color:#bdc9b5; }
+.event-detail-page.event-theme-premiere .event-booking-summary .event-summary-total { border-color:#59634f; }
+.event-detail-page.event-theme-premiere .event-booking-summary .booking-primary { background:#d9ff9b; color:#202b18; border-radius:8px; }
+.event-detail-page.event-theme-premiere .event-booking-summary .booking-primary:not(:disabled):hover { background:#e8ffc4; }
+.event-theme-premiere .experience-card { border-radius:14px; padding:30px; }
+.event-theme-premiere .experience-card-featured { border-color:#bcc6ac; }
+.event-theme-premiere .event-details-section { grid-column:1/-1; background:white; border:1px solid #dfe2d6; border-radius:16px; padding:30px; }
+.event-theme-premiere .event-facts { grid-template-columns:repeat(4,minmax(0,1fr)); }
+@media(max-width:1100px) {
+ .premiere-hero-grid { gap:28px; }.premiere-intro h1 { font-size:44px; }
+ .event-theme-premiere .event-ticket-layout { grid-template-columns:minmax(0,1fr) 280px; gap:20px; }
+ .event-theme-premiere .event-pass { padding:20px; }
+ .event-theme-premiere .event-pass-action { flex-wrap:wrap; }
+}
+@media(max-width:900px) {
+ .premiere-hero-grid { grid-template-columns:1fr; padding:30px 0; }
+ .premiere-intro { max-width:650px; }.premiere-intro>p { max-width:550px; }
+ .premiere-artwork { transform:none; max-width:720px; }
+ .event-theme-premiere .event-ticket-layout { grid-template-columns:1fr; }
+ .event-theme-premiere .event-booking-summary { position:static; }
+ .event-theme-premiere .event-facts { grid-template-columns:1fr 1fr; }
+}
+@media(max-width:560px) {
+ .premiere-intro h1 { font-size:38px; }.premiere-hero-actions { gap:18px; }
+ .premiere-facts { grid-template-columns:1fr; gap:18px; }
+ .premiere-facts>div+div { border:0; padding-left:0; }
+ .event-theme-premiere .event-ticket-list { grid-template-columns:1fr; }
+ .event-theme-premiere .event-pass { padding:24px; }
+ .event-theme-premiere .event-facts { grid-template-columns:1fr; }
+ .event-theme-premiere .experience-card,.event-theme-premiere .event-details-section { padding:24px; }
+}

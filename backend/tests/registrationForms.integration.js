@@ -110,6 +110,20 @@ const db=require('../config/db'),{migrateTenant,migratePlatform,sqlName}=require
  assert.deepEqual(vipPeople.map(p=>p.name),['First VIP','Second VIP']);assert.deepEqual(vipPeople.map(p=>p.email),['first@forms.test','second@forms.test']);assert.equal(vipPeople[0].phone,'');
  const uncollected=actualDetail.attendees.find(p=>p.ticket_type_id===type.id);assert.equal(uncollected.email,'');assert.equal(uncollected.phone,'');assert.equal(uncollected.name,'Attendee 1');
  assert.deepEqual(actual.tickets.filter(t=>t.ticket_type_id===vip.id).map(t=>t.attendee_name),['First VIP','Second VIP']);
+
+ // The expanded negative-case suite deliberately exhausts the public booking rate window.
+ await new Promise(resolve=>setTimeout(resolve,61000));
+ const derived=structuredClone(customBooking);derived.contact_source='attendee';delete derived.customer_name;delete derived.email;delete derived.phone;
+ const derivedBooking=await req(a.path+'/orders','POST',derived,null,201);
+ assert.equal(derivedBooking.order.customer_name,'First VIP');assert.equal(derivedBooking.order.email,'first@forms.test');assert.equal(derivedBooking.order.phone,null);
+ const derivedDetail=await req(a.path+'/admin/orders/'+derivedBooking.order.id,'GET',null,a.token);
+ assert.equal(derivedDetail.attendees.find(p=>p.name==='Second VIP').phone,'+91 9876543210');assert.equal(derivedDetail.attendees.find(p=>p.name==='First VIP').answers[1].value,'first@forms.test');
+ await req(b.path+'/admin/orders/'+derivedBooking.order.id,'GET',null,b.token,404);
+ const forged=structuredClone(derived);forged.customer_name='Forged';forged.email='forged@forms.test';forged.phone='1111111111';
+ const safe=await req(a.path+'/orders','POST',forged,null,201);assert.equal(safe.order.customer_name,'First VIP');assert.equal(safe.order.email,'first@forms.test');assert.equal(safe.order.phone,null);
+ const noContact={event_id:e.id,contact_source:'attendee',items:[{ticket_type_id:type.id,qty:1,form_version:minimal.version,attendees:[{}]}]};
+ const noContactBooking=await req(a.path+'/orders','POST',noContact,null,201);assert.equal(noContactBooking.order.email,'');assert.equal(noContactBooking.order.customer_name,'Attendee 1');
+ pass('attendee-only checkout derives contact from validated answers, preserves individual contacts/answers, ignores forged identity, supports uncollected contacts and prevents cross-organization reads');
  await req(vipPath,'PUT',{inherit:false,version:editableForm.version,config:{...editableConfig,fields:[]}},a.token);
  await req(a.path+'/orders','POST',customBooking,null,409);
  const unchanged=await req(a.path+'/admin/orders/'+actual.order.id,'GET',null,a.token);assert.equal(unchanged.attendees.find(p=>p.name==='First VIP').answers[0].value,'First VIP');
@@ -118,6 +132,6 @@ const db=require('../config/db'),{migrateTenant,migratePlatform,sqlName}=require
  const [[org]]=await db.platform.query('SELECT * FROM organizations WHERE id=?',[a.org.id]);
  await db.run(org,async()=>{const [r]=await db.query("INSERT INTO admins(name,email,password_hash,role) VALUES ('Staff','staff@forms.test','unused','staff')");const token=require('jsonwebtoken').sign({id:r.insertId,organization_id:org.id,role:'super_admin'},process.env.JWT_SECRET);await req(path,'PUT',{config,revision:4},token,403);});
  pass('live owner permissions prevent staff from modifying registration forms');
- if(process.env.FORM_UI_QA==='1'){await req(path,'PUT',{config:{...config,fields:config.fields.filter(f=>f.type!=='file')},revision:4},a.token);console.log('FORM_UI_QA_API='+base);console.log('FORM_UI_EVENT='+e.id+'; SLUG='+e.slug+'; TYPE='+type.id);await new Promise(resolve=>process.once('SIGTERM',resolve));}
+ if(process.env.FORM_UI_QA==='1'){const current=(await req(vipPath,'GET',null,a.token)).form;await req(vipPath,'PUT',{config:editableConfig,inherit:false,version:current.version},a.token);console.log('FORM_UI_QA_API='+base);console.log('FORM_UI_EVENT='+e.id+'; SLUG='+e.slug+'; TYPE='+vip.id+'; ORDER='+derivedBooking.order.id);await new Promise(resolve=>process.once('SIGTERM',resolve));}
  console.log(`Registration form integration passed: ${total} scenarios.`);
 })().catch(e=>{console.error(e);process.exitCode=1;}).finally(async()=>{if(server)await new Promise(r=>server.close(r));try{const [orgs]=await db.platform.query('SELECT db_name FROM organizations WHERE is_legacy=FALSE');connection=await mysql.createConnection(db.options);for(const org of orgs)if(/^tf_[a-f0-9]{24}$/.test(org.db_name))await connection.query('DROP DATABASE '+sqlName(org.db_name));await db.end();if(/^tf_forms_test_\d+_\d+$/.test(db.database))await connection.query('DROP DATABASE '+sqlName(db.database));}finally{await connection?.end();}});

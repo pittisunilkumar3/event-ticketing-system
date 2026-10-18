@@ -12,7 +12,12 @@ import Icon from '../components/Icon';
 import CustomerState from '../components/CustomerState';
 import './booking.css';
 import './eventDetail.css';
+import './eventThemes.css';
+import themes from '../../../shared/eventThemes.json';
 import EventTickets from './EventTickets';
+import PremiereHero from './PremiereHero';
+import ShowcaseHero, {showcaseThemes} from './ShowcaseHero';
+import EventDescription from './EventDescription';
 import {canSelectTicket, nextQuantity, validQuantity} from './ticketSelection';
 import {checkoutDestination} from './checkoutNavigation';
 export default function EventDetail() {
@@ -57,9 +62,6 @@ export default function EventDetail() {
   if (!data) return <CustomerState loading={!error} eyebrow="YOUR NEXT EXPERIENCE" title={error ? 'This event isn’t available.' : 'Opening your next experience…'} description={error || 'We’re getting the latest event and ticket details.'} action="Explore events" icon="calendar"/>;
   const { event, ticketTypes } = data;
   const selected = ticketTypes.filter(t => validQuantity(t, selection[t.id]) > 0);
-  const lowest = ticketTypes
-    .filter(canSelectTicket)
-    .reduce((m, t) => Math.min(m, Number(t.price)), Infinity);
   const setQty = (t, delta) => setSelection(s => ({...s, [t.id]: nextQuantity(t, s[t.id], delta)}));
   function checkout() {
     if (!selected.length) return;
@@ -68,11 +70,19 @@ export default function EventDetail() {
     if (data.checkout_path) window.location.assign(destination);
     else navigate(destination);
   }
+  return <EventPageView data={data} selection={selection} onQuantity={setQty} onCheckout={checkout}/>;
+}
+export function EventPageView({data,selection={},onQuantity=()=>{},onCheckout=()=>{}}) {
+  const {event,ticketTypes=[]}=data;
+  const theme=themes.find(t=>t.id===event.page_theme)?.id || 'classic';
+  const lowest = ticketTypes
+    .filter(canSelectTicket)
+    .reduce((m, t) => Math.min(m, Number(t.price)), Infinity);
   return (
-    <main className="booking-page event-detail-page">
-      <section
+    <main className={`booking-page event-detail-page event-theme-${theme}`}>
+      {showcaseThemes.includes(theme) ? <ShowcaseHero event={event} lowest={lowest} theme={theme}/> : theme === 'premiere' ? <PremiereHero event={event} lowest={lowest}/> : <section
         className={
-          'event-stage ' + (!event.banner_image ? 'event-stage-art' : '')
+          'event-stage ' + (!event.banner_image ? 'event-stage-art' : 'has-banner')
         }
       >
         {event.banner_image && (
@@ -115,7 +125,7 @@ export default function EventDetail() {
             </a>
           </div>
         </div>
-      </section>
+      </section>}
       <div className="event-section-nav">
         <div className="booking-container">
           <a href="#about">The experience</a>
@@ -131,15 +141,12 @@ export default function EventDetail() {
         </div>
       </div>
       <div className="booking-container event-body">
-        <EventTickets ticketTypes={ticketTypes} selection={selection} onQuantity={setQty} onCheckout={checkout}/>
+        <EventTickets ticketTypes={ticketTypes} selection={selection} onQuantity={onQuantity} onCheckout={onCheckout}/>
         <div className="event-story">
-          <section id="about">
+          <section id="about" className="event-about-section">
             <span className="booking-kicker">THE EXPERIENCE</span>
             <h2>About the experience.</h2>
-            <p className="event-description">
-              {event.description ||
-                'The organizer will share more details about this experience soon.'}
-            </p>
+            <EventDescription description={event.description}/>
             {event.highlights && (
               <div className="event-highlights">
                 {event.highlights

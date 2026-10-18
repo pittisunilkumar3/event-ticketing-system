@@ -73,7 +73,7 @@ let server,provider;const nativeFetch=global.fetch,owned=[db.database];
  await db.platform.query("INSERT INTO platform_admins(name,email,password_hash) VALUES ('Fixture','fixture@ticketmail.test','unused')");
  await require('../saas/paymentSettings').save({mode:'test',key_id:'rzp_test_ticketmail',key_secret:'fixture-secret',webhook_secret:'fixture-webhook'},1);
  global.fetch=async(url,options)=>{if(!String(url).startsWith('https://api.razorpay.com/v1/'))return nativeFetch(url,options);const path=String(url).split('/v1/')[1];if(path==='orders'){provider={...JSON.parse(options.body),id:'order_ticketmail',status:'created'};return Response.json(provider);}if(path==='orders/order_ticketmail')return Response.json(provider);throw Error('Unexpected gateway operation '+path);};
- const paid=booking();paid.items=paid.items.slice(0,1);const reserved=await req(a.path+'/orders','POST',paid,null,201);assert.equal(reserved.tickets.length,0);
+ const paid=booking();paid.contact_source='attendee';delete paid.customer_name;delete paid.email;delete paid.phone;paid.items=paid.items.slice(0,1);const reserved=await req(a.path+'/orders','POST',paid,null,201);assert.equal(reserved.tickets.length,0);assert.equal(reserved.order.customer_name,'Guest One');assert.equal(reserved.order.email,'shared@fixture.test');
  await db.run(a.org,async()=>{const [[n]]=await db.query('SELECT COUNT(*) n FROM mail_outbox WHERE order_id=?',[reserved.order.id]);assert.equal(n.n,0);});
  await req(a.path+'/admin/ticket-types/'+types[0].id,'PUT',{email_template_id:null},a.token);
  await req(a.path+'/admin/studio/templates/'+tmpl.id,'PUT',{name:tmpl.name,active:true,config:{...custom,subject:'CHANGED WHILE PENDING'}},a.token);
@@ -134,5 +134,13 @@ let server,provider;const nativeFetch=global.fetch,owned=[db.database];
  assert(!confirmMessages.find(m=>m.to.address==='buyer@fixture.test').attachments);
  await req(a.path+'/admin/studio/templates/'+defaultTemplate.id,'PUT',{name:defaultTemplate.name,active:true,config:defaultTemplate.config},a.token);
  console.log('PASS default booking confirmation with selected-design ticket PDF and uploaded PDF for attendee; separate buyer receipt.');
+
+ const noEmail=booking();noEmail.contact_source='attendee';delete noEmail.customer_name;delete noEmail.email;delete noEmail.phone;
+ noEmail.items=noEmail.items.slice(2);noEmail.items[0].attendees[0].registration_answers.f_email='';
+ await req(a.path+'/admin/studio/templates/'+defaultTemplate.id,'PUT',{name:defaultTemplate.name,active:true,config:{...defaultTemplate.config,attach_ticket_pdf:true}},a.token);
+ const noEmailCount=deliveries.length;const withoutEmail=await req(a.path+'/orders','POST',noEmail,null,201);
+ assert.equal(withoutEmail.order.email,'');await db.run(a.org,async()=>{const [jobs]=await db.query('SELECT status,error_message FROM mail_outbox WHERE order_id=?',[withoutEmail.order.id]);assert.equal(jobs.length,1);assert.equal(jobs[0].status,'skipped');assert.match(jobs[0].error_message,/No email address/);await require('../services/mailer').processOutbox();});
+ assert.equal(deliveries.length,noEmailCount);
+ console.log('PASS attendee-only checkout with optional email left blank: no fabricated recipient, no mail sent, personal delivery skipped explicitly.');
  if(process.env.EMAIL_UI_QA==='1'){console.log('EMAIL_UI_API='+base);console.log('EMAIL_UI_EVENT='+event.id);await new Promise(r=>process.once('SIGTERM',r));}
 })().catch(e=>{console.error(e);process.exitCode=1;}).finally(async()=>{global.fetch=nativeFetch;if(server)await new Promise(r=>server.close(r));await db.end();require('node:fs').rmSync(attachmentTestDir,{recursive:true,force:true});const c=await mysql.createConnection(db.options);try{for(const name of owned.reverse())await c.query('DROP DATABASE IF EXISTS '+sqlName(name));}finally{await c.end();}});

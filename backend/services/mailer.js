@@ -35,7 +35,7 @@ async function enqueue(conn, orderId, eventKey) {
   let confirmedDefault=null;
   const [[order]] = await conn.query('SELECT customer_name,email FROM orders WHERE id=?',[orderId]);
   if (!order) throw new Error('Booking not found for email delivery.');
-  const recipients = [{key:'booking',email:order.email.trim().toLowerCase(),name:order.customer_name}];
+  const recipients = order.email?.trim()?[{key:'booking',email:order.email.trim().toLowerCase(),name:order.customer_name}]:[];
   // A shared address receives one complete booking email, even if it covers several attendees.
   const seen = new Set(recipients.map(r=>r.email));
   if (eventKey === 'booking_confirmed') {
@@ -47,8 +47,9 @@ async function enqueue(conn, orderId, eventKey) {
       const snap=ticket.email_snapshot?JSON.parse(ticket.email_snapshot):null;
       if(!snap?.personal)continue;
       personalAttendees.add(ticket.attendee_id);
-      const ready=smtp.enabled&&snap.template?.active;
-      await conn.query('INSERT IGNORE INTO mail_outbox(order_id,event_key,recipient_key,recipient_email,recipient_name,ticket_id,template_snapshot,status,error_message) VALUES (?,?,?,?,?,?,?,?,?)',[orderId,eventKey,'ticket:'+ticket.id,ticket.email?.trim().toLowerCase()||order.email.trim().toLowerCase(),ticket.attendee_name,ticket.id,JSON.stringify(snap),ready?'pending':'skipped',ready?null:'Email delivery or this template was disabled at booking time.']);
+      const recipient=ticket.email?.trim().toLowerCase()||order.email?.trim().toLowerCase()||'';
+      const ready=smtp.enabled&&snap.template?.active&&Boolean(recipient);
+      await conn.query('INSERT IGNORE INTO mail_outbox(order_id,event_key,recipient_key,recipient_email,recipient_name,ticket_id,template_snapshot,status,error_message) VALUES (?,?,?,?,?,?,?,?,?)',[orderId,eventKey,'ticket:'+ticket.id,recipient,ticket.attendee_name,ticket.id,JSON.stringify(snap),ready?'pending':'skipped',ready?null:!recipient?'No email address was collected for this attendee.':'Email delivery or this template was disabled at booking time.']);
     }
     const [attendees] = await conn.query('SELECT id,name,email FROM order_attendees WHERE order_id=? ORDER BY id',[orderId]);
     for (const person of attendees) {

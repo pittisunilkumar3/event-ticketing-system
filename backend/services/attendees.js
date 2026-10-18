@@ -53,4 +53,10 @@ async function forOrder(orderId,conn=db){
  const [rows]=await conn.query('SELECT a.id,a.ticket_type_id,a.position,a.name,a.email,a.phone,a.answers_json,tt.name type_name FROM order_attendees a JOIN ticket_types tt ON tt.id=a.ticket_type_id WHERE a.order_id=? ORDER BY a.ticket_type_id,a.position',[orderId]);
  return rows.map(({answers_json,...row})=>({...row,answers:answers_json?JSON.parse(answers_json):[]}));
 }
-module.exports={validate,save,forOrder};
+function bookingContact(attendees){
+ const people=[...attendees.values()].flat();
+ const person=people.find(p=>p.email)||people[0];
+ if(!person)fail('Enter one attendee for every selected ticket.');
+ return {customer_name:person.name,email:person.email||'',phone:person.phone||null};
+}
+module.exports={validate,save,forOrder,bookingContact};

@@ -54,6 +54,9 @@ function eventFields(input, previous = {}) {
   out.end_datetime = date(data.end_datetime, 'End date');
   if (out.end_datetime && out.end_datetime <= out.start_datetime)
     fail('End date must be after start date.');
+  out.page_theme = data.page_theme ?? 'classic';
+  if (!require('../../shared/eventThemes.json').some(theme=>theme.id===out.page_theme))
+    fail('Choose an available event theme.');
   out.status = data.status || 'draft';
   if (!['draft', 'published', 'cancelled'].includes(out.status))
     fail('Choose a valid event status.');

@@ -2,14 +2,14 @@ const db = require('../config/db');
 
 const Event = {
   async create(fields) {
-    const keys = ['title','slug','description','category','venue','city','banner_image','start_datetime','end_datetime','status','summary','address','organizer_name','organizer_email','age_policy','highlights','entry_instructions'];
+    const keys = ['title','slug','description','category','venue','city','banner_image','start_datetime','end_datetime','status','summary','address','organizer_name','organizer_email','age_policy','highlights','entry_instructions','page_theme'];
     const conn=await db.getConnection();
     try {
       await conn.beginTransaction();
       const credits=require('../saas/credits');
       const org=await credits.lockOrganization(conn);
       await credits.requirePackage(conn,org);
-      const [result]=await conn.query(`INSERT INTO events (${keys.join(',')}) VALUES (${keys.map(()=>'?').join(',')})`,keys.map(key=>fields[key] ?? null));
+      const [result]=await conn.query(`INSERT INTO events (${keys.join(',')}) VALUES (${keys.map(()=>'?').join(',')})`,keys.map(key=>fields[key] ?? (key==='page_theme'?'classic':null)));
       if(fields.status==='published') await credits.consume(conn,org,{id:result.insertId,title:fields.title});
       await conn.commit();
       return this.findById(result.insertId);
@@ -91,7 +91,7 @@ const Event = {
   },
 
   async update(id, fields) {
-    const allowed = ['title', 'slug', 'description', 'category', 'venue', 'city', 'banner_image', 'start_datetime', 'end_datetime', 'status','summary','address','organizer_name','organizer_email','age_policy','highlights','entry_instructions'];
+    const allowed = ['title', 'slug', 'description', 'category', 'venue', 'city', 'banner_image', 'start_datetime', 'end_datetime', 'status','summary','address','organizer_name','organizer_email','age_policy','highlights','entry_instructions','page_theme'];
     const sets = [];
     const params = [];
     for (const key of allowed) {

@@ -11,10 +11,12 @@ try{
  const {default:Preview}=await server.ssrLoadModule('/src/admin/IssuedTicketPreview.jsx');
  const order={booking_ref:'TKT-SAVED',customer_name:'Booker',email:'booker@example.test',event_title:'Saved Event',event_start:'2027-01-02 10:00:00',created_at:'2026-10-15 10:00:00',total_amount:'797',currency:'INR',status:'paid',payment_method:'mock'};
  const ticket={id:10,attendee_id:21,attendee_name:'Saved Guest',type_name:'Saved Pass',ticket_code:'TCK-SAVED-CODE',price:'999',status:'valid',design:{layout:'classic',brand:'Saved Brand',price:199,type_name:'Saved Pass'}};
- const data={order,tickets:[ticket],attendees:[{id:21,name:'Saved Guest',email:'guest@example.test',answers:[]}],separate_test_bookings:true};
+ const data={order,tickets:[ticket],attendees:[{id:21,name:'Saved Guest',email:'guest@example.test',phone:'9876543210',answers:[{id:'f_city',type:'text',label:'City',value:'Hyderabad'}]}],separate_test_bookings:true};
  const page=render(Details,{data,onAction:()=>{},onDownload:()=>{}});
+ assert.match(page,/CONTACT DETAILS/);assert.match(page,/9876543210/);assert.match(page,/Hyderabad/);assert.match(page,/<details[^>]*open/);
  assert.match(page,/Preview ticket for Saved Guest/);assert.match(page,/guest@example.test/);assert.match(page,/199.00/);assert.doesNotMatch(page,/999.00|<table/);assert.match(page,/booking_group=test/);
  const pending=render(Details,{data:{...data,order:{...order,status:'pending'},tickets:[]},onAction:()=>{},onDownload:()=>{}});
+ assert.match(pending,/9876543210/);assert.match(pending,/Hyderabad/);
  assert.match(pending,/Ticket not issued/);assert.match(pending,/once payment is confirmed/);assert.doesNotMatch(pending,/Preview ticket for/);
  const preview=render(Preview,{ticket,order,demo:true,onClose:()=>{}});
  for(const value of ['Saved Guest','TCK-SAVED-CODE','Saved Brand','Saved Event','TKT-SAVED','199.00'])assert.ok(preview.includes(value),value);

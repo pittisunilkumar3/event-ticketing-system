@@ -1,0 +1,147 @@
+/* Themes change presentation only; booking and event content remain shared. */
+.event-theme-cinema { --theme-paper:#111512; --theme-card:#1c231e; --theme-ink:#f4f0e5; --theme-muted:#b8c2b8; --theme-line:#3c463c; --theme-accent:#e0c27a; --theme-soft:#293229; }
+.event-theme-poster { --theme-paper:#fff5eb; --theme-card:#fffdf9; --theme-ink:#38241d; --theme-muted:#795d50; --theme-line:#e5cdbb; --theme-accent:#a54624; --theme-soft:#f8e7d8; }
+.event-theme-editorial { --theme-paper:#fff; --theme-card:#fff; --theme-ink:#252321; --theme-muted:#69645d; --theme-line:#d9d4cd; --theme-accent:#37322c; --theme-soft:#f2eee7; }
+.event-detail-page:not(.event-theme-classic) { background:var(--theme-paper); color:var(--theme-ink); --paper:var(--theme-paper); --ink:var(--theme-ink); --muted:var(--theme-muted); }
+.event-detail-page:not(.event-theme-classic) :is(.event-pass,.event-booking-summary,.experience-card,.event-section-nav,.event-ticket-empty) { background:var(--theme-card); border-color:var(--theme-line); color:var(--theme-ink); }
+.event-detail-page:not(.event-theme-classic) :is(.event-pass h3,.experience-card h3,.experience-description h4,.event-summary-heading,.event-pass-price,.experience-pass-price,.event-section-nav a,.event-fact h3) { color:var(--theme-ink); }
+.event-detail-page:not(.event-theme-classic) :is(.event-ticket-intro>p,.event-pass-info p,.event-pass-info>small,.event-pass-price small,.event-summary-note,.event-summary-empty,.event-summary-empty span,.event-summary-items span,.event-summary-total small,.experience-description,.event-fact p,.event-fact small,.event-section-nav span,.experience-intro p:first-child) { color:var(--theme-muted); }
+.event-detail-page:not(.event-theme-classic) :is(.booking-kicker,.experience-pass-number,.event-pass-status,.event-pass-selected,.booking-text-link,.event-organizer a) { color:var(--theme-accent); }
+.event-detail-page:not(.event-theme-classic) :is(.event-pass-icon,.event-pass.is-selected,.event-quantity,.experience-dinner,.event-ticket-empty,.event-entry,.event-highlights>div,.organizer-monogram) { background:var(--theme-soft); color:var(--theme-ink); border-color:var(--theme-line); }
+.event-detail-page:not(.event-theme-classic) :is(.experience-card header,.event-story,.event-summary-total,.event-quantity) { border-color:var(--theme-line); }
+.event-detail-page:not(.event-theme-classic) .event-quantity button { color:var(--theme-ink); }
+.event-detail-page:not(.event-theme-classic) .event-quantity button:not(:disabled):hover { background:var(--theme-card); }
+.event-detail-page:not(.event-theme-classic) .event-booking-summary .booking-primary { background:var(--theme-accent); color:var(--theme-paper); }
+.event-detail-page:not(.event-theme-classic) .event-booking-summary .booking-primary:not(:disabled):hover { filter:brightness(.9); background:var(--theme-accent); }
+.event-detail-page:not(.event-theme-classic) :is(.experience-dinner h4,.experience-dinner-label) { color:var(--theme-accent); }
+.event-theme-cinema .event-stage { background:#090d0a; min-height:490px; }
+.event-theme-cinema .event-stage-shade { background:linear-gradient(0deg,#0d130ff5,#101a1299 65%,#101a1233); }
+.event-theme-cinema .event-stage .booking-kicker { color:#e0c27a; }
+.event-theme-cinema .event-stage h1 { font-size:clamp(40px,5vw,72px); text-transform:uppercase; letter-spacing:-.04em; }
+.event-theme-cinema .event-date-stamp { background:#e0c27a; color:#1b221a; transform:none; border-radius:4px; }
+.event-theme-cinema .experience-card-featured { border-color:#8c7850; }
+.event-theme-cinema .event-pass.is-selected { box-shadow:inset 0 0 0 1px #e0c27a; }
+.event-theme-cinema .event-stage-art::before { border-color:#c8a357; }
+.event-theme-poster .event-stage { display:flex; flex-direction:column; background:#f6e3cf; min-height:0; }
+.event-theme-poster .event-stage-image { position:static; display:block; width:100%; height:auto; max-height:none; object-fit:contain; }
+.event-theme-poster .event-stage-shade { display:none; }
+.event-theme-poster .event-stage-content { padding-top:28px; padding-bottom:38px; width:100%; }
+.event-theme-poster .event-stage-bottom { margin-top:26px; }
+.event-theme-poster .event-stage :is(h1,p,.booking-back,.booking-kicker,.event-stage-meta) { color:#38241d; }
+.event-theme-poster .event-date-stamp { transform:rotate(-3deg); background:#a54624; color:#fff9f0; border-radius:0; }
+.event-theme-poster .event-date-stamp span { color:#fff9f0; }
+.event-theme-poster :is(.event-pass,.experience-card,.event-booking-summary) { border-radius:4px; border-width:2px; box-shadow:4px 4px 0 #e9d3c0; }
+.event-theme-editorial .event-stage { background:#f2eee7; min-height:420px; }
+.event-theme-editorial .event-stage.has-banner { display:grid; grid-template-columns:1.1fr 1fr; align-items:stretch; }
+.event-theme-editorial .event-stage-image { position:static; grid-column:2; grid-row:1; width:100%; height:100%; max-height:650px; object-fit:contain; background:#171613; }
+.event-theme-editorial .event-stage-content { grid-column:1; grid-row:1; width:100%; padding:36px clamp(24px,4vw,64px); }
+.event-theme-editorial .event-stage-shade { display:none; }
+.event-theme-editorial .event-stage :is(h1,p,.booking-back,.booking-kicker,.event-stage-meta) { color:#252321; }
+.event-theme-editorial .event-stage h1 { font-family:Georgia,serif; font-weight:400; font-size:clamp(36px,4vw,60px); letter-spacing:-.04em; }
+.event-theme-editorial .event-stage-bottom { margin-top:46px; }
+.event-theme-editorial .event-date-stamp { display:none; }
+.event-theme-editorial :is(.event-ticket-intro h2,.event-story h2) { font-family:Georgia,serif; font-weight:400; }
+.event-theme-editorial :is(.event-pass,.event-booking-summary,.experience-card,.experience-dinner) { border-radius:0; box-shadow:none; }
+.event-theme-editorial .event-stage-art::before,.event-theme-poster .event-stage-art::before { display:none; }
+@media(max-width:800px) {
+ .event-theme-editorial .event-stage.has-banner { display:flex; flex-direction:column; }
+ .event-theme-editorial .event-stage-image { height:auto; max-height:none; }
+ .event-theme-editorial .event-stage-content { padding:24px; }
+ .event-theme-editorial .event-stage-bottom { margin-top:28px; }
+ .event-theme-cinema .event-stage { min-height:390px; }
+ .event-theme-poster .event-stage-bottom { align-items:start; }
+}
+
+/* Additional page compositions share the same content and booking controls. */
+.event-theme-aurora { --theme-paper:#171329; --theme-card:#241e3c; --theme-ink:#f4efff; --theme-muted:#c4badb; --theme-line:#4c4066; --theme-accent:#d9b5ff; --theme-soft:#352b4d; }
+.event-theme-summit { --theme-paper:#eef4fa; --theme-card:#fff; --theme-ink:#142b47; --theme-muted:#52677d; --theme-line:#cedbe8; --theme-accent:#1d5289; --theme-soft:#e2edf9; }
+.event-theme-festival { --theme-paper:#fff2e8; --theme-card:#fffaf5; --theme-ink:#34223c; --theme-muted:#71546d; --theme-line:#e4c7d6; --theme-accent:#913452; --theme-soft:#f4e2f5; }
+.event-theme-gala { --theme-paper:#f8f4eb; --theme-card:#fffdf8; --theme-ink:#383024; --theme-muted:#75664e; --theme-line:#dfd1b4; --theme-accent:#80602c; --theme-soft:#efe5ce; }
+.event-theme-blueprint { --theme-paper:#0c1b2c; --theme-card:#13283d; --theme-ink:#e8f6ff; --theme-muted:#aec5d9; --theme-line:#35566c; --theme-accent:#85dcea; --theme-soft:#203b50; }
+.event-theme-gallery { --theme-paper:#fff; --theme-card:#fff; --theme-ink:#252525; --theme-muted:#676767; --theme-line:#ddd; --theme-accent:#373737; --theme-soft:#f3f3f3; }
+
+.event-theme-aurora .event-stage { min-height:520px; background:radial-gradient(ellipse at 20% 0%,#68498d,transparent 65%),linear-gradient(130deg,#1b1430,#38244f); }
+.event-theme-aurora .event-stage-shade { background:linear-gradient(0deg,#1d1538f5,#29194eb0); }
+.event-theme-aurora .event-stage-bottom { justify-content:center; text-align:center; margin-top:70px; }
+.event-theme-aurora .event-stage-bottom>div { max-width:850px; }
+.event-theme-aurora .event-stage h1 { margin-inline:auto; font-size:clamp(38px,5vw,68px); }
+.event-theme-aurora .event-stage p { margin-inline:auto; color:#e3d8f4; }
+.event-theme-aurora .event-stage-meta { justify-content:center; }
+.event-theme-aurora .event-stage .booking-kicker { color:#ddc3ff; }
+.event-theme-aurora .event-date-stamp { display:none; }
+.event-theme-aurora .event-pass,.event-theme-aurora .experience-card { border-radius:24px; box-shadow:0 12px 35px #09051720; }
+.event-theme-aurora .event-booking-summary { border-top:3px solid #c698f1; }
+.event-theme-aurora .event-stage-art::before { display:none; }
+
+.event-theme-summit .event-stage { background:#e0ebf7; min-height:420px; }
+.event-theme-summit .event-stage.has-banner { display:grid; grid-template-columns:1fr 1.2fr; }
+.event-theme-summit .event-stage-image { position:static; grid-column:1; grid-row:1; height:100%; max-height:620px; object-fit:contain; background:#102132; }
+.event-theme-summit .event-stage-content { grid-column:2; grid-row:1; width:100%; padding:38px clamp(24px,4vw,60px); }
+.event-theme-summit .event-stage-shade { display:none; }
+.event-theme-summit .event-stage :is(h1,p,.booking-back,.booking-kicker,.event-stage-meta) { color:#142b47; }
+.event-theme-summit .event-stage h1 { font-size:clamp(34px,4vw,55px); letter-spacing:-.04em; }
+.event-theme-summit .event-stage-bottom { margin-top:40px; }
+.event-theme-summit .event-date-stamp { display:none; }
+.event-theme-summit .event-section-nav { border-bottom:3px solid #1d5289; }
+.event-theme-summit .event-pass { border-radius:8px; border-left:4px solid #3573ad; }
+.event-theme-summit .event-booking-summary { border-radius:8px; }
+.event-theme-summit .event-stage-art::before { display:none; }
+
+.event-theme-festival .event-stage { background:#f5a585; }
+.event-theme-festival .event-stage-image { opacity:.14; }
+.event-theme-festival .event-stage-shade { background:linear-gradient(120deg,#ffc4a7b3,#f0bbdd99); }
+.event-theme-festival .event-stage :is(h1,p,.booking-back,.booking-kicker,.event-stage-meta) { color:#34223c; }
+.event-theme-festival .event-stage h1 { text-transform:uppercase; font-weight:850; font-size:clamp(38px,5.4vw,74px); letter-spacing:-.055em; }
+.event-theme-festival .event-date-stamp { background:#e6d3f2; color:#412647; border:2px solid #412647; border-radius:50%; width:145px; height:145px; transform:rotate(-8deg); box-shadow:5px 5px 0 #412647; }
+.event-theme-festival .event-date-stamp span { color:#412647; }
+.event-theme-festival .event-pass,.event-theme-festival .experience-card { border:2px solid #67415f; border-radius:18px; box-shadow:4px 4px 0 #ead2e7; }
+.event-theme-festival .event-stage-art::before { border-color:#f8d4eb; }
+
+.event-theme-gala .event-stage { display:flex; flex-direction:column; background:#f0e8d5; padding:28px 28px 0; min-height:0; }
+.event-theme-gala .event-stage-image { position:static; width:min(100%,1120px); height:auto; object-fit:contain; margin:0 auto; border:1px solid #bda46c; padding:10px; background:#171611; }
+.event-theme-gala .event-stage-shade { display:none; }
+.event-theme-gala .event-stage-content { width:100%; padding-top:24px; padding-bottom:40px; }
+.event-theme-gala .event-stage-bottom { margin-top:25px; text-align:center; justify-content:center; }
+.event-theme-gala .event-stage :is(h1,p,.booking-back,.booking-kicker,.event-stage-meta) { color:#44351e; }
+.event-theme-gala .event-stage h1 { font-family:Georgia,serif; font-weight:400; letter-spacing:-.035em; margin-inline:auto; }
+.event-theme-gala .event-stage p { margin-inline:auto; }
+.event-theme-gala .event-stage-meta { justify-content:center; }
+.event-theme-gala .event-date-stamp { display:none; }
+.event-theme-gala :is(.event-ticket-intro h2,.event-story h2,.experience-card h3) { font-family:Georgia,serif; font-weight:400; }
+.event-theme-gala :is(.event-pass,.event-booking-summary,.experience-card) { border-radius:2px; outline:1px solid #e2d6bd; outline-offset:-7px; }
+.event-theme-gala .event-stage-art::before { display:none; }
+
+.event-theme-blueprint .event-stage { background:#0b2034; }
+.event-theme-blueprint .event-stage-shade { background:linear-gradient(90deg,#0b2034ed,#0b203499),repeating-linear-gradient(0deg,transparent,transparent 39px,#85dcea18 40px); }
+.event-theme-blueprint .event-stage .booking-kicker { color:#85dcea; font-family:monospace; letter-spacing:.18em; }
+.event-theme-blueprint .event-stage h1 { text-transform:uppercase; letter-spacing:-.03em; }
+.event-theme-blueprint .event-date-stamp { border:1px solid #85dcea; background:#102b41; color:#c7f5fb; transform:none; border-radius:0; box-shadow:8px 8px 0 #85dcea22; }
+.event-theme-blueprint .event-date-stamp span { color:#c7f5fb; }
+.event-theme-blueprint :is(.event-pass,.event-booking-summary,.experience-card,.experience-dinner,.event-quantity) { border-radius:0; }
+.event-theme-blueprint .event-pass { border-left:3px solid #85dcea; }
+.event-theme-blueprint :is(.event-pass-status,.experience-pass-number,.event-fact small) { font-family:monospace; letter-spacing:.12em; }
+.event-theme-blueprint .event-stage-art::before { border-color:#417b91; }
+
+.event-theme-gallery .event-stage { display:flex; flex-direction:column-reverse; background:#fff; min-height:0; padding-bottom:32px; }
+.event-theme-gallery .event-stage-image { position:static; display:block; width:calc(100% - 64px); max-width:1120px; height:auto; margin:0 auto; object-fit:contain; }
+.event-theme-gallery .event-stage-shade { display:none; }
+.event-theme-gallery .event-stage-content { width:100%; padding-top:28px; padding-bottom:32px; }
+.event-theme-gallery .event-stage-bottom { margin-top:30px; }
+.event-theme-gallery .event-stage :is(h1,p,.booking-back,.booking-kicker,.event-stage-meta) { color:#252525; }
+.event-theme-gallery .event-stage h1 { font-size:clamp(36px,4vw,54px); font-weight:500; letter-spacing:-.045em; }
+.event-theme-gallery .event-date-stamp { background:#f3f3f3; color:#333; border:1px solid #ddd; border-radius:0; transform:none; box-shadow:none; }
+.event-theme-gallery .event-date-stamp span { color:#555; }
+.event-theme-gallery :is(.event-pass,.experience-card) { border-radius:0; border-width:0 0 1px; box-shadow:none; padding-inline:0; }
+.event-theme-gallery .event-booking-summary { border-radius:0; box-shadow:none; }
+.event-theme-gallery .event-stage-art::before { display:none; }
+@media(max-width:800px) {
+ .event-theme-summit .event-stage.has-banner { display:flex; flex-direction:column; }
+ .event-theme-summit .event-stage-image { height:auto; max-height:none; }
+ .event-theme-summit .event-stage-content { padding:24px; }
+ .event-theme-summit .event-stage-bottom { margin-top:28px; }
+ .event-theme-aurora .event-stage { min-height:400px; }
+ .event-theme-aurora .event-stage-bottom { margin-top:40px; }
+ .event-theme-festival .event-date-stamp { min-width:110px; width:110px; height:110px; }
+ .event-theme-gala .event-stage { padding:16px 16px 0; }
+ .event-theme-gallery .event-stage-image { width:calc(100% - 32px); }
+}

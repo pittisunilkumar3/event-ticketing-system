@@ -5,14 +5,16 @@ const { asyncHandler } = require('../middleware/errorHandler');
 /** POST /api/orders — public checkout (no auth) */
 const createPublicOrder = asyncHandler(async (req, res) => {
   const { event_id, customer_name, email, phone, items } = req.body;
+  const fromAttendee=req.body.contact_source==='attendee';
+  if(req.body.contact_source!==undefined&&!fromAttendee)fail('Choose a valid booking contact source.');
 
-  if (!event_id || !customer_name || !email || !Array.isArray(items) || items.length === 0) {
+  if (!event_id || (!fromAttendee&&(!customer_name||!email)) || !Array.isArray(items) || items.length === 0) {
     return res.status(400).json({
       success: false,
       message: 'event_id, customer_name, email and at least one item are required.',
     });
   }
-  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+  if (!fromAttendee&&!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
     return res.status(400).json({ success: false, message: 'Please provide a valid email address.' });
   }
   for (const item of items) {
@@ -21,14 +23,17 @@ const createPublicOrder = asyncHandler(async (req, res) => {
     }
   }
 
+  if(!fromAttendee){
   string(customer_name,'Name',150,true); emailAddress(email,true);
   string(phone,'Phone',40,true);
   if(!/^\+?[0-9 ()\-.]{6,40}$/.test(phone)||phone.replace(/\D/g,'').length<6) fail('Please provide a valid phone number.');
+  }
   const result = await require('../services/bookingPayments').create({
     event_id,
-    customer_name,
-    email: email.toLowerCase().trim(),
-    phone,
+    contact_source:fromAttendee?'attendee':undefined,
+    customer_name:fromAttendee?undefined:customer_name,
+    email:fromAttendee?undefined:email.toLowerCase().trim(),
+    phone:fromAttendee?undefined:phone,
     items,
     registration_answers:req.body.registration_answers,
     form_revision:req.body.form_revision,

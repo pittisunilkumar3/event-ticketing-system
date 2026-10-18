@@ -3,7 +3,9 @@ import { useNavigate, useParams, Link } from 'react-router-dom';
 import api from '../api/client';
 import Icon from '../components/Icon';
 import './events.css';
+import EventThemePicker from './EventThemePicker';
 const initial = {
+  page_theme: 'classic',
   title: '',
   summary: '',
   description: '',
@@ -30,6 +32,7 @@ export default function EventForm() {
     [banner, setBanner] = useState(null),
     [preview, setPreview] = useState(''),
     [removeBanner, setRemoveBanner] = useState(false);
+  const [ticketTypes,setTicketTypes]=useState([]);
   const [subscription,setSubscription]=useState(null),[attempt,setAttempt]=useState(0);
   const [organizationStatus,setOrganizationStatus]=useState('');
   useEffect(() => {
@@ -43,6 +46,7 @@ export default function EventForm() {
       .get('/admin/events/' + id, { signal: controller.signal })
       .then(({ data }) => {
         const e = data.data.event;
+        setTicketTypes(data.data.ticketTypes || []);
         setForm(
           Object.fromEntries(
             Object.keys(initial).map((k) => [
@@ -254,6 +258,7 @@ export default function EventForm() {
                 {area('entry_instructions', 'Arrival & entry instructions', 4)}
               </div>
             </section>
+            <EventThemePicker value={form.page_theme} onChange={page_theme=>setForm(f=>({...f,page_theme}))} event={{...form,banner_image:preview}} ticketTypes={ticketTypes}/>
           </div>
           <aside className="ea-form-aside">
             <section className="ea-panel">
