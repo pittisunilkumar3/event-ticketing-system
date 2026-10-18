@@ -1,0 +1,51 @@
+.booker-emails .booker-compose {
+ display:grid; grid-template-columns:minmax(280px,1fr) minmax(0,1.5fr);
+ gap:24px; margin:28px 0; align-items:start;
+}
+.booker-emails .studio-panel { padding:28px; min-width:0; }
+.booker-emails .booker-compose > .studio-panel { display:flex; flex-direction:column; gap:22px; }
+.booker-emails h2 { font-size:20px; line-height:1.4; margin:0; }
+.booker-emails .studio-heading p { margin-top:12px; }
+.booker-emails .studio-field { gap:9px; }
+.booker-emails .studio-token-box { margin:0; }
+.booker-emails .booker-selection { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; }
+.booker-emails .booker-selection .studio-text-button { padding:8px 0; }
+.booker-emails .booker-recipients { max-height:400px; overflow:auto; }
+.booker-emails .booker-recipients:empty { display:none; }
+.booker-emails .booker-recipients label { display:flex; align-items:center; gap:12px; padding:16px 0; border-bottom:1px solid #e5e7eb; overflow-wrap:anywhere; cursor:pointer; }
+.booker-emails .booker-recipients label:first-child { padding-top:0; }
+.booker-emails .booker-recipients label:last-child { border-bottom:0; padding-bottom:0; }
+.booker-emails .booker-recipients small { display:block; color:#667085; margin-top:5px; line-height:1.6; }
+.booker-emails .booker-help { font-size:13px; color:#667085; line-height:1.7; margin:16px 0; }
+.booker-emails .booker-compose .booker-help { margin:0; }
+.booker-emails .booker-empty { color:#667085; line-height:1.7; margin:0; }
+.booker-emails .booker-warning { background:#fff4dd; padding:16px; border-radius:10px; }
+.booker-emails .booker-compose .studio-button { align-self:flex-start; }
+.booker-emails .booker-review { width:min(760px,94vw)!important; max-width:760px!important; max-height:90vh; overflow:auto; }
+.booker-emails .booker-review iframe { width:100%; height:clamp(180px,32vh,280px); background:white; border:1px solid #e5e7eb; border-radius:8px; margin:16px 0; }
+.booker-emails .booker-review details { overflow-wrap:anywhere; max-height:240px; overflow:auto; }
+.booker-emails td .studio-text-button { display:block; margin:8px 0; }
+.booker-emails input[type=checkbox] { width:18px; height:18px; flex:none; }
+@media(max-width:1000px){.booker-emails .booker-compose{grid-template-columns:1fr}}
+@media(max-width:650px){.booker-emails .studio-panel{padding:20px}.booker-emails .booker-compose{gap:20px}.booker-emails .booker-compose > .studio-panel{gap:20px}}
+
+.booker-emails .booker-customer-summary { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:18px; padding-top:2px; }
+.booker-emails .booker-customer-summary p { margin:7px 0 0; color:#667085; font-size:13px; overflow-wrap:anywhere; }
+.booker-emails .booker-customer-picker { width:min(720px,calc(100vw - 32px)); height:min(700px,90dvh); max-height:90dvh; padding:0; border:1px solid #e9e5e0; border-radius:16px; margin:auto; color:#242424; background:white; box-shadow:0 24px 80px #0003; }
+.booker-emails .booker-customer-picker[open] { display:flex; flex-direction:column; }
+.booker-emails .booker-customer-picker::backdrop { background:rgb(15 23 42 / 48%); }
+.booker-emails .booker-picker-header,.booker-emails .booker-picker-footer { display:flex; align-items:center; justify-content:space-between; gap:16px; padding:20px 24px; flex-shrink:0; }
+.booker-emails .booker-picker-header { border-bottom:1px solid #e9e5e0; }
+.booker-emails .booker-picker-header p { font-size:13px; color:#667085; margin:6px 0 0; }
+.booker-emails .booker-picker-footer { border-top:1px solid #e9e5e0; background:#faf9f7; }
+.booker-emails .booker-picker-body { display:flex; flex-direction:column; gap:18px; padding:22px 24px; flex:1; min-height:0; overflow:auto; }
+.booker-emails .booker-picker-filters { display:grid; grid-template-columns:1fr 1fr; gap:18px; flex-shrink:0; }
+.booker-emails .booker-picker-body > .booker-selection { flex-shrink:0; }
+.booker-emails .booker-picker-body .booker-recipients { flex:1; min-height:80px; max-height:none; overflow:auto; overscroll-behavior:contain; padding-right:6px; scrollbar-gutter:stable; }
+.booker-emails .booker-picker-body .booker-help { margin:0; flex-shrink:0; }
+@media(max-width:650px){
+ .booker-emails .booker-picker-filters { grid-template-columns:1fr; gap:16px; }
+ .booker-emails .booker-picker-header,.booker-emails .booker-picker-footer { padding:16px 18px; }
+ .booker-emails .booker-picker-body { padding:18px; gap:16px; }
+ .booker-emails .booker-picker-header h2 { font-size:18px; }
+}

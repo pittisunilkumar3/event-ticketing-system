@@ -128,7 +128,10 @@ function startWorker() {
     try {
       await require('../saas/platformMail').processOutbox().catch(()=>{});
       const [organizations]=await db.platform.query("SELECT * FROM organizations WHERE status IN ('active','suspended')");
-      for(const organization of organizations) await db.run(organization,()=>processOutbox().catch(()=>{}));
+      for(const organization of organizations) await db.run(organization,async()=>{
+        await processOutbox().catch(()=>{});
+        if(!organization.is_legacy&&organization.status==='active')await require('./organizerMessages').processOutbox().catch(()=>{});
+      });
     } catch { /* A migration may still be running. Retry on the next pass. */ }
     finally{sweeping=false;}
   },10000);

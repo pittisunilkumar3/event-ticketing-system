@@ -30,6 +30,7 @@ tenant.use('/admin/wallet', require('./routes/walletRoutes'));
 tenant.use('/admin/orders', require('./routes/orderRoutes'));
 tenant.use('/admin/tickets', require('./routes/ticketRoutes'));
 tenant.use('/admin/studio', require('./routes/studioRoutes'));
+tenant.use('/admin/messages', require('./routes/organizerMessageRoutes'));
 tenant.use('/admin/email-templates', require('./routes/emailTemplateRoutes'));
 tenant.use(require('./routes/publicRoutes'));
 // Pass an explicit, validated organization slug into the shared router.

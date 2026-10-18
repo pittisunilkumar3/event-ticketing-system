@@ -3,8 +3,16 @@ import { Link, useSearchParams } from 'react-router-dom';
 import api from '../api/client';
 import { Spinner, Alert } from '../components/ui';
 import { formatDateTime, formatCurrency, StatusBadge } from '../utils/format';
+import TicketBookings from './TicketBookings';
 
 export default function Orders() {
+  const [params,setParams]=useSearchParams();
+  const tickets=params.get('view')==='tickets';
+  function switchView(view){const next=new URLSearchParams(params);if(view==='tickets')next.set('view','tickets');else next.delete('view');next.delete('page');setParams(next);}
+  return <div><h1 className="text-2xl font-extrabold text-slate-900">Orders</h1><div className="orders-view-switch" role="group" aria-label="Booking view"><button type="button" aria-pressed={!tickets} onClick={()=>switchView('orders')}>By order</button><button type="button" aria-pressed={tickets} onClick={()=>switchView('tickets')}>Individual tickets</button></div>{tickets?<TicketBookings/>:<OrdersList/>}</div>;
+}
+
+function OrdersList() {
   const [params, setParams] = useSearchParams();
   const eventId = params.get('event_id') || '';
   const bookingGroup=params.get('booking_group')==='test'?'test':'real';
@@ -47,7 +55,6 @@ export default function Orders() {
 
   return (
     <div className="space-y-5">
-      <h1 className="text-2xl font-extrabold text-slate-900">Orders</h1>
       {separated&&<p className="text-sm text-slate-500">{organization} · {bookingGroup==='test'?'Test and demo bookings — no real payments collected.':'Real bookings only. Test and demo records are kept separately.'}</p>}
       {eventId && <div className="flex items-center gap-4 text-sm"><Link className="font-semibold text-orange-700" to={`/admin/events/${eventId}`}>← Back to event</Link><span>Showing this event’s bookings</span><button className="underline" onClick={() => { setParams({}); setPagination(p => ({ ...p, page: 1 })); }}>Show all orders</button></div>}
 

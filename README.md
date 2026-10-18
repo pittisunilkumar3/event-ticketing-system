@@ -248,3 +248,9 @@ Run `node saas/migrate.js` from the backend to apply migration `014_ticket_atten
 Booking confirmations use the saved organization email template and SMTP sender. After confirmed payment (or a confirmed free booking), separate emails are queued for the booking contact and each distinct attendee email address. Repeated addresses receive one complete booking confirmation. Each delivery has its own status and retry action; duplicate payment callbacks do not create duplicate email jobs. Migration `015_booking_email_recipients.sql` preserves existing mail history.
 
 Sample seeding is restricted to disposable integration-test database names. On 2026-10-15, the user-requested cleanup removed five sample events, nine mock orders, twenty tickets and related demo records from the existing workspace. A private, Git-ignored backup is retained under `backend/backups/`. Accounts, packages, event credits, branding and reusable templates were preserved.
+
+### Individual ticket reports
+
+In **Orders → Individual tickets**, organizers can search attendees by name, email, phone, ticket number or booking reference and filter by event/pass, booking status, check-in status, booking dates, and real versus test bookings. Each issued ticket has its own row and preview. Pending reservations without issued tickets stay in **By order**. **Export CSV** downloads all matching tickets, including contact fields and saved registration answers, across every result page. Reports remain scoped to the signed-in organization; CSV exports neutralize spreadsheet formulas and exclude private files and email settings.
+
+Regression checks: `cd backend && node --test tests/ticketReport.test.js` and `node tests/ticketReport.integration.js` (disposable local databases), plus `cd frontend && node tests/ticket-bookings.mjs`.

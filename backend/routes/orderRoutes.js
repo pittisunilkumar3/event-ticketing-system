@@ -4,6 +4,7 @@ const { verifyToken } = require('../middleware/auth');
 
 router.use(verifyToken);
 
+router.use('/tickets', require('./ticketReportRoutes'));
 router.get('/', controller.list);
 router.get('/:id', controller.detail);
 router.get('/:id/registration-files/:field',require('../middleware/errorHandler').asyncHandler(async(req,res)=>{

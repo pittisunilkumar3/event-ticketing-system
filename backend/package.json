@@ -20,7 +20,8 @@
     "test:forms": "node --test tests/registrationForms.test.js",
     "test:forms:integration": "node tests/registrationForms.integration.js",
     "test:wallet": "node tests/eventWallet.integration.js",
-    "test:booking-payments": "node tests/bookingPayments.integration.js"
+    "test:booking-payments": "node tests/bookingPayments.integration.js",
+    "test:messages": "node tests/organizerMessages.integration.js"
   },
   "keywords": [
     "ticketing",
