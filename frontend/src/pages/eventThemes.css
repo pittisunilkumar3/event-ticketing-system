@@ -1,7 +1,4 @@
 /* Themes change presentation only; booking and event content remain shared. */
-.event-theme-cinema { --theme-paper:#111512; --theme-card:#1c231e; --theme-ink:#f4f0e5; --theme-muted:#b8c2b8; --theme-line:#3c463c; --theme-accent:#e0c27a; --theme-soft:#293229; }
-.event-theme-poster { --theme-paper:#fff5eb; --theme-card:#fffdf9; --theme-ink:#38241d; --theme-muted:#795d50; --theme-line:#e5cdbb; --theme-accent:#a54624; --theme-soft:#f8e7d8; }
-.event-theme-editorial { --theme-paper:#fff; --theme-card:#fff; --theme-ink:#252321; --theme-muted:#69645d; --theme-line:#d9d4cd; --theme-accent:#37322c; --theme-soft:#f2eee7; }
 .event-detail-page:not(.event-theme-classic) { background:var(--theme-paper); color:var(--theme-ink); --paper:var(--theme-paper); --ink:var(--theme-ink); --muted:var(--theme-muted); }
 .event-detail-page:not(.event-theme-classic) :is(.event-pass,.event-booking-summary,.experience-card,.event-section-nav,.event-ticket-empty) { background:var(--theme-card); border-color:var(--theme-line); color:var(--theme-ink); }
 .event-detail-page:not(.event-theme-classic) :is(.event-pass h3,.experience-card h3,.experience-description h4,.event-summary-heading,.event-pass-price,.experience-pass-price,.event-section-nav a,.event-fact h3) { color:var(--theme-ink); }
@@ -53,12 +50,6 @@
 }
 
 /* Additional page compositions share the same content and booking controls. */
-.event-theme-aurora { --theme-paper:#171329; --theme-card:#241e3c; --theme-ink:#f4efff; --theme-muted:#c4badb; --theme-line:#4c4066; --theme-accent:#d9b5ff; --theme-soft:#352b4d; }
-.event-theme-summit { --theme-paper:#eef4fa; --theme-card:#fff; --theme-ink:#142b47; --theme-muted:#52677d; --theme-line:#cedbe8; --theme-accent:#1d5289; --theme-soft:#e2edf9; }
-.event-theme-festival { --theme-paper:#fff2e8; --theme-card:#fffaf5; --theme-ink:#34223c; --theme-muted:#71546d; --theme-line:#e4c7d6; --theme-accent:#913452; --theme-soft:#f4e2f5; }
-.event-theme-gala { --theme-paper:#f8f4eb; --theme-card:#fffdf8; --theme-ink:#383024; --theme-muted:#75664e; --theme-line:#dfd1b4; --theme-accent:#80602c; --theme-soft:#efe5ce; }
-.event-theme-blueprint { --theme-paper:#0c1b2c; --theme-card:#13283d; --theme-ink:#e8f6ff; --theme-muted:#aec5d9; --theme-line:#35566c; --theme-accent:#85dcea; --theme-soft:#203b50; }
-.event-theme-gallery { --theme-paper:#fff; --theme-card:#fff; --theme-ink:#252525; --theme-muted:#676767; --theme-line:#ddd; --theme-accent:#373737; --theme-soft:#f3f3f3; }
 
 .event-theme-aurora .event-stage { min-height:520px; background:radial-gradient(ellipse at 20% 0%,#68498d,transparent 65%),linear-gradient(130deg,#1b1430,#38244f); }
 .event-theme-aurora .event-stage-shade { background:linear-gradient(0deg,#1d1538f5,#29194eb0); }

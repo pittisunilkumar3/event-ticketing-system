@@ -19,7 +19,12 @@ export function watchEventContent(scope, load) {
   refresh();
   const stream = typeof window.EventSource === 'function' ? new window.EventSource(scope + '/events/stream') : null;
   // A ready event also catches changes missed during a disconnected stream.
-  stream?.addEventListener('ready', refresh);
+  let connected = false;
+  stream?.addEventListener('ready', () => {
+    // The initial request is already running. Only reconnects need a catch-up.
+    if (connected) refresh();
+    connected = true;
+  });
   stream?.addEventListener('changed', refresh);
   const stop = watchSiteContent(refresh, {eventName:eventName(scope), storageKey:storageKey(scope)});
   return () => { stream?.close(); stop(); controller.abort(); };

@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
-import api from "../api/client";
 import defaults from "../../../shared/siteSettings.json";
+import {preloadPublicRoute, getPublicData} from './publicStartup';
 import {watchSiteContent} from './watchSiteContent';
 const Context = createContext(defaults);
 export const notifySiteSettingsChanged = () => {
@@ -24,7 +24,7 @@ export function SiteSettingsProvider({ children }) {
     const load = async () => {
       const id = ++revision;
       try {
-        const { data } = await api.get("/site-settings");
+        const { data } = await getPublicData("/site-settings");
         if (alive && id === revision) {
           setSettings({ ...defaults, ...data.data.settings }); setLoaded(true); setError("");
         }
@@ -32,6 +32,7 @@ export function SiteSettingsProvider({ children }) {
         if(alive && id === revision) setError(e.response?.data?.message || "Unable to load this website. Please try again.");
       }
     };
+    preloadPublicRoute(pathname);
     load();
     const stop=watchSiteContent(load);
     return () => {
@@ -64,6 +65,6 @@ export function SiteSettingsProvider({ children }) {
     }
     description.content = settings.description;
   }, [settings, pathname]);
-  if (!pathname.startsWith('/superadmin') && pathname !== '/signup' && !loaded) return <main style={{padding:40}}>{error ? <><p role="alert">{error}</p><button onClick={()=>window.dispatchEvent(new Event('site-settings-changed'))}>Try again</button></> : <p role="status">Loading website…</p>}</main>;
+  if (!pathname.startsWith('/superadmin') && pathname !== '/signup' && !loaded) return <main className="site-opening">{error ? <><p role="alert">{error}</p><button onClick={()=>window.dispatchEvent(new Event('site-settings-changed'))}>Try again</button></> : <p role="status">Loading website…</p>}</main>;
   return <Context.Provider value={settings}>{children}</Context.Provider>;
 }

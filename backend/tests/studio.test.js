@@ -74,7 +74,9 @@ test('all eleven email layouts render safe placeholders and only published polic
     assert.doesNotMatch(rendered.html,/\{\{/); htmls.add(rendered.html);
     if(format===7) assert.doesNotMatch(rendered.html,/>View my tickets</);
   }
-  assert.equal(htmls.size,11);
+  // Formats 5 and 6 now share the message-only layout after removing the
+  // automatic order table; keep both saved format IDs compatible.
+  assert.equal(htmls.size,10);
 });
 test('SMTP secrets round trip, preserve whitespace, and fail closed on tampering',()=>{
   process.env.SETTINGS_ENCRYPTION_KEY='a'.repeat(64);
@@ -139,4 +141,16 @@ test('site settings validate input, preserve omitted fields and expose only publ
   assert.deepEqual(Object.keys(safe).sort(),Object.keys(defaults.brand).sort());
   assert.doesNotMatch(JSON.stringify(safe),/private|secret|password|admin_token/);
   assert.equal(validateSiteSettings({favicon:'',support_email:''},current).favicon,'');
+});
+
+test('removing an email logo stays removed even when the website has a logo',()=>{
+ const brand={...defaults.brand,logo:'https://example.com/website-logo.png'};
+ const removed=v.template('email',{...defaults.email,format:8,logo:'',show_logo:false,banner_image:'https://example.com/banner.jpg'});
+ assert.equal(removed.show_logo,false);
+ assert.doesNotMatch(renderEmail(removed,brand,sampleData).html,/Company logo|website-logo/);
+ assert.match(renderEmail(removed,brand,sampleData).html,/banner.jpg/);
+ const legacy=v.template('email',{...defaults.email,format:8});
+ assert.match(renderEmail(legacy,brand,sampleData).html,/website-logo/);
+ const uploaded=v.template('email',{...removed,show_logo:true,logo:'https://example.com/new-logo.png'});
+ assert.match(renderEmail(uploaded,brand,sampleData).html,/new-logo/);
 });

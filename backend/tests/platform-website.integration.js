@@ -87,6 +87,14 @@ async function run(){
  await request(platform+'/pages/privacy-policy','PUT',page,platformToken);
  assert.equal((await request('/api/pages')).pages.length,0);
  await request('/api/pages/privacy-policy','GET',null,null,404);
+ // Existing installations have only the original five pages. New page types
+ // must remain editable, preserve their old content, and start unpublished.
+ const existingPages=await website.pages();
+ const addedSlugs=['about-us','pricing','ticket-delivery'];
+ await connection.query("UPDATE platform_settings SET value_json=? WHERE name='website_pages'",[JSON.stringify(existingPages.filter(p=>!addedSlugs.includes(p.slug)))]);
+ const upgradedPages=await website.pages();
+ assert.equal(upgradedPages.find(p=>p.slug==='privacy-policy').body,existingPages.find(p=>p.slug==='privacy-policy').body);
+ for(const slug of addedSlugs){assert.equal(upgradedPages.find(p=>p.slug===slug).published,false);await request('/api/pages/'+slug,'GET',null,null,404);}
  // Every supported policy follows the same publish/edit/unpublish path.
  for(const [slug,title] of require('../services/studioDefaults').pages) {
   const fixture={title,body:`<p>Published ${slug}</p>`,published:true};

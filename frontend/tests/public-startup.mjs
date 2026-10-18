@@ -1,0 +1,18 @@
+import assert from 'node:assert/strict';
+import {readFile} from 'node:fs/promises';
+import vm from 'node:vm';
+const calls=[],timers=[];
+let now=0;
+const source=(await readFile(new URL('../src/settings/publicStartup.js',import.meta.url),'utf8')).replace("import api from '../api/client';",'').replaceAll('export ','');
+const context=vm.createContext({api:{defaults:{baseURL:'/api'},get(path,options){let resolve,reject;const request=new Promise((a,b)=>{resolve=a;reject=b;});calls.push({path,options,resolve,reject});return request;}},Date:{now:()=>now},window:{setTimeout(fn){timers.push(fn);}}});
+vm.runInContext(source+'\nthis.preload=preloadPublicRoute;this.get=getPublicData;',context);
+context.preload('/');context.preload('/');assert.equal(calls.length,1);assert.equal(calls[0].path,'/events');
+const first=context.get('/events');calls[0].resolve({data:'published'});assert.equal((await first).data,'published');
+const fresh=context.get('/events');assert.equal(calls.length,2);calls[1].resolve({data:'changed'});assert.equal((await fresh).data,'changed');
+context.preload('/events/expo');const detail=context.get('/events/expo');assert.equal(calls[2].path,'/events/expo');calls[2].resolve('event');assert.equal(await detail,'event');
+context.preload('/checkout/expo');const controller=new AbortController();const cancelled=context.get('/events/expo',{signal:controller.signal});controller.abort();calls[3].resolve('event');await assert.rejects(cancelled,{name:'AbortError'});
+context.preload('/events/error');calls[4].reject(new Error('offline'));await assert.rejects(context.get('/events/error'),/offline/);const retry=context.get('/events/error');calls[5].resolve('recovered');assert.equal(await retry,'recovered');
+context.preload('/events/stale');now=15001;const stale=context.get('/events/stale');assert.equal(calls.length,8);calls[7].resolve('new');assert.equal(await stale,'new');calls[6].resolve('old');
+const count=calls.length;context.preload('/admin');context.preload('/superadmin');context.preload('/my-bookings');assert.equal(calls.length,count);
+for(const call of calls)assert.equal(call.options.timeout,15000);
+console.log('PASS public startup: shared initial request, fresh updates, event/checkout prefetch, abort, retry, expiry, public-only routes, timeout.');

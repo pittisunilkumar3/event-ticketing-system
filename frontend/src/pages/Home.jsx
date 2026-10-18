@@ -2,6 +2,7 @@ import OrganizerHome from './OrganizerHome';
 import {useSiteSettings} from '../settings/SiteSettingsContext';
 import { useEffect, useState } from 'react';
 import api from '../api/client';
+import {getPublicData} from '../settings/publicStartup';
 import {watchEventContent} from '../settings/watchEventContent';
 import {formatDate} from '../utils/format';
 import { Link } from 'react-router-dom';
@@ -17,7 +18,7 @@ export function PublishedEventList({events,loading,error,onRetry}) {
 }
 function PublishedEvents() {
  const [events,setEvents]=useState([]),[loading,setLoading]=useState(true),[error,setError]=useState(''),[attempt,setAttempt]=useState(0);
- useEffect(()=>watchEventContent(api.defaults.baseURL,signal=>{api.get('/events',{signal,timeout:15000}).then(({data})=>{if(!signal.aborted){setEvents(data.data.events);setError('');}}).catch(e=>{if(!signal.aborted)setError(e.response?.data?.message||'Unable to load events. Please try again.');}).finally(()=>{if(!signal.aborted)setLoading(false);});}),[attempt]);
+ useEffect(()=>watchEventContent(api.defaults.baseURL,signal=>{getPublicData('/events',{signal,timeout:15000}).then(({data})=>{if(!signal.aborted){setEvents(data.data.events);setError('');}}).catch(e=>{if(!signal.aborted)setError(e.response?.data?.message||'Unable to load events. Please try again.');}).finally(()=>{if(!signal.aborted)setLoading(false);});}),[attempt]);
  return <PublishedEventList events={events} loading={loading} error={error} onRetry={()=>setAttempt(n=>n+1)}/>;
 }
 

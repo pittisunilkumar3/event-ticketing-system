@@ -7,11 +7,15 @@ import {
   useLocation,
 } from 'react-router-dom';
 import api from '../api/client';
+import {getPublicData} from '../settings/publicStartup';
 import {loadCheckout} from '../saas/razorpayCheckout';
 import { formatCurrency, formatDateTime } from '../utils/format';
 import Icon from '../components/Icon';
 import CustomerState from '../components/CustomerState';
 import './booking.css';
+import './checkoutThemes.css';
+import {eventThemeId, refreshCheckoutTheme} from './eventTheme';
+import {watchEventContent} from '../settings/watchEventContent';
 import CheckoutAttendees,{attendeePayload} from './CheckoutAttendees';
 import {checkoutDestination} from './checkoutNavigation';
 export default function Checkout() {
@@ -35,25 +39,29 @@ export default function Checkout() {
     const controller = new AbortController();
     setData(null);
     setLoadError('');
-    api
-      .get('/events/' + slug, { signal: controller.signal })
+    let loaded = false;
+    const stop = watchEventContent(api.defaults.baseURL, signal => {
+    getPublicData('/events/' + slug, { signal })
       .then(({ data: r }) => {
-        if (controller.signal.aborted) return;
+        if (signal.aborted) return;
         if (r.data.checkout_path) {
           window.location.replace(checkoutDestination(r.data, slug, cart));
           return;
         }
-        setData(r.data);
+        loaded = true;
+        setLoadError('');
+        setData(current => refreshCheckoutTheme(current, r.data));
       })
       .catch((e) => {
-        if (!controller.signal.aborted)
+        if (!signal.aborted && !loaded)
           setLoadError(e.response?.data?.message || 'Unable to load event.');
       });
+    });
     api
       .get('/pages', { signal: controller.signal })
       .then(({ data: r }) => setPages(r.data.pages))
       .catch(() => {});
-    return () => controller.abort();
+    return () => { stop(); controller.abort(); };
   }, [slug, cart]);
   const storageKey='event-checkout:'+window.location.pathname+':'+cart;
   function finish(result){sessionStorage.removeItem(storageKey);navigate('/confirmation/'+result.order.booking_ref,{replace:true,state:{fresh:result,email:result.order.email}});}
@@ -131,8 +139,13 @@ export default function Checkout() {
       setBusy(false);
     }
   }
+  return <CheckoutPageView {...{data, items, people, pending, busy, error, pages, editLink, total, count}} onBook={book} onPersonChange={(key,person)=>setPeople(p=>({...p,[key]:person}))} onCheckPayment={checkPayment} onStartNew={()=>{sessionStorage.removeItem(storageKey);setPending(null);window.location.reload();}}/>;
+}
+
+export function CheckoutPageView({data,items,people={},pending=null,busy=false,error='',pages=[],editLink,total,count,onBook,onPersonChange,onCheckPayment,onStartNew}) {
+  const {event}=data;
   return (
-    <main className="booking-page checkout-page">
+    <main className={`booking-page checkout-page event-theme-${eventThemeId(event.page_theme)}`}>
       <div className="booking-container">
         <Link className="booking-back" to={editLink}>
           ← Back to ticket selection
@@ -158,8 +171,8 @@ export default function Checkout() {
           <p>Your next great experience starts here.</p>
         </div>
         <div className="checkout-grid">
-          <form onSubmit={book} className="checkout-form">
-            <CheckoutAttendees items={items} people={people} config={data.registrationForm?.config} disabled={busy||Boolean(pending)} saved={pending?.attendees} onChange={(key,person)=>setPeople(p=>({...p,[key]:person}))}/>
+          <form onSubmit={onBook} className="checkout-form">
+            <CheckoutAttendees items={items} people={people} config={data.registrationForm?.config} disabled={busy||Boolean(pending)} saved={pending?.attendees} onChange={onPersonChange}/>
             <div className="checkout-section-title">
               <span>02</span>
               <div>
@@ -177,7 +190,7 @@ export default function Checkout() {
               </div>
               <span>{total===0?'FREE':data.payment?.mode==='live'?'SECURE':'TEST MODE'}</span>
             </div>
-            {pending&&<div className="booking-alert"><strong>Booking {pending.order.booking_ref}</strong><p>{pending.order.customer_name} · {pending.order.email}</p><p>Payment status: {pending.payment.status.replaceAll('_',' ')}. Your original total is {formatCurrency(pending.order.total_amount,pending.order.currency)}. Unpaid reservations are held for 15 minutes.</p><button type="button" disabled={busy} onClick={checkPayment}>Check payment</button>{pending.payment.status==='expired'&&<button type="button" disabled={busy} onClick={()=>{sessionStorage.removeItem(storageKey);setPending(null);window.location.reload();}}>Start a new booking</button>}</div>}
+            {pending&&<div className="booking-alert"><strong>Booking {pending.order.booking_ref}</strong><p>{pending.order.customer_name} · {pending.order.email}</p><p>Payment status: {pending.payment.status.replaceAll('_',' ')}. Your original total is {formatCurrency(pending.order.total_amount,pending.order.currency)}. Unpaid reservations are held for 15 minutes.</p><button type="button" disabled={busy} onClick={onCheckPayment}>Check payment</button>{pending.payment.status==='expired'&&<button type="button" disabled={busy} onClick={onStartNew}>Start a new booking</button>}</div>}
             {error && (
               <div className="booking-alert" role="alert">
                 {error}

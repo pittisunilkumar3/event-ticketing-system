@@ -6,6 +6,7 @@ import {
   Link,
 } from 'react-router-dom';
 import api from '../api/client';
+import {getPublicData} from '../settings/publicStartup';
 import {watchEventContent} from '../settings/watchEventContent';
 import { formatDate, formatTime, formatCurrency } from '../utils/format';
 import Icon from '../components/Icon';
@@ -13,7 +14,7 @@ import CustomerState from '../components/CustomerState';
 import './booking.css';
 import './eventDetail.css';
 import './eventThemes.css';
-import themes from '../../../shared/eventThemes.json';
+import {eventThemeId} from './eventTheme';
 import EventTickets from './EventTickets';
 import PremiereHero from './PremiereHero';
 import ShowcaseHero, {showcaseThemes} from './ShowcaseHero';
@@ -32,8 +33,7 @@ export default function EventDetail() {
     setData(null);
     setError('');
     return watchEventContent(api.defaults.baseURL, signal => {
-    api
-      .get('/events/' + slug, { signal })
+    getPublicData('/events/' + slug, { signal })
       .then(({ data: r }) => {
         if (signal.aborted) return;
         setError('');
@@ -74,7 +74,7 @@ export default function EventDetail() {
 }
 export function EventPageView({data,selection={},onQuantity=()=>{},onCheckout=()=>{}}) {
   const {event,ticketTypes=[]}=data;
-  const theme=themes.find(t=>t.id===event.page_theme)?.id || 'classic';
+  const theme=eventThemeId(event.page_theme);
   const lowest = ticketTypes
     .filter(canSelectTicket)
     .reduce((m, t) => Math.min(m, Number(t.price)), Infinity);

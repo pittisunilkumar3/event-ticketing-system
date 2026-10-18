@@ -71,8 +71,12 @@ router.post('/email-preview',wrap(async(req,res)=> {
   const data=await emailPreviewData(req,brand),files=await attachments.list(config);
   const ticketPdf=attachments.needsTicket(config);
   data.attachment_names=[...(ticketPdf?['ticket-'+data.ticket_code+'.pdf']:[]),...files.map(f=>f.name)];
-  const preview = renderEmail(config,brand,data,await Studio.pages(true),await Studio.getSetting('social_links'));
-  ok(res,{...preview,file_attachments:files,ticket_pdf:ticketPdf},'Preview ready');
+  const [pages,social]=await Promise.all([Studio.pages(true),Studio.getSetting('social_links')]);
+  const preview = renderEmail(config,brand,data,pages,social);
+  // Return the same renderer's layouts together so selecting a format is instant.
+  const formats=req.body.preview_formats===true?Object.fromEntries(Array.from({length:11},(_,i)=>[i+1,renderEmail({...config,format:i+1},brand,data,pages,social).html])):undefined;
+  res.set('Cache-Control','no-store');
+  ok(res,{...preview,formats,file_attachments:files,ticket_pdf:ticketPdf},'Preview ready');
 }));
 // Explicit button presses only; preview and save never send mail.
 router.post('/email-test',wrap(async(req,res)=> {

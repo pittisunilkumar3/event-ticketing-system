@@ -1,6 +1,7 @@
 import { Link, useLocation } from 'react-router-dom';
 import {useSiteSettings} from '../settings/SiteSettingsContext';
 import Icon from './Icon';
+import './organizerLogo.css';
 
 export default function Navbar() {
   const site=useSiteSettings();
@@ -8,7 +9,7 @@ export default function Navbar() {
   return (
     <header className={`tf-site-header ${site.is_organizer ? 'organizer-site-header' : ''} no-print sticky top-0 z-50 border-b ${pathname !== '/' ? 'tf-browse-header' : ''}`}>
       <div className="mx-auto flex items-center justify-between">
-        <Link to="/" className="tf-site-brand" aria-label={`${site.company_name} home`}><span>{site.logo ? <img src={site.logo} alt="" className="h-[22px] w-[22px] object-contain"/> : <Icon name="ticket" size={22}/>}</span><span>{site.company_name}</span></Link>
+        <Link to="/" className="tf-site-brand" aria-label={`${site.company_name} home`}><span className={site.is_organizer && site.logo ? 'tf-organizer-logo' : undefined}>{site.logo ? <img src={site.logo} alt="" className="h-[22px] w-[22px] object-contain"/> : <Icon name="ticket" size={22}/>}</span><span>{site.company_name}</span></Link>
         <nav className="tf-site-nav" aria-label="Main navigation">
           {pathname === '/' && !site.is_organizer ? <>
             <a className="tf-nav-detail" href="#features">Features</a>

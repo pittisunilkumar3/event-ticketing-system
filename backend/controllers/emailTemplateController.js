@@ -97,6 +97,7 @@ const sendTest = asyncHandler(async (req, res) => {
   if (!to) {
     return res.status(400).json({ success: false, message: "Recipient email 'to' is required" });
   }
+  const recipient = require('../services/studioValidation').emailAddress(to, true);
 
   const smtp = await Studio.getSetting('smtp');
   if (!smtp.enabled) {
@@ -126,7 +127,7 @@ const sendTest = asyncHandler(async (req, res) => {
   // Dummy replacements — superset of every placeholder any template uses.
   const testReplacements = {
     name: 'Test User',
-    email: to,
+    email: recipient,
     phone: '+1 555-0100',
     customer_name: 'Test Customer',
     booking_id: 'TKT-TEST-001',
@@ -149,15 +150,16 @@ const sendTest = asyncHandler(async (req, res) => {
 
   const html = await generateTemplateHTML(template, testReplacements);
   try {
-    await mailer.send(smtp, to, { subject: template.title || 'Test email', html });
+    const subject = require('../services/emailRenderer').replace(template.title || 'Test email', testReplacements, false).replace(/[\r\n]/g, ' ');
+    await mailer.send(smtp, recipient, { subject: '[TEST] ' + subject, html });
   } catch {
     return res.status(502).json({
       success: false,
-      message: 'Test email failed. Check your superadmin email settings and recipient address.',
+      message: 'Test email failed. Check your organization SMTP settings and recipient address.',
     });
   }
 
-  res.json({ success: true, message: `✅ Test email sent to ${to}` });
+  res.json({ success: true, message: `Test email accepted by your SMTP server for ${recipient}. Check your inbox and spam folder.` });
 });
 
 module.exports = { list, footerData, update, toggle, uploadImage, deleteImage, sendTest, uploadDir };

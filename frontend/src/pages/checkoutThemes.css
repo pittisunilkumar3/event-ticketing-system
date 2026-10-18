@@ -1,0 +1,43 @@
+/* Keep the same checkout flow; inherit the event's palette and visual style. */
+.checkout-page:not(.event-theme-classic) { --paper:var(--theme-paper); --ink:var(--theme-ink); --muted:var(--theme-muted); background:var(--theme-paper); color:var(--theme-ink); }
+.checkout-page:not(.event-theme-classic) :is(.checkout-form,.checkout-summary) { background:var(--theme-card); border-color:var(--theme-line); box-shadow:none; }
+.checkout-page:not(.event-theme-classic) :is(.checkout-person,.demo-payment,.checkout-section-title>span) { background:var(--theme-soft); border-color:var(--theme-line); color:var(--theme-ink); }
+.checkout-page:not(.event-theme-classic) :is(.booking-steps,.checkout-intro p,.checkout-section-title p,.checkout-person legend span,.checkout-person>p,.attendee-custom>p,.attendee-answers dt,.registration-field small,.registration-section p,.checkout-summary-body>small,.checkout-summary-body>p,.checkout-line-items small,.checkout-total small,.checkout-ticket-note,.checkout-fineprint,.demo-payment p) { color:var(--theme-muted); }
+.checkout-page:not(.event-theme-classic) :is(.checkout-person legend,.attendee-contact-fields label,.registration-field>label,.registration-field legend,.attendee-answers dd) { color:var(--theme-ink); }
+.checkout-page:not(.event-theme-classic) :is(.booking-kicker,.booking-steps .current,.checkout-intro em,.booking-text-link,.attendee-custom a,.attendee-answers button,.demo-payment>svg) { color:var(--theme-accent); }
+.checkout-page:not(.event-theme-classic) :is(.checkout-line-items,.checkout-ticket-note,.attendee-custom,.registration-section) { border-color:var(--theme-line); }
+.checkout-page:not(.event-theme-classic) .booking-steps i { background:var(--theme-line); }
+.checkout-page:not(.event-theme-classic) :is(.registration-field input:not([type=checkbox]):not([type=radio]),.registration-field select,.registration-field textarea,.attendee-contact-fields input) { background:var(--theme-card); color:var(--theme-ink); border-color:var(--theme-line); color-scheme:normal; }
+.checkout-page:not(.event-theme-classic) :is(input,textarea)::placeholder { color:var(--theme-muted); opacity:1; }
+.checkout-page:not(.event-theme-classic) :is(input,select,textarea) { accent-color:var(--theme-accent); }
+.checkout-page:not(.event-theme-classic) :focus-visible { outline-color:var(--theme-accent); }
+.checkout-page:not(.event-theme-classic) .booking-primary { background:var(--theme-accent); color:var(--theme-paper); }
+.checkout-page:not(.event-theme-classic) .booking-primary:not(:disabled):hover { filter:brightness(.9); }
+.checkout-page:not(.event-theme-classic) .demo-payment>span { background:var(--theme-card); color:var(--theme-accent); }
+.checkout-page:not(.event-theme-classic) .checkout-summary-banner { height:auto; min-height:80px; background:var(--theme-soft); }
+.checkout-page:not(.event-theme-classic) .checkout-summary-banner img { display:block; width:100%; height:auto; object-fit:contain; }
+.checkout-page:not(.event-theme-classic) .checkout-summary-banner span { position:static; display:inline-block; margin:16px 24px; background:var(--theme-card); color:var(--theme-accent); }
+.checkout-page:is(.event-theme-atelier,.event-theme-editorial,.event-theme-gala) :is(.checkout-intro h1,.checkout-intro em,.checkout-summary h2,.checkout-section-title h2) { font-family:Georgia,serif; font-weight:400; }
+.checkout-page:is(.event-theme-marquee,.event-theme-pulse,.event-theme-blueprint,.event-theme-editorial,.event-theme-gallery,.event-theme-atelier) :is(.checkout-form,.checkout-summary,.checkout-person,.booking-primary,.registration-field input,.registration-field textarea,.registration-field select) { border-radius:0; }
+.checkout-page.event-theme-marquee .checkout-intro { background:#ee9b67; color:#282922; padding:28px; border-left:6px solid #282922; }
+.checkout-page.event-theme-marquee .checkout-intro :is(em,p,.booking-kicker) { color:#282922; }
+.checkout-page:is(.event-theme-marquee,.event-theme-pulse) .checkout-intro h1 { text-transform:uppercase; }
+.checkout-page.event-theme-pulse .checkout-intro { background:#d5f66b; color:#202719; padding:28px; }
+.checkout-page.event-theme-pulse .checkout-intro :is(em,p,.booking-kicker) { color:#202719; }
+.checkout-page.event-theme-atelier .checkout-intro { background:#532b36; color:#fff2e6; padding:28px; }
+.checkout-page.event-theme-atelier .checkout-intro :is(em,p,.booking-kicker) { color:#fff2e6; }
+.checkout-page.event-theme-horizon .checkout-intro { text-align:center; padding:28px; background:#d4eaf4; border-radius:20px; }
+.checkout-page.event-theme-horizon .checkout-summary { border-top:5px solid var(--theme-accent); }
+.checkout-page.event-theme-festival :is(.checkout-form,.checkout-summary) { box-shadow:5px 5px 0 #e4c7d6; border-radius:4px; }
+.checkout-page.event-theme-poster :is(.checkout-form,.checkout-summary) { box-shadow:4px 4px 0 #e9d3c0; border-radius:4px; }
+.checkout-page.event-theme-premiere .checkout-intro { background:#1c241f; color:#f7f7ee; padding:28px; border-radius:14px; }
+.checkout-page.event-theme-premiere .checkout-intro :is(em,.booking-kicker) { color:#d9ff9b; }
+.checkout-page.event-theme-premiere .checkout-intro p { color:#bfcabb; }
+.checkout-page.event-theme-blueprint .checkout-intro { border-block:1px solid var(--theme-line); padding-block:28px; }
+.checkout-page.event-theme-gala :is(.checkout-form,.checkout-summary) { border-radius:0; border-color:#bda46c; }
+.checkout-page.event-theme-aurora .checkout-intro { text-align:center; }
+@media(max-width:600px) {
+ .checkout-page:not(.event-theme-classic) .checkout-intro { padding:20px; }
+ .checkout-page:not(.event-theme-classic) .checkout-intro h1 { font-size:36px; }
+ .checkout-page:not(.event-theme-classic) .checkout-summary-banner { height:auto; }
+}

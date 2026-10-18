@@ -30,37 +30,38 @@ async function send(smtp, to, rendered, messageId) {
 }
 async function enqueue(conn, orderId, eventKey) {
   const smtp = await Studio.getSetting('smtp');
+  if(eventKey==='payment_successful')await Studio.ensureEmailTemplate(eventKey,conn);
   const [templates] = await conn.query('SELECT * FROM design_templates WHERE event_key=?', [eventKey]);
   let enabled = smtp.enabled && templates[0]?.active;
   let confirmedDefault=null;
   const [[order]] = await conn.query('SELECT customer_name,email FROM orders WHERE id=?',[orderId]);
   if (!order) throw new Error('Booking not found for email delivery.');
-  const recipients = order.email?.trim()?[{key:'booking',email:order.email.trim().toLowerCase(),name:order.customer_name}]:[];
+  // Confirmations are ticket deliveries. Only the separate payment-success
+  // event sends a buyer receipt, so assigned pass templates are not duplicated.
+  const recipients = eventKey!=='booking_confirmed'&&order.email?.trim()?[{key:'booking',email:order.email.trim().toLowerCase(),name:order.customer_name}]:[];
   // A shared address receives one complete booking email, even if it covers several attendees.
   const seen = new Set(recipients.map(r=>r.email));
   if (eventKey === 'booking_confirmed') {
     const [issued]=await conn.query('SELECT t.id,t.attendee_id,t.attendee_name,t.email_snapshot,a.email FROM tickets t LEFT JOIN order_attendees a ON a.id=t.attendee_id WHERE t.order_id=? ORDER BY t.id',[orderId]);
     confirmedDefault=issued.map(t=>t.email_snapshot?JSON.parse(t.email_snapshot).default_template:null).find(Boolean)||null;
     if(confirmedDefault)enabled=smtp.enabled&&confirmedDefault.active;
-    const personalAttendees=new Set();
     for(const ticket of issued){
       const snap=ticket.email_snapshot?JSON.parse(ticket.email_snapshot):null;
       if(!snap?.personal)continue;
-      personalAttendees.add(ticket.attendee_id);
       const recipient=ticket.email?.trim().toLowerCase()||order.email?.trim().toLowerCase()||'';
       const ready=smtp.enabled&&snap.template?.active&&Boolean(recipient);
       await conn.query('INSERT IGNORE INTO mail_outbox(order_id,event_key,recipient_key,recipient_email,recipient_name,ticket_id,template_snapshot,status,error_message) VALUES (?,?,?,?,?,?,?,?,?)',[orderId,eventKey,'ticket:'+ticket.id,recipient,ticket.attendee_name,ticket.id,JSON.stringify(snap),ready?'pending':'skipped',ready?null:!recipient?'No email address was collected for this attendee.':'Email delivery or this template was disabled at booking time.']);
     }
-    const [attendees] = await conn.query('SELECT id,name,email FROM order_attendees WHERE order_id=? ORDER BY id',[orderId]);
-    for (const person of attendees) {
-      const email=person.email?.trim().toLowerCase();
-      if (!email || seen.has(email)||personalAttendees.has(person.id)) continue;
+    for (const ticket of issued) {
+      if(ticket.email_snapshot&&JSON.parse(ticket.email_snapshot).personal)continue;
+      const email=ticket.email?.trim().toLowerCase()||order.email?.trim().toLowerCase();
+      if (!email || seen.has(email)) continue;
       seen.add(email);
-      recipients.push({key:crypto.createHash('sha256').update(email).digest('hex'),email,name:person.name});
+      recipients.push({key:crypto.createHash('sha256').update(email).digest('hex'),email,name:ticket.attendee_name});
     }
   }
   const receiptTemplate=confirmedDefault||(templates[0]?{id:templates[0].id,config:JSON.parse(templates[0].config_json)}:null);
-  const receiptSnapshot=eventKey==='booking_confirmed'&&receiptTemplate?JSON.stringify({template:{...receiptTemplate,config:(receiptTemplate.config.attach_ticket_pdf||ticketEmails.personalPattern.test(JSON.stringify(receiptTemplate.config)))?require('./studioDefaults').email:receiptTemplate.config}}):null;
+  const receiptSnapshot=['booking_confirmed','payment_successful'].includes(eventKey)&&receiptTemplate?JSON.stringify({template:receiptTemplate}):null;
   for (const recipient of recipients) await conn.query('INSERT IGNORE INTO mail_outbox (order_id,event_key,recipient_key,recipient_email,recipient_name,status,error_message,template_snapshot) VALUES (?,?,?,?,?,?,?,?)',
     [orderId,eventKey,recipient.key,recipient.email,recipient.name,enabled ? 'pending' : 'skipped',enabled ? null : 'Email delivery or this template was disabled at booking time.',receiptSnapshot]);
 }
@@ -85,12 +86,12 @@ async function processOutbox() {
         }
         const Order = require('../models/Order');
         const order = await Order.findById(job.order_id);
-        if (job.event_key === 'booking_confirmed' && order.status !== 'paid') {
+        if (['booking_confirmed','payment_successful'].includes(job.event_key) && order.status !== 'paid') {
           await db.query("UPDATE mail_outbox SET status='skipped',error_message='Booking is no longer paid.' WHERE id=?",[job.id]); continue;
         }
         const [tickets] = await db.query('SELECT t.id,t.ticket_code,t.attendee_name,t.email_snapshot,t.design_snapshot,t.status,tt.price,tt.name type_name,a.email attendee_email,a.phone attendee_phone,a.answers_json FROM tickets t JOIN ticket_types tt ON tt.id=t.ticket_type_id LEFT JOIN order_attendees a ON a.id=t.attendee_id WHERE t.order_id=? ORDER BY t.id',[order.id]);
         const recipientEmail=(job.recipient_email||order.email).trim().toLowerCase();
-        const personalTickets=job.ticket_id?tickets.filter(t=>t.id===job.ticket_id):job.recipient_key==='booking'?tickets:tickets.filter(t=>t.attendee_email?.trim().toLowerCase()===recipientEmail&&!(t.email_snapshot&&JSON.parse(t.email_snapshot).personal));
+        const personalTickets=job.ticket_id?tickets.filter(t=>t.id===job.ticket_id):job.recipient_key==='booking'?tickets:tickets.filter(t=>(t.attendee_email?.trim().toLowerCase()||order.email?.trim().toLowerCase())===recipientEmail&&!(t.email_snapshot&&JSON.parse(t.email_snapshot).personal));
         if(job.ticket_id&&personalTickets.length!==1)throw Error('Ticket is missing for personal email.');
         const config=snapshot?.template?.config||JSON.parse(templates[0].config_json);
         const person=job.ticket_id?personalTickets[0]:null;
@@ -103,7 +104,7 @@ async function processOutbox() {
           booking_url: brand.site_url.replace(/\/$/,'') + '/confirmation/' + order.booking_ref,
           amount: new Intl.NumberFormat('en-US',{style:'currency',currency:order.currency||'USD'}).format(order.total_amount),
           ticket_count: job.ticket_id?1:tickets.length, status: order.status,
-          include_booking_details: job.event_key==='booking_confirmed', tickets: personalTickets,
+          tickets: personalTickets,
           ...personal,...qr,
         };
         const files=await require('./emailAttachments').build(config,brand,emailData);

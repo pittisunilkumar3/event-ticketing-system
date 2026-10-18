@@ -85,6 +85,7 @@ async function fulfill(payment,config){
   await conn.query("UPDATE orders SET status='paid' WHERE id=?",[p.order_id]);
   await wallet.credit(conn,p.order_id);
   await conn.query(`UPDATE ${table} SET status='paid',provider_order_id=?,provider_payment_id=? WHERE id=?`,[order.id,payment.id,p.id]);
+  await require('./mailer').enqueue(conn,p.order_id,'payment_successful');
   await require('./mailer').enqueue(conn,p.order_id,'booking_confirmed');
  });
  return true;

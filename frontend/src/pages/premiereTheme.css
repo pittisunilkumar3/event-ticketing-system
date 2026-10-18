@@ -1,4 +1,3 @@
-.event-theme-premiere { --theme-paper:#f4f3ed; --theme-card:#fff; --theme-ink:#20271e; --theme-muted:#646b60; --theme-line:#dfe2d6; --theme-accent:#355c24; --theme-soft:#eef4e7; }
 .premiere-hero { background:#1c241f; color:#f7f7ee; padding:28px 0 0; overflow:hidden; }
 .premiere-back { color:#bac6b8; font-size:12px; display:inline-flex; padding:8px 0; }
 .premiere-back:hover { color:#d9ff9b; }

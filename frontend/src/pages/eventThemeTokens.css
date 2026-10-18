@@ -1,0 +1,15 @@
+/* Shared event and checkout palettes. */
+.event-theme-cinema { --theme-paper:#111512; --theme-card:#1c231e; --theme-ink:#f4f0e5; --theme-muted:#b8c2b8; --theme-line:#3c463c; --theme-accent:#e0c27a; --theme-soft:#293229; }
+.event-theme-poster { --theme-paper:#fff5eb; --theme-card:#fffdf9; --theme-ink:#38241d; --theme-muted:#795d50; --theme-line:#e5cdbb; --theme-accent:#a54624; --theme-soft:#f8e7d8; }
+.event-theme-editorial { --theme-paper:#fff; --theme-card:#fff; --theme-ink:#252321; --theme-muted:#69645d; --theme-line:#d9d4cd; --theme-accent:#37322c; --theme-soft:#f2eee7; }
+.event-theme-aurora { --theme-paper:#171329; --theme-card:#241e3c; --theme-ink:#f4efff; --theme-muted:#c4badb; --theme-line:#4c4066; --theme-accent:#d9b5ff; --theme-soft:#352b4d; }
+.event-theme-summit { --theme-paper:#eef4fa; --theme-card:#fff; --theme-ink:#142b47; --theme-muted:#52677d; --theme-line:#cedbe8; --theme-accent:#1d5289; --theme-soft:#e2edf9; }
+.event-theme-festival { --theme-paper:#fff2e8; --theme-card:#fffaf5; --theme-ink:#34223c; --theme-muted:#71546d; --theme-line:#e4c7d6; --theme-accent:#913452; --theme-soft:#f4e2f5; }
+.event-theme-gala { --theme-paper:#f8f4eb; --theme-card:#fffdf8; --theme-ink:#383024; --theme-muted:#75664e; --theme-line:#dfd1b4; --theme-accent:#80602c; --theme-soft:#efe5ce; }
+.event-theme-blueprint { --theme-paper:#0c1b2c; --theme-card:#13283d; --theme-ink:#e8f6ff; --theme-muted:#aec5d9; --theme-line:#35566c; --theme-accent:#85dcea; --theme-soft:#203b50; }
+.event-theme-gallery { --theme-paper:#fff; --theme-card:#fff; --theme-ink:#252525; --theme-muted:#676767; --theme-line:#ddd; --theme-accent:#373737; --theme-soft:#f3f3f3; }
+.event-theme-premiere { --theme-paper:#f4f3ed; --theme-card:#fff; --theme-ink:#20271e; --theme-muted:#646b60; --theme-line:#dfe2d6; --theme-accent:#355c24; --theme-soft:#eef4e7; }
+.event-theme-marquee { --theme-paper:#f6f2e9; --theme-card:#fffdf7; --theme-ink:#282922; --theme-muted:#646458; --theme-line:#d5d3c6; --theme-accent:#ac3c19; --theme-soft:#f8e5d9; }
+.event-theme-atelier { --theme-paper:#f7f1ea; --theme-card:#fffbf6; --theme-ink:#422329; --theme-muted:#796269; --theme-line:#deccc8; --theme-accent:#813b4a; --theme-soft:#f1e3df; }
+.event-theme-horizon { --theme-paper:#f2f7fa; --theme-card:#fff; --theme-ink:#17334a; --theme-muted:#577083; --theme-line:#d0e0e9; --theme-accent:#1d6089; --theme-soft:#e4f1f8; }
+.event-theme-pulse { --theme-paper:#171a1d; --theme-card:#22272a; --theme-ink:#f4f6ed; --theme-muted:#b4bdb7; --theme-line:#4b5350; --theme-accent:#d5f66b; --theme-soft:#333c2a; }

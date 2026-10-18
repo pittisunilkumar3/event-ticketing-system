@@ -9,6 +9,7 @@ const signals=[],other=[];
 const stop=watchEventContent('/api/o/one',signal=>signals.push(signal));
 const stopOther=watchEventContent('/api/o/two',signal=>other.push(signal));
 assert.equal(signals.length,1);
+streams[0].dispatchEvent(new Event('ready'));assert.equal(signals.length,1);assert.equal(signals[0].aborted,false);
 notifyEventContentChanged('/api/o/one');assert.equal(signals.length,2);assert.equal(other.length,1);assert(signals[0].aborted);
 const saved=new Event('storage');saved.key=writes[0].key;window.dispatchEvent(saved);assert.equal(signals.length,3);assert.equal(other.length,1);
 window.dispatchEvent(new Event('focus'));assert.equal(signals.length,4);

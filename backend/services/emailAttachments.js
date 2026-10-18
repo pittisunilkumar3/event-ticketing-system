@@ -17,7 +17,17 @@ function needsTicket(config){return config.attach_ticket_pdf===true||/{{\s*ticke
 async function build(config,brand,data){
  const result=[];
  for(const item of await list(config)){const file=await read(item.id);result.push({filename:file.name,content:file.content,contentType:'application/pdf',contentDisposition:'attachment'});}
- if(needsTicket(config)&&data.ticket_code)result.push({filename:'ticket-'+data.ticket_code+'.pdf',content:await require('./ticketPdf')(data,brand,config),contentType:'application/pdf',contentDisposition:'attachment'});
+ if(needsTicket(config)){
+  const tickets=data.ticket_code?[data]:(data.tickets||[]).map(ticket=>({
+   ...data,...require('./ticketEmails').values(ticket,ticket.answers_json?JSON.parse(ticket.answers_json):[]),
+  }));
+  const seen=new Set();
+  for(const ticket of tickets){
+   if(!ticket.ticket_code||seen.has(ticket.ticket_code))continue;
+   seen.add(ticket.ticket_code);
+   result.push({filename:'ticket-'+ticket.ticket_code+'.pdf',content:await require('./ticketPdf')(ticket,brand,config),contentType:'application/pdf',contentDisposition:'attachment'});
+  }
+ }
  return result;
 }
 module.exports={upload,metadata,list,read,build,needsTicket};

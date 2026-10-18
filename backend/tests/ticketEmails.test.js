@@ -21,10 +21,29 @@ test('PDF attachments are bounded and ticket tokens request a personal PDF',()=>
  assert.throws(()=>template('email',{...defaults.email,attachments:Array.from({length:4},(_,i)=>({id:String(i).repeat(32)}))}));
  assert.throws(()=>template('email',{...defaults.email,attachments:[{id:'a'.repeat(32)},{id:'a'.repeat(32)}]}));
 });
-test('ticket PDF checkbox makes the default confirmation attendee-specific without body tokens',async()=>{
+test('ticket PDF option stays on the booking receipt without duplicate personal emails',async()=>{
  const config={...defaults.email,attach_ticket_pdf:true};
  const conn={query:async()=>[[{id:1,name:'Confirmation',active:1,config_json:JSON.stringify(config)}]]};
  const snapshot=await ticketEmails.snapshot({},conn);
- assert.equal(snapshot.personal,true);
+ assert.equal(snapshot.personal,false);
  assert.equal(snapshot.template.config.attach_ticket_pdf,true);
+ assert.equal(ticketEmails.needsPersonal({...config,body:'{{ticket_pdf}}'}),false);
+ assert.equal(ticketEmails.needsPersonal({...config,body:'{{attendee_name}}'}),true);
+});
+test('delivered ticket emails match the selected preview without appended booking sections',()=>{
+ const data={customer_name:'Guest',event_title:'Expo',booking_ref:'TKT-TEST',ticket_count:1,amount:'₹999.00',booking_url:'https://example.com/confirmation/TKT-TEST'};
+ const delivery={...data,include_booking_details:true,tickets:[{attendee_name:'Guest',type_name:'Explorer',ticket_code:'TCK-HIDDEN'}],attachments:[{filename:'ticket.pdf',content:Buffer.from('%PDF-fixture')}]};
+ for(let format=1;format<=11;format++){
+  const config={...defaults.email,format,show_logo:false,body:'<p>My chosen design for {{customer_name}}</p>',attach_ticket_pdf:true};
+  const preview=renderEmail(config,defaults.brand,data),sent=renderEmail(config,defaults.brand,delivery);
+  assert.equal(sent.html,preview.html,`Layout ${format} must match its preview`);
+  assert.doesNotMatch(sent.html,/Your entry tickets|Open your booking and QR tickets|TCK-HIDDEN/);
+  assert.equal(sent.attachments[0].filename,'ticket.pdf');
+  assert.doesNotMatch(sent.html,/Booking reference<\/td>|Event<\/td>|Total<\/td>/);
+ }
+});
+test('tables explicitly authored in the email body remain intact',()=>{
+ const rendered=renderEmail({...defaults.email,format:9,body:'<table><tr><td>My detail</td><td>{{booking_ref}}</td></tr></table>'},defaults.brand,{booking_ref:'TKT-CUSTOM'});
+ assert.match(rendered.html,/<td[^>]*>My detail<\/td><td[^>]*>TKT-CUSTOM<\/td>/);
+ assert.doesNotMatch(rendered.html,/Booking reference<\/td>/);
 });

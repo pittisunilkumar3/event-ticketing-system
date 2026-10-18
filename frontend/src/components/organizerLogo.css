@@ -1,0 +1,54 @@
+/* Uploaded organizer artwork keeps its original orientation and background. */
+.tf-site-header.organizer-site-header .tf-site-brand > span.tf-organizer-logo {
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  flex-shrink:0;
+  width:38px;
+  height:38px;
+  padding:0;
+  background:transparent;
+  border-radius:0;
+  transform:none;
+}
+.tf-site-header.organizer-site-header .tf-organizer-logo img {
+  display:block;
+  width:100%;
+  height:100%;
+  object-fit:contain;
+}
+
+/* A two-row mobile header needs natural height, including both navigation rows. */
+@media (max-width: 600px) {
+  .tf-site-header.organizer-site-header > div {
+    width:calc(100% - 40px);
+    height:auto;
+    min-height:106px;
+    padding:12px 0;
+    flex-wrap:wrap;
+    gap:10px;
+  }
+  .tf-site-header.organizer-site-header .tf-site-brand {
+    width:100%;
+    min-width:0;
+    font-size:20px;
+    line-height:1.25;
+    letter-spacing:-.5px;
+  }
+  .tf-site-header.organizer-site-header .tf-site-brand > span:last-child {
+    max-width:none;
+    min-width:0;
+    white-space:normal;
+    overflow:visible;
+    overflow-wrap:anywhere;
+    text-overflow:clip;
+  }
+  .tf-site-header.organizer-site-header .tf-site-nav {
+    width:100%;
+    justify-content:space-between;
+    gap:12px;
+    font-size:13px;
+  }
+  .tf-site-header.organizer-site-header .tf-site-nav a { white-space:nowrap; }
+  .tf-site-header.organizer-site-header .tf-nav-account { padding:9px 12px; }
+}

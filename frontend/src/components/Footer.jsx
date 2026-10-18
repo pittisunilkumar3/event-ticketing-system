@@ -26,7 +26,7 @@ export default function Footer() {
       <div className={`mx-auto grid max-w-6xl gap-10 px-4 py-14 ${pages.length ? 'sm:grid-cols-3' : 'sm:grid-cols-2'}`}>
         <div>
           <div className="flex items-center gap-2.5">
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl border border-orange-400/30 bg-orange-400/10 text-orange-400">
+            <span className={site.is_organizer && site.logo ? "flex h-9 w-9 items-center justify-center" : "flex h-9 w-9 items-center justify-center rounded-xl border border-orange-400/30 bg-orange-400/10 text-orange-400"}>
               {site.logo ? <img src={site.logo} alt="" className="h-9 w-9 object-contain"/> : <Icon name="ticket"/>}
             </span>
             <span className="font-display text-lg font-extrabold text-white">

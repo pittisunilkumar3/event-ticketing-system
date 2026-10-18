@@ -1,7 +1,3 @@
-.event-theme-marquee { --theme-paper:#f6f2e9; --theme-card:#fffdf7; --theme-ink:#282922; --theme-muted:#646458; --theme-line:#d5d3c6; --theme-accent:#ac3c19; --theme-soft:#f8e5d9; }
-.event-theme-atelier { --theme-paper:#f7f1ea; --theme-card:#fffbf6; --theme-ink:#422329; --theme-muted:#796269; --theme-line:#deccc8; --theme-accent:#813b4a; --theme-soft:#f1e3df; }
-.event-theme-horizon { --theme-paper:#f2f7fa; --theme-card:#fff; --theme-ink:#17334a; --theme-muted:#577083; --theme-line:#d0e0e9; --theme-accent:#1d6089; --theme-soft:#e4f1f8; }
-.event-theme-pulse { --theme-paper:#171a1d; --theme-card:#22272a; --theme-ink:#f4f6ed; --theme-muted:#b4bdb7; --theme-line:#4b5350; --theme-accent:#d5f66b; --theme-soft:#333c2a; }
 .showcase-hero { overflow:hidden; color:var(--theme-ink); }
 .showcase-topline { display:flex; justify-content:space-between; align-items:center; gap:20px; padding:24px 0; border-bottom:1px solid currentColor; font-size:11px; }
 .showcase-topline a { color:inherit; padding:6px 0; }

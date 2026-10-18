@@ -54,20 +54,20 @@ let server,provider;const nativeFetch=global.fetch,owned=[db.database];
  await req(a.path+'/admin/ticket-types/'+types[0].id,'PUT',{template_id:badge.id},a.token);assert.equal(booked.tickets.length,4);assert.ok(booked.tickets.every(t=>t.email_snapshot===undefined));
  await req(a.path+'/orders','POST',payload,null,201);
  await req(a.path+'/admin/studio/templates/'+tmpl.id,'PUT',{name:tmpl.name,active:true,config:{...custom,subject:'CHANGED AFTER BOOKING'}},a.token);
- await db.run(a.org,async()=>{const [[n]]=await db.query('SELECT COUNT(*) n FROM mail_outbox WHERE order_id=?',[booked.order.id]);assert.equal(n.n,5);failNext=true;await require('../services/mailer').processOutbox();});
- assert.equal(deliveries.length,4);
+ await db.run(a.org,async()=>{const [[n]]=await db.query('SELECT COUNT(*) n FROM mail_outbox WHERE order_id=?',[booked.order.id]);assert.equal(n.n,4);failNext=true;await require('../services/mailer').processOutbox();});
+ assert.equal(deliveries.length,3);
  const log=await req(a.path+'/admin/studio/mail-log','GET',null,a.token);const failed=log.logs.find(l=>l.status==='failed');assert.ok(failed.ticket_id);assert.ok(log.logs.every(l=>l.template_snapshot===undefined));
  await req(a.path+'/admin/studio/mail-log/'+failed.id+'/retry','POST',{},a.token);
- await db.run(a.org,()=>require('../services/mailer').processOutbox());assert.equal(deliveries.length,5);
+ await db.run(a.org,()=>require('../services/mailer').processOutbox());assert.equal(deliveries.length,4);
  const personal=deliveries.filter(m=>m.attachments?.length);assert.equal(personal.length,3);
  const first=personal.find(m=>m.subject.includes('Guest One')),second=personal.find(m=>m.subject.includes('Guest Two')),v=personal.find(m=>m.subject.startsWith('VIP'));
  assert.ok(first&&second&&v);assert.match(first.subject,/Mobilematica/);assert.match(second.subject,/Scriptmatica/);assert.doesNotMatch(first.html,/Guest Two|VIP Guest/);assert.doesNotMatch(second.html,/Guest One/);assert.equal(v.to.address,'buyer@fixture.test');assert.match(v.html,/VIP ONLY/);
  for(const m of personal){assert.equal(m.attachments.filter(f=>f.contentType==='application/pdf').length,2);assert(m.attachments.some(f=>f.filename==='Guidelines.pdf'&&f.content.equals(samplePdf)));assert(m.attachments.some(f=>/^ticket-TCK-.*\.pdf$/.test(f.filename)&&f.content.subarray(0,5).toString()==='%PDF-'));assert.match(m.html,/cid:ticket-qr@ticketflow/);assert.equal(m.attachments[0].content.subarray(1,4).toString(),'PNG');assert.match(m.attachments[0].filename,/^ticket-TCK-/);assert.doesNotMatch(m.html,/{{[^}]+}}/);}
- assert.ok(deliveries.some(m=>m.to.address==='default@fixture.test'&&!m.attachments));assert.ok(deliveries.some(m=>m.to.address==='buyer@fixture.test'&&!m.attachments));
+ assert.ok(deliveries.some(m=>m.to.address==='default@fixture.test'&&!m.attachments));assert.equal(deliveries.filter(m=>m.to.address==='buyer@fixture.test').length,1);
  assert.equal(pdfRequests.find(p=>p.attendee_name==='Guest One'&&!p.ticket_code.includes('PREVIEW')).ticket_design.layout,'boarding');
  assert.equal(pdfRequests.find(p=>p.attendee_name==='VIP Guest').ticket_design.layout,'badge');
  console.log('PASS selected ticket designs and immutable issued-design snapshots.');
- console.log('PASS mixed pass routing, separate messages to shared addresses, buyer fallback, default receipt, real QR PNGs, immutable snapshots, and retry without duplicate jobs.');
+ console.log('PASS mixed pass routing, separate messages to shared addresses, buyer fallback, no extra generic confirmation, real QR PNGs, immutable snapshots, and retry without duplicate jobs.');
  // Paid reservation freezes the selected template before capture.
  await db.run(a.org,()=>db.query('UPDATE ticket_types SET price=10 WHERE id=?',[types[0].id]));
  await db.platform.query("INSERT INTO platform_admins(name,email,password_hash) VALUES ('Fixture','fixture@ticketmail.test','unused')");
@@ -79,8 +79,12 @@ let server,provider;const nativeFetch=global.fetch,owned=[db.database];
  await req(a.path+'/admin/studio/templates/'+tmpl.id,'PUT',{name:tmpl.name,active:true,config:{...custom,subject:'CHANGED WHILE PENDING'}},a.token);
  provider.status='paid';const payment={id:'pay_ticketmail',order_id:provider.id,amount:2000,currency:'INR',status:'captured',captured:true};const settings=await require('../saas/paymentSettings').get();
  await Promise.all([1,2].map(()=>require('../services/bookingPayments').fulfill(payment,settings)));
+ const successTemplate=bootstrap.emailTemplates.find(t=>t.event_key==='payment_successful');assert.ok(successTemplate);
  const before=deliveries.length;await db.run(a.org,()=>require('../services/mailer').processOutbox());assert.equal(deliveries.length,before+3);
  assert.equal(deliveries.slice(before).filter(m=>m.subject==='CHANGED AFTER BOOKING').length,2);
+ const paymentReceipts=deliveries.slice(before).filter(m=>m.subject.startsWith('Payment successful:'));assert.equal(paymentReceipts.length,1);assert.equal(paymentReceipts[0].to.address,'shared@fixture.test');assert.match(paymentReceipts[0].html,/20.00/);assert(!paymentReceipts[0].attachments);assert.doesNotMatch(paymentReceipts[0].html,/alt="Company logo"/);
+ await db.run(a.org,async()=>{const [jobs]=await db.query('SELECT event_key,COUNT(*) n FROM mail_outbox WHERE order_id=? GROUP BY event_key',[reserved.order.id]);assert.equal(jobs.find(j=>j.event_key==='payment_successful').n,1);assert.equal(jobs.find(j=>j.event_key==='booking_confirmed').n,2);});
+ const editedSuccess={...successTemplate.config,subject:'Receipt {{booking_ref}}',body:'<p>Paid {{amount}} for {{event_title}}</p>'};await req(a.path+'/admin/studio/templates/'+successTemplate.id,'PUT',{name:successTemplate.name,active:true,config:editedSuccess},a.token);const successPreview=await req(a.path+'/admin/studio/email-preview','POST',{config:editedSuccess},a.token);assert.match(successPreview.subject,/Receipt/);assert.match(successPreview.html,/Paid/);assert.equal(successPreview.ticket_pdf,false);
  console.log('PASS no tickets or emails before payment, reservation template snapshot survives edits, duplicate captures issue/send only once.');
  // Disabled custom assignments fall back to the default for new bookings.
  await req(a.path+'/admin/studio/templates/'+vip.id,'PUT',{name:vip.name,active:false,config:vip.config},a.token);
@@ -89,12 +93,12 @@ let server,provider;const nativeFetch=global.fetch,owned=[db.database];
  const defaultTemplate=bootstrap.emailTemplates.find(t=>t.event_key==='booking_confirmed');
  await req(a.path+'/admin/studio/templates/'+defaultTemplate.id,'PUT',{name:defaultTemplate.name,active:true,config:{...defaultTemplate.config,body:'<p>DEFAULT PERSONAL {{attendee_name}} {{ticket}}</p>'}},a.token);
  const defaultPersonal=booking();defaultPersonal.items=defaultPersonal.items.slice(2);const dp=await req(a.path+'/orders','POST',defaultPersonal,null,201);const count=deliveries.length;
- await db.run(a.org,()=>require('../services/mailer').processOutbox());assert.equal(deliveries.length,count+2);assert.equal(deliveries.slice(count).filter(m=>m.attachments?.length).length,1);assert.match(deliveries.slice(count).find(m=>m.attachments?.length).html,/DEFAULT PERSONAL Default Guest/);
+ await db.run(a.org,()=>require('../services/mailer').processOutbox());assert.equal(deliveries.length,count+1);assert.equal(deliveries.slice(count).filter(m=>m.attachments?.length).length,1);assert.match(deliveries.slice(count).find(m=>m.attachments?.length).html,/DEFAULT PERSONAL Default Guest/);
  await req(a.path+'/admin/studio/templates/'+defaultTemplate.id,'PUT',{name:defaultTemplate.name,active:true,config:defaultTemplate.config},a.token);
  console.log('PASS inactive custom fallback and editable default template with personal ticket tokens.');
 
  // All default booking emails support uploads without ticket PDFs or QR attachments.
- for(const original of bootstrap.emailTemplates.filter(t=>t.event_key)){
+ for(const original of bootstrap.emailTemplates.filter(t=>t.event_key&&t.event_key!=='payment_successful')){
   const fileConfig={...original.config,attach_ticket_pdf:false,attachments:[uploaded],body:original.config.body+'<p>{{attachments}}</p>'};
   const saved=(await req(a.path+'/admin/studio/templates/'+original.id,'PUT',{name:original.name,active:true,config:fileConfig},a.token)).template;
   assert.equal(saved.config.attach_ticket_pdf,false);assert.equal(saved.config.attachments[0].id,uploaded.id);
@@ -108,7 +112,7 @@ let server,provider;const nativeFetch=global.fetch,owned=[db.database];
    await require('../services/mailer').processOutbox();
   });
   const matched=deliveries.slice(start).filter(m=>m.attachments?.some(f=>f.filename==='Guidelines.pdf'));
-  assert.equal(matched.length,original.event_key==='booking_confirmed'?3:2);
+  assert.equal(matched.length,2);
   for(const m of matched){assert.equal(m.attachments.length,1);assert.equal(m.attachments[0].filename,'Guidelines.pdf');assert(m.attachments[0].content.equals(samplePdf));assert.doesNotMatch(m.html,/cid:ticket-qr|personalized ticket PDF/);}
   assert.equal(pdfRequests.length,pdfStart,'Default emails must not generate ticket PDFs');
   await req(a.path+'/admin/studio/templates/'+original.id,'PUT',{name:original.name,active:true,config:original.config},a.token);
@@ -116,7 +120,7 @@ let server,provider;const nativeFetch=global.fetch,owned=[db.database];
  console.log('PASS all three default templates: upload/save/preview/test and automatic delivery attach only the uploaded PDF, with no ticket PDF or QR file.');
 
  // Confirmation can opt into personal ticket PDFs while retaining uploaded documents.
- const pdfConfirmation={...defaultTemplate.config,attach_ticket_pdf:true,attachments:[uploaded]};
+ const pdfConfirmation={...defaultTemplate.config,show_logo:false,logo:'',format:8,attach_ticket_pdf:true,attachments:[uploaded]};
  await req(a.path+'/admin/studio/templates/'+defaultTemplate.id,'PUT',{name:defaultTemplate.name,active:true,config:pdfConfirmation},a.token);
  const confirmPreview=await req(a.path+'/admin/studio/email-preview','POST',{config:pdfConfirmation,ticket_type_id:types[2].id},a.token);
  assert.equal(confirmPreview.ticket_pdf,true);assert.equal(confirmPreview.file_attachments[0].name,'Guidelines.pdf');
@@ -124,23 +128,36 @@ let server,provider;const nativeFetch=global.fetch,owned=[db.database];
  const confirmStart=deliveries.length,pdfStart=pdfRequests.length;
  await req(a.path+'/orders','POST',confirmOrder,null,201);
  await db.run(a.org,()=>require('../services/mailer').processOutbox());
- const confirmMessages=deliveries.slice(confirmStart);assert.equal(confirmMessages.length,2);
+ const confirmMessages=deliveries.slice(confirmStart);assert.equal(confirmMessages.length,1);
  const personalConfirmation=confirmMessages.find(m=>m.to.address==='default@fixture.test');
  assert.equal(personalConfirmation.attachments.length,2);
  assert(personalConfirmation.attachments.some(f=>f.filename==='Guidelines.pdf'&&f.content.equals(samplePdf)));
  assert(personalConfirmation.attachments.some(f=>/^ticket-TCK-.*\.pdf$/.test(f.filename)&&f.content.subarray(0,5).toString()==='%PDF-'));
  assert.equal(pdfRequests.length,pdfStart+1);assert.equal(pdfRequests.at(-1).attendee_name,'Default Guest');
  assert.equal(pdfRequests.at(-1).ticket_design.layout,'classic');
- assert(!confirmMessages.find(m=>m.to.address==='buyer@fixture.test').attachments);
+ assert(!confirmMessages.some(m=>m.to.address==='buyer@fixture.test'));
+ for(const m of confirmMessages)assert.doesNotMatch(m.html,/alt="Company logo"/);
+ const sharedOrder=booking();sharedOrder.items=sharedOrder.items.slice(2);
+ sharedOrder.items[0].qty=2;
+ sharedOrder.items[0].attendees=[guest('Guest A','buyer@fixture.test','Mobilematica'),guest('Guest B','buyer@fixture.test','Scriptmatica')];
+ const sharedStart=deliveries.length;
+ await req(a.path+'/orders','POST',sharedOrder,null,201);
+ await db.run(a.org,()=>require('../services/mailer').processOutbox());
+ const sharedMessages=deliveries.slice(sharedStart);assert.equal(sharedMessages.length,1);
+ assert.equal(sharedMessages[0].attachments.length,3);
+ assert.equal(new Set(sharedMessages[0].attachments.map(f=>f.filename)).size,3);
+ assert.doesNotMatch(sharedMessages[0].html,/alt="Company logo"/);
  await req(a.path+'/admin/studio/templates/'+defaultTemplate.id,'PUT',{name:defaultTemplate.name,active:true,config:defaultTemplate.config},a.token);
- console.log('PASS default booking confirmation with selected-design ticket PDF and uploaded PDF for attendee; separate buyer receipt.');
+ console.log('PASS default booking and attendee confirmations retain selected-design PDFs, uploaded documents and hidden logos.');
 
  const noEmail=booking();noEmail.contact_source='attendee';delete noEmail.customer_name;delete noEmail.email;delete noEmail.phone;
  noEmail.items=noEmail.items.slice(2);noEmail.items[0].attendees[0].registration_answers.f_email='';
  await req(a.path+'/admin/studio/templates/'+defaultTemplate.id,'PUT',{name:defaultTemplate.name,active:true,config:{...defaultTemplate.config,attach_ticket_pdf:true}},a.token);
  const noEmailCount=deliveries.length;const withoutEmail=await req(a.path+'/orders','POST',noEmail,null,201);
- assert.equal(withoutEmail.order.email,'');await db.run(a.org,async()=>{const [jobs]=await db.query('SELECT status,error_message FROM mail_outbox WHERE order_id=?',[withoutEmail.order.id]);assert.equal(jobs.length,1);assert.equal(jobs[0].status,'skipped');assert.match(jobs[0].error_message,/No email address/);await require('../services/mailer').processOutbox();});
+ assert.equal(withoutEmail.order.email,'');await db.run(a.org,async()=>{const [jobs]=await db.query('SELECT status FROM mail_outbox WHERE order_id=?',[withoutEmail.order.id]);assert.equal(jobs.length,0);await require('../services/mailer').processOutbox();});
  assert.equal(deliveries.length,noEmailCount);
  console.log('PASS attendee-only checkout with optional email left blank: no fabricated recipient, no mail sent, personal delivery skipped explicitly.');
+ for(const message of deliveries)assert.doesNotMatch(message.html,/Your entry tickets|Open your booking and QR tickets|Booking reference<\/td>/);
+ console.log('PASS default, custom and payment email delivery does not append sections outside the selected template.');
  if(process.env.EMAIL_UI_QA==='1'){console.log('EMAIL_UI_API='+base);console.log('EMAIL_UI_EVENT='+event.id);await new Promise(r=>process.once('SIGTERM',r));}
 })().catch(e=>{console.error(e);process.exitCode=1;}).finally(async()=>{global.fetch=nativeFetch;if(server)await new Promise(r=>server.close(r));await db.end();require('node:fs').rmSync(attachmentTestDir,{recursive:true,force:true});const c=await mysql.createConnection(db.options);try{for(const name of owned.reverse())await c.query('DROP DATABASE IF EXISTS '+sqlName(name));}finally{await c.end();}});

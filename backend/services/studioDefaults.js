@@ -19,12 +19,15 @@ const email = {
 };
 const emailEvents = [
   { key: 'booking_confirmed', name: 'Booking confirmed', title: 'You’re on the guest list.', body: email.body },
+  { key: 'payment_successful', name: 'Payment successful', title: 'Your payment was successful.', body: '<p>Hi {{customer_name}},</p><p>We received your payment of <strong>{{amount}}</strong> for <strong>{{event_title}}</strong>.</p><p>Your booking reference is <strong>{{booking_ref}}</strong>. Ticket emails are sent separately using the template selected for each pass.</p>', config: {format:9,show_logo:false,logo:'',attach_ticket_pdf:false,button_name:'View booking'} },
   { key: 'booking_cancelled', name: 'Booking cancelled', title: 'Your booking has been cancelled.', body: '<p>Hi {{customer_name}},</p><p>Your booking <strong>{{booking_ref}}</strong> for {{event_title}} has been cancelled. Its tickets are no longer valid.</p>' },
   { key: 'booking_refunded', name: 'Booking refunded', title: 'Your booking is marked as refunded.', body: '<p>Hi {{customer_name}},</p><p>Your booking {{booking_ref}} for {{event_title}} is now marked as refunded. Please contact the organizer for payment details.</p>' },
 ];
 const pages = [
+  ['about-us', 'About Us'], ['pricing', 'Tickets & Pricing'],
   ['privacy-policy', 'Privacy Policy'], ['terms-and-conditions', 'Terms & Conditions'],
   ['refund-policy', 'Refund Policy'], ['cancellation-policy', 'Cancellation Policy'], ['contact', 'Contact Us'],
+  ['ticket-delivery', 'Ticket Delivery'],
 ];
 const brand = require('../../shared/siteSettings.json');
 const smtp = { enabled: false, host: '', port: 587, encryption: 'starttls', username: '', from_name: 'TicketFlow', from_email: '', reply_to: '', password_encrypted: '' };

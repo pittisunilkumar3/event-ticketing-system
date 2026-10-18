@@ -3,14 +3,17 @@ const defaults = require('../services/studioDefaults');
 const ticketLayouts = require('../services/ticketLayouts');
 const parse = row => row && ({ ...row, active: Boolean(row.active), config: JSON.parse(row.config_json), config_json: undefined });
 const Studio = {
+  async ensureEmailTemplate(key, conn=db) {
+    const e=defaults.emailEvents.find(item=>item.key===key);
+    if(!e)throw new Error('Unknown email event');
+    await conn.query('INSERT IGNORE INTO design_templates (kind,name,event_key,config_json) VALUES (?,?,?,?)',
+      ['email',e.name,e.key,JSON.stringify({...defaults.email,title:e.title,body:e.body,subject:`${e.name}: {{booking_ref}}`,...e.config})]);
+  },
   async initialize() {
     for (const [key, value] of [['brand', defaults.brand], ['smtp', defaults.smtp]]) {
       await db.query('INSERT IGNORE INTO system_settings (setting_key,value_json) VALUES (?,?)', [key, JSON.stringify(value)]);
     }
-    for (const e of defaults.emailEvents) await db.query(
-      'INSERT IGNORE INTO design_templates (kind,name,event_key,config_json) VALUES (?,?,?,?)',
-      ['email', e.name, e.key, JSON.stringify({ ...defaults.email, title: e.title, body: e.body, subject: `${e.name}: {{booking_ref}}` })]
-    );
+    for (const e of defaults.emailEvents) await this.ensureEmailTemplate(e.key);
     const brand=await this.getSetting('brand');
     await db.query(
       'INSERT IGNORE INTO design_templates (kind,name,event_key,config_json) VALUES ?',

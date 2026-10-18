@@ -75,6 +75,7 @@ function template(kind, input) {
   } else {
     if (!Number.isInteger(Number(c.format)) || c.format < 1 || c.format > 11) fail('Choose email format 1–11.');
     out.format = Number(c.format);
+    if (input.show_logo !== undefined) out.show_logo = input.show_logo !== false;
     out.attach_ticket_pdf = c.attach_ticket_pdf === true;
     if(c.attachments!=null && (!Array.isArray(c.attachments)||c.attachments.length>3)) fail('Attach up to three PDF files.');
     out.attachments=(c.attachments||[]).map(a=>{if(!a||typeof a.id!=='string'||!/^[a-f0-9]{32}$/.test(a.id))fail('Choose a valid PDF attachment.');return {id:a.id};});
