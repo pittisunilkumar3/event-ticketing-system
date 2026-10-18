@@ -3,52 +3,86 @@ const db = require('../config/db');
 const Studio = require('../models/Studio');
 const defaults = require('../services/studioDefaults');
 const v = require('../services/studioValidation');
-const { encrypt } = require('../services/secrets');
 const { renderEmail, sampleData } = require('../services/emailRenderer');
 const mailer = require('../services/mailer');
+const attachments=require('../services/emailAttachments');
+async function checkedConfig(kind,input){const config=v.template(kind,input);if(kind==='email')await attachments.list(config);return config;}
 const { verifyToken, requireSuperAdmin } = require('../middleware/auth');
 const { asyncHandler: wrap } = require('../middleware/errorHandler');
 const upload = require('../middleware/upload');
+const { rateLimit } = require('../saas/tenancy');
 router.use(verifyToken, requireSuperAdmin);
+router.use((req,res,next)=>{if(req.organization.is_legacy && (['/brand','/social-links'].includes(req.path) || req.path.startsWith('/pages/')))return res.status(403).json({success:false,message:'Manage the platform website in Superadmin → Website & branding or Policies & pages.'});next();});
 const ok = (res,data,message='Saved') => res.json({success:true,data,message});
 
 router.get('/bootstrap',wrap(async (req,res) => {
   await Studio.initialize();
+  const ticketTemplates = await Studio.templates('ticket');
+  const savedLayouts = new Set(ticketTemplates.map(t => t.config.layout));
+  const ticketLayouts = [
+    ...require('../services/ticketLayouts'),
+    ...require('../services/legacyTicketLayouts').filter(layout => savedLayouts.has(layout.id)),
+  ];
+  const [emailTicketTypes]=await db.query('SELECT t.id,t.name,e.title event_title FROM ticket_types t JOIN events e ON e.id=t.event_id WHERE t.archived_at IS NULL AND e.archived_at IS NULL ORDER BY e.id DESC,t.sort_order,t.id LIMIT 1000');
   const smtp = await Studio.getSetting('smtp');
-  const { password_encrypted, ...safeSmtp } = smtp;
-  ok(res, { brand: await Studio.getSetting('brand'), smtp: {...safeSmtp,has_password:Boolean(password_encrypted)},
-    ticketTemplates: await Studio.templates('ticket'), emailTemplates: await Studio.templates('email'),
+  ok(res, { brand: await Studio.getSetting('brand'), smtp: require('../services/smtpSettings').safe(smtp),
+    emailTicketTypes,ticketTemplates, ticketLayouts, emailTemplates: await Studio.templates('email'),
     pages: await Studio.pages(), socialLinks: await Studio.getSetting('social_links'), defaults: { ticket:defaults.ticket,email:defaults.email }, placeholders:defaults.placeholders });
 }));
 
 router.post('/upload',upload.single('image'),wrap(async(req,res)=> {
   if (!req.file) v.fail('Choose an image to upload.');
-  ok(res,{url:`/uploads/${req.file.filename}`},'Image uploaded');
+  ok(res,{url:require('../middleware/upload').url(req)},'Image uploaded');
 }));
 
 router.post('/templates',wrap(async(req,res)=> {
   const { kind, name, config } = req.body;
-  const saved = await Studio.saveTemplate({kind,name:v.string(name,'Template name',120,true),active:req.body.active !== false,config:v.template(kind,config)});
+  const saved = await Studio.saveTemplate({kind,name:v.string(name,'Template name',120,true),active:req.body.active !== false,config:await checkedConfig(kind,config)});
   res.status(201); ok(res,{template:saved},'Template created');
 }));
 router.put('/templates/:id',wrap(async(req,res)=> {
   const existing = await Studio.template(req.params.id);
   if (!existing) v.fail('Template not found.',404);
-  const saved = await Studio.saveTemplate({id:existing.id,kind:existing.kind,name:v.string(req.body.name,'Template name',120,true),active:req.body.active !== false,config:v.template(existing.kind,req.body.config)});
+  const saved = await Studio.saveTemplate({id:existing.id,kind:existing.kind,name:v.string(req.body.name,'Template name',120,true),active:req.body.active !== false,config:await checkedConfig(existing.kind,req.body.config)});
   ok(res,{template:saved},'Template saved');
 }));
+router.get('/email-fields/:ticketTypeId',wrap(async(req,res)=>{
+ const {type,fields}=await require('../services/ticketEmails').context(req.params.ticketTypeId);
+ ok(res,{ticketType:{id:type.id,name:type.name,event_title:type.event_title},fields:fields.map(f=>({key:'field_'+f.id,label:f.label,type:f.type}))});
+}));
+async function emailPreviewData(req,brand){
+ const personal=req.body.ticket_type_id?await require('../services/ticketEmails').preview(req.body.ticket_type_id):{...require('../services/ticketEmails').values({attendee_name:'Alex Morgan',attendee_email:'alex@example.test',attendee_phone:'+91 9876543210',type_name:'Sample pass',ticket_code:'TCK-PREVIEW-NOT-VALID'}),...await require('../services/ticketEmails').qr('TCK-PREVIEW-NOT-VALID',true)};
+ return {...sampleData,booking_url:brand.site_url.replace(/\/$/,'')+'/confirmation/TKT-PREVIEW',...personal};
+}
+router.post('/email-attachment',require('multer')({storage:require('multer').memoryStorage(),limits:{fileSize:5*1024*1024,files:1}}).single('file'),wrap(async(req,res)=>{
+ ok(res,{attachment:await db.run(req.organization,()=>attachments.upload(req.file))},'PDF uploaded');
+}));
+router.get('/email-attachments/:id',wrap(async(req,res)=>{
+ const file=await attachments.read(req.params.id);res.set({'Content-Type':'application/pdf','Cache-Control':'no-store','X-Content-Type-Options':'nosniff','Content-Disposition':`inline; filename="attachment.pdf"`});res.send(file.content);
+}));
+router.post('/email-ticket-preview',wrap(async(req,res)=>{
+ const config=await checkedConfig('email',req.body.config),brand=await Studio.getSetting('brand');
+ const data=await emailPreviewData(req,brand);const pdf=await require('../services/ticketPdf')(data,brand,config);
+ res.set({'Content-Type':'application/pdf','Cache-Control':'no-store','Content-Disposition':'inline; filename="ticket-preview.pdf"'});res.send(pdf);
+}));
 router.post('/email-preview',wrap(async(req,res)=> {
-  const config = v.template('email',req.body.config);
+  const config = await checkedConfig('email',req.body.config);
   const brand = await Studio.getSetting('brand');
-  const preview = renderEmail(config,brand,{...sampleData,booking_url:brand.site_url.replace(/\/$/,'')+'/confirmation/TKT-PREVIEW'},await Studio.pages(true),await Studio.getSetting('social_links'));
-  ok(res,preview,'Preview ready');
+  const data=await emailPreviewData(req,brand),files=await attachments.list(config);
+  const ticketPdf=attachments.needsTicket(config);
+  data.attachment_names=[...(ticketPdf?['ticket-'+data.ticket_code+'.pdf']:[]),...files.map(f=>f.name)];
+  const preview = renderEmail(config,brand,data,await Studio.pages(true),await Studio.getSetting('social_links'));
+  ok(res,{...preview,file_attachments:files,ticket_pdf:ticketPdf},'Preview ready');
 }));
 // Explicit button presses only; preview and save never send mail.
 router.post('/email-test',wrap(async(req,res)=> {
   const recipient = v.emailAddress(req.body.recipient,true);
-  const config = v.template('email',req.body.config);
+  const config = await checkedConfig('email',req.body.config);
   const brand = await Studio.getSetting('brand');
-  const rendered = renderEmail(config,brand,{...sampleData,booking_url:brand.site_url.replace(/\/$/,'')+'/confirmation/TKT-PREVIEW'},await Studio.pages(true),await Studio.getSetting('social_links'));
+  const testData=await emailPreviewData(req,brand);
+  if(/{{\s*(ticket|ticket_qr)\s*}}/.test(JSON.stringify(config)))Object.assign(testData,await require('../services/ticketEmails').qr(testData.ticket_code));
+  const files=await attachments.build(config,brand,testData);testData.attachments=[...(testData.attachments||[]),...files];testData.attachment_names=files.map(f=>f.filename);
+  const rendered = renderEmail(config,brand,testData,await Studio.pages(true),await Studio.getSetting('social_links'));
   rendered.subject = '[TEST] ' + rendered.subject;
   try { await mailer.send(await Studio.getSetting('smtp'),recipient,rendered); }
   catch { v.fail('Test email failed. Check your SMTP settings and recipient address.',502); }
@@ -59,39 +93,28 @@ router.put('/social-links',wrap(async(req,res)=> {
   await Studio.saveSetting('social_links',socialLinks);
   ok(res,{socialLinks},'Social media links saved.');
 }));
+router.get('/brand',wrap(async(req,res)=> {
+  ok(res,{brand:await Studio.getSetting('brand')},'Site settings loaded');
+}));
 router.put('/brand',wrap(async(req,res)=> {
-  const b = req.body;
-  const brand = {company_name:v.string(b.company_name,'Company name',120,true),site_url:v.url(b.site_url),support_email:v.emailAddress(b.support_email || ''),logo:v.url(b.logo,{image:true})};
-  if (!brand.site_url) v.fail('Website URL is required.');
-  const parsed = new URL(brand.site_url);
-  if (parsed.search || parsed.hash || parsed.pathname !== '/') v.fail('Use the website origin, without a path or query.');
-  brand.site_url = parsed.origin;
-  await Studio.saveSetting('brand',brand); ok(res,{brand},'Brand settings saved');
+  const current = await Studio.getSetting('brand');
+  if(!req.organization.is_legacy) req.body.site_url=req.siteUrl;
+  const brand = require('../services/siteSettings').validateSiteSettings(req.body,current);
+  await Studio.saveSetting('brand',brand);
+  ok(res,{brand},'Site settings saved');
 }));
-router.put('/smtp',wrap(async(req,res)=> {
-  const b = req.body;
-  const current = await Studio.getSetting('smtp');
-  const port = Number(b.port);
-  if (!Number.isInteger(port) || port < 1 || port > 65535) v.fail('Enter a valid SMTP port.');
-  if (!['tls','starttls'].includes(b.encryption)) v.fail('Choose TLS or STARTTLS encryption.');
-  const host = v.string(b.host,'SMTP host',255,true);
-  if (!/^[a-zA-Z0-9.-]+$/.test(host)) v.fail('Enter an SMTP hostname without a URL prefix.');
-  const smtp = { enabled: b.enabled === true, host, port, encryption:b.encryption,
-    username:v.string(b.username || '','Username',255),from_name:v.string(b.from_name,'Sender name',120,true),
-    from_email:v.emailAddress(b.from_email,true),reply_to:v.emailAddress(b.reply_to || ''),password_encrypted:current.password_encrypted || '' };
-  if (b.clear_password === true) smtp.password_encrypted = '';
-  if (b.password) { v.string(b.password,'Password',2000,true); smtp.password_encrypted = encrypt(b.password); }
-  if (smtp.username && !smtp.password_encrypted) v.fail('Enter an SMTP password for this username.');
+router.put('/smtp',wrap(async(req,res)=>{
+  const smtp=require('../services/smtpSettings').validate(req.body,await Studio.getSetting('smtp'));
   await Studio.saveSetting('smtp',smtp);
-  const {password_encrypted,...safe} = smtp;
-  ok(res,{smtp:{...safe,has_password:Boolean(password_encrypted)}},'SMTP settings saved');
+  ok(res,{smtp:require('../services/smtpSettings').safe(smtp)},'Organization SMTP settings saved.');
 }));
-router.post('/smtp/verify',wrap(async(req,res)=> {
+router.post('/smtp/test',rateLimit(5,60000),require('../controllers/smtpController').sendTest);
+router.post('/smtp/verify',wrap(async(req,res)=>{
   let transport;
-  try { transport=mailer.transport(await Studio.getSetting('smtp')); await transport.verify(); }
-  catch { v.fail('Connection failed. Check the saved host, port, encryption, username and password.',502); }
+  try { transport=mailer.transport(await Studio.getSetting('smtp'));await transport.verify(); }
+  catch { v.fail('Connection failed. Check this organization’s saved SMTP settings.',502); }
   finally { transport?.close(); }
-  ok(res,{},'SMTP connection and authentication verified. No email was sent.');
+  ok(res,{},'Organization connection verified. No email was sent.');
 }));
 
 router.put('/pages/:slug',wrap(async(req,res)=> {
@@ -104,7 +127,7 @@ router.put('/pages/:slug',wrap(async(req,res)=> {
   ok(res,{page:(await Studio.pages()).find(p=>p.slug===req.params.slug)},published ? 'Page published' : 'Draft saved');
 }));
 router.get('/mail-log',wrap(async(req,res)=> {
-  const [logs]=await db.query('SELECT m.*,o.booking_ref,o.email FROM mail_outbox m JOIN orders o ON o.id=m.order_id ORDER BY m.id DESC LIMIT 100');
+  const [logs]=await db.query('SELECT m.id,m.order_id,m.event_key,m.ticket_id,m.status,m.attempts,m.error_message,m.message_id,m.created_at,m.updated_at,m.recipient_key,m.recipient_name,o.booking_ref,COALESCE(m.recipient_email,o.email) email FROM mail_outbox m JOIN orders o ON o.id=m.order_id ORDER BY m.id DESC LIMIT 100');
   ok(res,{logs});
 }));
 router.post('/mail-log/:id/retry',wrap(async(req,res)=> {

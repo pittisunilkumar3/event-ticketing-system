@@ -1,6 +1,5 @@
 const path = require('path');
 const fs = require('fs');
-const crypto = require('crypto');
 const EmailTemplate = require('../models/EmailTemplate');
 const { generateTemplateHTML } = require('../services/emailTemplateRenderer');
 const Studio = require('../models/Studio');
@@ -68,7 +67,7 @@ const uploadImage = asyncHandler(async (req, res) => {
   if (!req.file) {
     return res.status(400).json({ success: false, message: 'No file provided' });
   }
-  const url = `/uploads/email-templates/${req.file.filename}`;
+  const url = require('../middleware/upload').url(req);
   res.json({ success: true, url, message: 'Image uploaded successfully' });
 });
 
@@ -78,17 +77,10 @@ const deleteImage = asyncHandler(async (req, res) => {
   if (!url) {
     return res.status(400).json({ success: false, message: 'No image url provided' });
   }
-  const match = String(url).match(/\/uploads\/email-templates\/[^"'\s)]+/i);
-  if (!match) {
-    return res.status(400).json({ success: false, message: 'Invalid image url' });
-  }
-  const uploadRoot = path.resolve(uploadDir);
-  const filePath = path.resolve(path.join(uploadRoot, '..', match[0]));
-
-  // Containment guard: prevent escaping the upload directory (e.g. via ../)
-  if (!filePath.startsWith(uploadRoot + path.sep)) {
-    return res.status(400).json({ success: false, message: 'Forbidden path' });
-  }
+  const prefix = req.organization.is_legacy ? '/uploads/' : `/uploads/${req.organization.slug}/`;
+  const allowed = req.organization.is_legacy ? /^([a-zA-Z0-9_-][a-zA-Z0-9._-]*|email-templates\/[a-zA-Z0-9_-][a-zA-Z0-9._-]*)$/ : /^[a-zA-Z0-9_-][a-zA-Z0-9._-]*$/;
+  if(typeof url!=='string' || !url.startsWith(prefix) || !allowed.test(url.slice(prefix.length))) return res.status(400).json({success:false,message:'Invalid image URL for this organizer.'});
+  const filePath = path.join(__dirname,'..','uploads',url.slice('/uploads/'.length));
 
   try {
     await fs.promises.unlink(filePath);
@@ -99,7 +91,7 @@ const deleteImage = asyncHandler(async (req, res) => {
 });
 
 // POST /api/admin/email-templates/send-test — { to, templateId }
-// Renders with sample data and sends through the studio SMTP settings.
+// Renders with sample data and sends through the organization SMTP settings.
 const sendTest = asyncHandler(async (req, res) => {
   const { to, templateId } = req.body;
   if (!to) {
@@ -110,13 +102,13 @@ const sendTest = asyncHandler(async (req, res) => {
   if (!smtp.enabled) {
     return res.status(400).json({
       success: false,
-      message: 'Mail service is disabled. Enable it in Admin → Brand & SMTP.',
+      message: 'Mail service is disabled. Enable it in your Organization SMTP settings.',
     });
   }
-  if (!smtp.host || !smtp.username || !smtp.password_encrypted) {
+  if (!smtp.host || !smtp.from_email) {
     return res.status(400).json({
       success: false,
-      message: 'SMTP not configured. Go to Admin → Brand & SMTP and set Host, Username, Password.',
+      message: 'SMTP not configured. Configure your organization’s email delivery in Organization SMTP.',
     });
   }
 
@@ -161,7 +153,7 @@ const sendTest = asyncHandler(async (req, res) => {
   } catch {
     return res.status(502).json({
       success: false,
-      message: 'Test email failed. Check your SMTP settings and recipient address.',
+      message: 'Test email failed. Check your superadmin email settings and recipient address.',
     });
   }
 

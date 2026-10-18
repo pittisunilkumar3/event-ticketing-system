@@ -1,0 +1,7 @@
+CREATE TABLE IF NOT EXISTS ticket_registration_forms (
+ ticket_type_id INT UNSIGNED PRIMARY KEY,
+ config_json LONGTEXT NULL,
+ revision INT UNSIGNED NOT NULL DEFAULT 1,
+ updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+ CONSTRAINT fk_ticket_registration_type FOREIGN KEY(ticket_type_id) REFERENCES ticket_types(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

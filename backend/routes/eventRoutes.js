@@ -9,6 +9,8 @@ router.get('/', controller.list);
 router.get('/:id', controller.detail);
 router.post('/', upload.single('banner'), controller.create);
 router.put('/:id', upload.single('banner'), controller.update);
+router.patch('/:id/status', controller.status);
+router.post('/:id/restore', controller.restore);
 router.delete('/:id', controller.remove);
 
 module.exports = router;

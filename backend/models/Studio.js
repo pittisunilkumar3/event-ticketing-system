@@ -1,5 +1,6 @@
 const db = require('../config/db');
 const defaults = require('../services/studioDefaults');
+const ticketLayouts = require('../services/ticketLayouts');
 const parse = row => row && ({ ...row, active: Boolean(row.active), config: JSON.parse(row.config_json), config_json: undefined });
 const Studio = {
   async initialize() {
@@ -10,15 +11,19 @@ const Studio = {
       'INSERT IGNORE INTO design_templates (kind,name,event_key,config_json) VALUES (?,?,?,?)',
       ['email', e.name, e.key, JSON.stringify({ ...defaults.email, title: e.title, body: e.body, subject: `${e.name}: {{booking_ref}}` })]
     );
-    for (const [layout,name] of [['classic','Signature admission'],['minimal','Minimal white pass'],['badge','VIP event badge']]) await db.query(
-      'INSERT IGNORE INTO design_templates (kind,name,event_key,config_json) VALUES (?,?,?,?)',
-      ['ticket',name,`ticket_${layout}`,JSON.stringify({...defaults.ticket,layout})]
+    const brand=await this.getSetting('brand');
+    await db.query(
+      'INSERT IGNORE INTO design_templates (kind,name,event_key,config_json) VALUES ?',
+      [ticketLayouts.map(({id, name, config}) =>
+        ['ticket', name, `ticket_${id}`, JSON.stringify({...defaults.ticket, ...config, ...(db.current() && !db.current().is_legacy ? {brand:brand.company_name,logo:brand.logo} : {})})]
+      )]
     );
     for (const [slug,title] of defaults.pages) await db.query('INSERT IGNORE INTO content_pages (slug,title,body) VALUES (?,?,?)', [slug,title,'']);
   },
   async getSetting(key, conn = db) {
     const [rows] = await conn.query('SELECT value_json FROM system_settings WHERE setting_key=?', [key]);
-    return rows.length ? JSON.parse(rows[0].value_json) : defaults[key];
+    const value = rows.length ? JSON.parse(rows[0].value_json) : defaults[key];
+    return key === 'brand' ? {...defaults.brand, ...value} : value;
   },
   async saveSetting(key, value) {
     await db.query('INSERT INTO system_settings (setting_key,value_json) VALUES (?,?) ON DUPLICATE KEY UPDATE value_json=VALUES(value_json)', [key,JSON.stringify(value)]);

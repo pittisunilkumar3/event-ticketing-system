@@ -1,27 +1,43 @@
+import {session} from '../saas/context';
 import { useState } from 'react';
 import { useNavigate, useLocation, Link, Navigate } from 'react-router-dom';
+import {useSiteSettings} from '../settings/SiteSettingsContext';
 import api from '../api/client';
-import { Alert } from '../components/ui';
+import Icon from '../components/Icon';
+import '../pages/customer.css';
 
 export default function Login() {
+  const site=useSiteSettings();
   const navigate = useNavigate();
   const location = useLocation();
   const [form, setForm] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [workspaces,setWorkspaces] = useState(null);
+  const [workspaceId,setWorkspaceId] = useState('');
 
-  if (localStorage.getItem('admin_token')) {
+  if (session.getItem('admin_token')) {
     return <Navigate to="/admin" replace />;
   }
 
   async function handleSubmit(e) {
     e.preventDefault();
+    if (loading) return;
     setError('');
     setLoading(true);
     try {
-      const { data } = await api.post('/auth/login', form);
-      localStorage.setItem('admin_token', data.data.token);
-      localStorage.setItem('admin_user', JSON.stringify(data.data.admin));
+      const { data } = await api.post('/auth/login', {...form,...(workspaceId?{workspace_id:Number(workspaceId)}:{})});
+      if(data.data.workspaces){setWorkspaces(data.data.workspaces);setLoading(false);return;}
+      if(!site.is_organizer && !data.data.workspace.is_legacy){
+        const slug=data.data.workspace.slug;
+        localStorage.setItem('admin_token:'+slug,data.data.token);
+        localStorage.setItem('admin_user:'+slug,JSON.stringify(data.data.admin));
+        window.location.assign(data.data.workspace.path);
+        return;
+      }
+      session.setItem('admin_token', data.data.token);
+      session.setItem('admin_user', JSON.stringify(data.data.admin));
       navigate(location.state?.from || '/admin', { replace: true });
     } catch (err) {
       setError(err.response?.data?.message || 'Login failed');
@@ -30,72 +46,29 @@ export default function Login() {
   }
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-slate-950 px-4">
-      {/* glow orbs */}
-      <div className="pointer-events-none absolute -top-32 left-[15%] h-96 w-96 rounded-full bg-orange-600/20 blur-3xl" />
-      <div className="pointer-events-none absolute bottom-0 right-[10%] h-96 w-96 rounded-full bg-orange-600/15 blur-3xl" />
-      <div className="dot-grid absolute inset-0" aria-hidden="true" />
-
-      <div className="relative w-full max-w-md">
-        <div className="text-center">
-          <span className="inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-orange-500 to-amber-500 text-3xl shadow-xl shadow-orange-500/30">
-            🎟️
-          </span>
-          <h1 className="mt-5 font-display text-2xl font-extrabold text-white">
-            Ticket<span className="text-orange-400">Flow</span> Admin
-          </h1>
-          <p className="mt-1.5 text-sm text-slate-500">Sign in to manage your events</p>
+    <main className="organizer-login">
+      <section className="login-story">
+        <Link className="login-brand" to="/" aria-label={`${site.company_name} home`}><span>{site.logo ? <img src={site.logo} alt=""/> : <Icon name="ticket" size={24}/>}</span>{site.company_name}</Link>
+        <div className="login-story-content"><p className="customer-eyebrow">THE WORKSPACE BEHIND THE EXPERIENCE</p><h2>Great events.<br/><span>Start with you.</span></h2><p>Your events, ticket designs, and bookings. Everything you need to bring people together.</p></div>
+        <p className="login-story-footer">From the first ticket to the final check-in.</p>
+      </section>
+      <section className="login-panel">
+        <div className="login-panel-inner"><span className="customer-icon"><Icon name="grid" size={24}/></span><h1>Welcome back.</h1><p>Sign in to your organizer workspace.</p>
+          <form onSubmit={handleSubmit} className="customer-form">
+            <label htmlFor="login-email">Email address</label>
+            <input id="login-email" type="email" autoComplete="username" required value={form.email} onChange={e => {setForm({...form,email:e.target.value});setWorkspaces(null);setWorkspaceId('');}} placeholder="you@example.com" disabled={loading}/>
+            <label htmlFor="login-password">Password</label>
+            <div className="login-password-field"><input id="login-password" type={showPassword ? 'text' : 'password'} autoComplete="current-password" required value={form.password} onChange={e => {setForm({...form,password:e.target.value});setWorkspaces(null);setWorkspaceId('');}} placeholder="Enter your password" disabled={loading}/><button type="button" onClick={() => setShowPassword(value => !value)} aria-label={showPassword ? 'Hide password' : 'Show password'} aria-pressed={showPassword}>{showPassword ? 'Hide' : 'Show'}</button></div>
+            {workspaces && <><label htmlFor="login-workspace">Choose your workspace</label><select id="login-workspace" required value={workspaceId} disabled={loading} onChange={e=>setWorkspaceId(e.target.value)}><option value="">Select a workspace</option>{workspaces.map(w=><option key={w.id} value={w.id}>{w.name} ({w.slug})</option>)}</select></>}
+            {error && <p className="customer-alert" role="alert">{error}</p>}
+            <button className="customer-button" type="submit" disabled={loading}>{loading ? 'Signing in…' : 'Sign in'}<Icon name="arrow" size={18}/></button>
+          </form>
+          <nav className="login-links" aria-label="Account and website">
+            <a href="/signup" className="login-signup-link">Create an organizer account <Icon name="arrow" size={16}/></a>
+            <Link to="/" className="login-back-link"><span aria-hidden="true">←</span> Back to website</Link>
+          </nav>
         </div>
-
-        <form onSubmit={handleSubmit} className="mt-8 space-y-4 rounded-3xl bg-white/[0.04] p-8 ring-1 ring-white/10 backdrop-blur-xl">
-          {error && <Alert>{error}</Alert>}
-          <div>
-            <label className="mb-1.5 block text-sm font-semibold text-slate-300">Email</label>
-            <input
-              type="email"
-              required
-              value={form.email}
-              onChange={(e) => setForm({ ...form, email: e.target.value })}
-              placeholder="admin@ticketing.com"
-              className="w-full rounded-xl bg-white/[0.05] px-4 py-3 text-sm text-white placeholder-slate-600 ring-1 ring-white/10 transition focus:bg-white/[0.08] focus:outline-none focus:ring-2 focus:ring-orange-400/60"
-            />
-          </div>
-          <div>
-            <label className="mb-1.5 block text-sm font-semibold text-slate-300">Password</label>
-            <input
-              type="password"
-              required
-              value={form.password}
-              onChange={(e) => setForm({ ...form, password: e.target.value })}
-              placeholder="••••••••"
-              className="w-full rounded-xl bg-white/[0.05] px-4 py-3 text-sm text-white placeholder-slate-600 ring-1 ring-white/10 transition focus:bg-white/[0.08] focus:outline-none focus:ring-2 focus:ring-orange-400/60"
-            />
-          </div>
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 py-3.5 font-display font-bold text-white shadow-[0_12px_40px_-10px_rgba(139,92,246,0.6)] transition hover:opacity-90 disabled:opacity-60"
-          >
-            {loading ? (
-              <span className="inline-flex items-center gap-2">
-                <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
-                Signing in…
-              </span>
-            ) : (
-              'Sign In →'
-            )}
-          </button>
-          <div className="rounded-xl bg-white/[0.03] px-4 py-3 text-center text-xs text-slate-500 ring-1 ring-white/5">
-            Demo credentials: <span className="font-mono text-slate-400">admin@ticketing.com / admin123</span>
-          </div>
-        </form>
-
-        <p className="mt-6 text-center text-sm">
-          <Link to="/" className="text-slate-500 transition hover:text-white">
-            ← Back to website
-          </Link>
-        </p>
-      </div>
-    </div>
+      </section>
+    </main>
   );
 }

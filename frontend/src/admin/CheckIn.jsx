@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import api from '../api/client';
 import { Alert } from '../components/ui';
+import AttendeeAnswers from '../components/AttendeeAnswers';
+import '../pages/checkoutAttendees.css';
 import { formatDateTime, StatusBadge } from '../utils/format';
 
 export default function CheckIn() {
@@ -45,7 +47,7 @@ export default function CheckIn() {
     setResult(null);
   }
 
-  const canCheckIn = ticket && ticket.status === 'valid' && !['cancelled', 'refunded'].includes(ticket.order_status);
+  const canCheckIn = ticket && ticket.status === 'valid' && ticket.order_status === 'paid';
 
   return (
     <div className="mx-auto max-w-xl space-y-6">
@@ -100,12 +102,13 @@ export default function CheckIn() {
           <div className="grid gap-4 p-5 sm:grid-cols-2">
             <Meta label="Event" value={ticket.event_title} />
             <Meta label="When" value={formatDateTime(ticket.event_start)} />
-            <Meta label="Attendee" value={`${ticket.customer_name} (${ticket.email})`} />
+            <TicketAttendeeDetails ticket={ticket}/>
             <Meta label="Ticket type" value={`${ticket.type_name} — ${ticket.booking_ref}`} />
             <Meta label="Venue" value={`${ticket.venue}, ${ticket.city}`} />
             {ticket.checked_in_at && <Meta label="Checked in at" value={ticket.checked_in_at} />}
           </div>
 
+          {!!ticket.attendee_answers?.length&&<section className="border-t border-slate-100 p-5"><h3 className="font-semibold text-slate-800">Attendee registration</h3><AttendeeAnswers answers={ticket.attendee_answers}/></section>}
           {canCheckIn && (
             <div className="border-t border-slate-100 p-5">
               <button
@@ -130,4 +133,8 @@ function Meta({ label, value }) {
       <p className="text-sm font-medium text-slate-800">{value}</p>
     </div>
   );
+}
+
+export function TicketAttendeeDetails({ticket}) {
+ return <><Meta label="Attendee" value={ticket.attendee_name || ticket.customer_name}/>{ticket.attendee_email&&<Meta label="Attendee email" value={ticket.attendee_email}/>} {ticket.attendee_phone&&<Meta label="Attendee phone" value={ticket.attendee_phone}/>}<Meta label="Booked by" value={`${ticket.customer_name} (${ticket.email})`}/></>;
 }

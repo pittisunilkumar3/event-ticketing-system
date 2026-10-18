@@ -664,7 +664,7 @@ export default function EmailTemplates() {
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
                     <div>
                       <h3 style={{ fontSize: 16, fontWeight: 700, color: "#1e283a", margin: 0 }}>📤 Send Test Email</h3>
-                      <p style={{ fontSize: 12, color: "#9ca3af", margin: "4px 0 0" }}>Sends a test email using admin SMTP settings</p>
+                      <p style={{ fontSize: 12, color: "#9ca3af", margin: "4px 0 0" }}>Sends a test email using platform email delivery</p>
                     </div>
                     <button onClick={() => setTestEmailModal(p => ({ ...p, open: false }))} style={{ background: "none", border: "none", fontSize: 18, cursor: "pointer", color: "#9ca3af", padding: 4 }}>✕</button>
                   </div>
@@ -678,7 +678,7 @@ export default function EmailTemplates() {
                   {/* SMTP status */}
                   <div style={{ background: "#fff8e1", borderRadius: 8, padding: "8px 12px", marginBottom: 16, border: "1px solid #ffe082", display: "flex", alignItems: "center", gap: 8 }}>
                     <span style={{ fontSize: 14 }}>⚙️</span>
-                    <span style={{ fontSize: 11, color: "#e65100", fontWeight: 600 }}>Uses SMTP credentials from Admin → Brand &amp; SMTP</span>
+                    <span style={{ fontSize: 11, color: "#e65100", fontWeight: 600 }}>Email delivery is managed in Superadmin → Settings</span>
                   </div>
 
                   {/* Email input */}

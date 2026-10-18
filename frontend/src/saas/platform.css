@@ -1,0 +1,30 @@
+/* Reuse the organizer panel's shell; these controls belong only to superadmin. */
+.platform-shell .platform-content { width:100%; flex:1; }
+.platform-brand-row { display:flex; align-items:center; }
+.platform-brand-row .admin-brand { flex:1; }
+.platform-sidebar .admin-nav-group>p { text-transform:uppercase; }
+.platform-sidebar button:focus-visible,.platform-sidebar a:focus-visible,.platform-shell .admin-menu-toggle:focus-visible { outline:2px solid #ffa76b; outline-offset:3px; }
+.platform-signout { display:flex; align-items:center; justify-content:space-between; padding:13px; min-height:44px; width:100%; border-top:1px solid #343334; color:#c8b8aa; background:transparent; font-size:13px; cursor:pointer; }
+.platform-signout:hover { color:white; }
+.platform-close { display:none; }
+.platform-shell .admin-breadcrumb,.platform-shell .admin-topbar-right a { font-size:12px; }
+@media(max-width:800px) {
+ .platform-sidebar:not(.open) { visibility:hidden; }
+ .platform-close { display:block; margin-right:12px; min-width:36px; min-height:36px; color:#d8cdc1; font-size:26px; cursor:pointer; }
+ .platform-shell .admin-menu-toggle { min-width:36px; min-height:36px; }
+ .platform-shell .admin-breadcrumb { font-size:11px; gap:8px; }
+ .platform-shell .admin-topbar-right a { font-size:10px; }
+}
+@media(prefers-reduced-motion:reduce) { .platform-sidebar { transition:none; } }
+
+/* Shared website editors retain readable controls inside the platform shell. */
+.platform-content .studio-design-list button { color:#514d47; }
+.platform-content .studio-toggle { display:flex; margin-bottom:0; }
+.platform-content .studio-text-button { color:#b44d22; background:transparent; }
+@media(max-width:950px) {
+  .platform-content .studio-policy-grid .studio-design-list { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .platform-content .studio-policy-grid .studio-design-list button { width:100%; min-width:0; }
+}
+@media(max-width:620px) {
+  .platform-content .studio-policy-grid .studio-design-list { grid-template-columns:1fr; }
+}

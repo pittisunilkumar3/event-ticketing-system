@@ -1,186 +1,309 @@
-import { useState } from 'react';
-import { useLocation, useNavigate, useParams, Link } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import {
+  useNavigate,
+  useParams,
+  useSearchParams,
+  Link,
+  useLocation,
+} from 'react-router-dom';
 import api from '../api/client';
-import { Alert, GlowOrbs } from '../components/ui';
-import { formatCurrency, categoryGradient } from '../utils/format';
-
+import {loadCheckout} from '../saas/razorpayCheckout';
+import { formatCurrency, formatDateTime } from '../utils/format';
+import Icon from '../components/Icon';
+import CustomerState from '../components/CustomerState';
+import './booking.css';
+import CheckoutAttendees,{attendeePayload} from './CheckoutAttendees';
+import {checkoutDestination} from './checkoutNavigation';
 export default function Checkout() {
-  const { slug } = useParams();
-  const navigate = useNavigate();
-  const { state } = useLocation();
-
-  const [form, setForm] = useState({ customer_name: '', email: '', phone: '' });
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState('');
-
-  if (!state?.items?.length) {
-    return (
-      <main className="mx-auto max-w-2xl px-4 py-20">
-        <Alert type="info">No tickets selected. Please pick your tickets first.</Alert>
-        <div className="mt-4 text-center">
-          <Link to={`/events/${slug}`} className="font-semibold text-indigo-300 hover:underline">
-            ← Back to event
-          </Link>
-        </div>
-      </main>
+  const { slug } = useParams(),
+    [params] = useSearchParams(),
+    { state } = useLocation(),
+    navigate = useNavigate();
+  const [data, setData] = useState(null),
+    [loadError, setLoadError] = useState(''),
+    [error, setError] = useState(''),
+    [pages, setPages] = useState([]);
+  const [form, setForm] = useState({ customer_name: '', email: '', phone: '' }),
+    [busy, setBusy] = useState(false);
+  const [pending,setPending]=useState(null);
+  const [people,setPeople]=useState({});
+  useEffect(()=>{setPeople({});setPending(null);},[slug]);
+  const cart =
+    params.get('tickets') ||
+    state?.items?.map((i) => i.ticket_type_id + ':' + i.qty).join(',') ||
+    '';
+  useEffect(() => {
+    const controller = new AbortController();
+    setData(null);
+    setLoadError('');
+    api
+      .get('/events/' + slug, { signal: controller.signal })
+      .then(({ data: r }) => {
+        if (controller.signal.aborted) return;
+        if (r.data.checkout_path) {
+          window.location.replace(checkoutDestination(r.data, slug, cart));
+          return;
+        }
+        setData(r.data);
+      })
+      .catch((e) => {
+        if (!controller.signal.aborted)
+          setLoadError(e.response?.data?.message || 'Unable to load event.');
+      });
+    api
+      .get('/pages', { signal: controller.signal })
+      .then(({ data: r }) => setPages(r.data.pages))
+      .catch(() => {});
+    return () => controller.abort();
+  }, [slug, cart]);
+  const storageKey='event-checkout:'+window.location.pathname+':'+cart;
+  function finish(result){sessionStorage.removeItem(storageKey);navigate('/confirmation/'+result.order.booking_ref,{replace:true,state:{fresh:result,email:result.order.email}});}
+  useEffect(()=>{let active=true;setPending(null);const token=sessionStorage.getItem(storageKey);if(token)api.post('/booking-payments/status',{}, {headers:{'x-booking-token':token}}).then(r=>{if(!active)return;if(r.data.data.paid)finish(r.data.data);else setPending(r.data.data);}).catch(()=>{});return()=>{active=false;};},[storageKey]);
+  async function checkPayment(){setBusy(true);setError('');try{const r=await api.post('/booking-payments/status',{}, {headers:{'x-booking-token':sessionStorage.getItem(storageKey)}});if(r.data.data.paid)finish(r.data.data);else{setPending(r.data.data);setError(r.data.data.payment.status==='review'?'Payment needs review. Please contact the organizer with your booking reference.':'Payment is not confirmed yet. You can resume checkout or check again.');}}catch(e){setError(e.response?.data?.message||'Unable to check payment.');}finally{setBusy(false);}}
+  async function pay(result){
+    if(result.paid){finish(result);return;}
+    setPending(result);
+    if(!result.payment.order_id||!result.payment.can_pay){setBusy(false);setError('This reservation has expired or needs review. Check payment status before starting again.');return;}
+    await loadCheckout();
+    const checkout=new window.Razorpay({key:result.payment.key,order_id:result.payment.order_id,amount:result.payment.amount,currency:result.payment.currency,name:data.event.title,description:'Event tickets',prefill:{name:result.order.customer_name,email:result.order.email,contact:result.order.phone||''},theme:{color:'#d95620'},
+      handler:async response=>{try{const r=await api.post('/booking-payments/verify',response,{headers:{'x-booking-token':sessionStorage.getItem(storageKey)}});if(r.data.data.paid)finish(r.data.data);else{setPending(r.data.data);setError('Payment needs review. Contact the organizer with your booking reference.');}}catch(e){setError(e.response?.data?.message||'Payment confirmation is pending. Use Check payment before trying again.');}finally{setBusy(false);}},
+      modal:{ondismiss:()=>setBusy(false)},
+    });
+    checkout.on('payment.failed',()=>{setBusy(false);setError('Payment did not complete. Resume this checkout to retry.');});checkout.open();
+  }
+  const requested = cart
+    .split(',')
+    .filter(Boolean)
+    .map((s) => {
+      const [id, qty] = s.split(':');
+      return { id: Number(id), qty: Number(qty) };
+    });
+  const items = pending?.items?.length ? pending.items.map(i=>({id:i.ticket_type_id,qty:i.qty,type:{name:i.name,price:i.price}})) : data
+    ? requested.map((i) => ({
+        ...i,
+        type: data.ticketTypes.find((t) => t.id === i.id),
+      }))
+    : [];
+  const valid =
+    items.length > 0 &&
+    new Set(items.map((i) => i.id)).size === items.length &&
+    items.every(
+      (i) =>
+        i.type?.is_on_sale &&
+        Number.isInteger(i.qty) &&
+        i.qty >= i.type.min_per_order &&
+        i.qty <= Math.min(i.type.available, i.type.max_per_order)
     );
-  }
-
-  const { event, items, totalAmount, totalQty } = state;
-
-  function setField(e) {
-    setForm({ ...form, [e.target.name]: e.target.value });
-  }
-
-  async function handleSubmit(e) {
+  const editLink = '/events/' + slug + '?tickets=' + encodeURIComponent(cart);
+  if (loadError) return <CustomerState eyebrow="YOUR BOOKING" title="We couldn’t open this checkout." description={loadError} action="Browse events"/>;
+  if (!data) return <CustomerState loading eyebrow="YOUR BOOKING" title="Getting your tickets ready…"/>;
+  if (!valid && !pending) return <CustomerState eyebrow="YOUR BOOKING" title={requested.length ? 'Let’s update your selection.' : 'Start with your tickets.'} description={requested.length ? 'A selected ticket is unavailable or the quantity has changed. Review the latest options before continuing.' : 'Choose the ticket type and quantity you’d like before entering your booking details.'} to={editLink} action="Choose tickets"/>;
+  const { event } = data,
+    total = pending ? Number(pending.order.total_amount) : items.reduce((s, i) => s + Number(i.type.price) * i.qty, 0),
+    count = items.reduce((s, i) => s + i.qty, 0);
+  async function book(e) {
     e.preventDefault();
+    if (busy) return;
+    setBusy(true);
     setError('');
-    if (!form.customer_name.trim() || !form.email.trim()) {
-      setError('Please fill in your name and email.');
-      return;
-    }
-    setSubmitting(true);
     try {
-      const { data } = await api.post('/orders', {
+      if(pending){await pay(pending);return;}
+      let requestKey=sessionStorage.getItem(storageKey);if(!requestKey){requestKey=crypto.randomUUID();sessionStorage.setItem(storageKey,requestKey);}
+      const attendeeData=attendeePayload(items,people,data.registrationForm?.config);
+      if(attendeeData.attachments.some(a=>a.file.size>2*1024*1024))throw new Error('Each registration attachment must be 2 MB or smaller.');
+      if(attendeeData.attachments.length>30||attendeeData.attachments.reduce((n,a)=>n+a.file.size,0)>20*1024*1024)throw new Error('Use up to 30 attachments and 20 MB per booking.');
+      const payload={
         event_id: event.id,
+        request_key:requestKey,
         customer_name: form.customer_name.trim(),
         email: form.email.trim(),
         phone: form.phone.trim() || null,
-        items: items.map(({ ticket_type_id, qty }) => ({ ticket_type_id, qty })),
-      });
-      navigate(`/confirmation/${data.data.order.booking_ref}`, {
-        state: { fresh: data.data, email: form.email.trim() },
-      });
-    } catch (err) {
-      setError(err.response?.data?.message || 'Booking failed. Please try again.');
-      setSubmitting(false);
+        items: attendeeData.items,
+        form_revision:data.registrationForm?.revision||0,
+      };
+      const attachments=attendeeData.attachments;
+      let body=payload;
+      if(attachments.length){body=new FormData();body.append('booking',JSON.stringify(payload));for(const f of attachments)body.append(f.name,f.file);}
+      const {data:r}=await api.post('/orders',body,attachments.length?{headers:{'Content-Type':'multipart/form-data'}}:undefined);
+      await pay(r.data);
+    } catch (e) {
+      setError(
+        e.response?.data?.message || e.message || 'Booking failed. Please try again.'
+      );
+      if(e.response?.status===409&&e.response?.data?.message?.includes('registration form')){try{const r=await api.get('/events/'+slug);setData(r.data.data);}catch{}}
+      setBusy(false);
     }
   }
-
   return (
-    <main className="relative">
-      <GlowOrbs />
-      <div className="relative mx-auto max-w-5xl px-4 py-10">
-        <button
-          onClick={() => navigate(-1)}
-          className="no-print mb-5 text-sm font-medium text-slate-500 transition hover:text-indigo-300"
-        >
-          ← Back
-        </button>
-
-        <h1 className="font-display text-3xl font-extrabold text-white">
-          Secure <span className="text-gradient">checkout</span>
-        </h1>
-        <p className="mt-1.5 text-slate-500">Almost there — confirm your details to get your e-tickets.</p>
-
-        <div className="mt-8 grid gap-6 lg:grid-cols-[1fr_400px]">
-          {/* Form */}
-          <form onSubmit={handleSubmit} className="h-fit rounded-3xl bg-white/[0.04] p-7 ring-1 ring-white/10 backdrop-blur">
-            <h2 className="font-display text-lg font-bold text-white">Your details</h2>
-            <div className="mt-5 space-y-4">
-              <Field label="Full name" name="customer_name" value={form.customer_name} onChange={setField} placeholder="John Doe" required />
-              <Field
-                label="Email"
-                name="email"
-                type="email"
-                value={form.email}
-                onChange={setField}
-                placeholder="john@example.com"
-                required
-                hint="E-tickets will be linked to this email"
-              />
-              <Field label="Phone (optional)" name="phone" value={form.phone} onChange={setField} placeholder="555-0100" />
+    <main className="booking-page checkout-page">
+      <div className="booking-container">
+        <Link className="booking-back" to={editLink}>
+          ← Back to ticket selection
+        </Link>
+        <div className="booking-steps" aria-label="Booking progress">
+          <span>
+            01 <b>Choose tickets</b>
+          </span>
+          <i />
+          <span className="current" aria-current="step">
+            02 <b>Your details</b>
+          </span>
+          <i />
+          <span>
+            03 <b>You’re in</b>
+          </span>
+        </div>
+        <div className="checkout-intro">
+          <span className="booking-kicker">ONE STEP CLOSER</span>
+          <h1>
+            Make it <em>official.</em>
+          </h1>
+          <p>Your next great experience starts here.</p>
+        </div>
+        <div className="checkout-grid">
+          <form onSubmit={book} className="checkout-form">
+            <div className="checkout-section-title">
+              <span>01</span>
+              <div>
+                <h2>Booking contact</h2>
+                <p>Your confirmation will be sent here and to any attendee email addresses provided.</p>
+              </div>
             </div>
-
-            {/* Payment */}
-            <div className="mt-7 rounded-2xl border border-indigo-400/25 bg-indigo-500/[0.07] p-5">
-              <p className="flex items-center gap-2 font-display font-bold text-white">💳 Payment method</p>
-              <label className="mt-4 flex cursor-pointer items-center gap-3.5 rounded-xl bg-slate-950/60 p-4 ring-1 ring-indigo-400/30">
-                <input type="radio" checked readOnly className="h-4 w-4 accent-indigo-500" />
-                <span className="flex-1">
-                  <span className="block text-sm font-semibold text-white">Demo Payment — instant</span>
-                  <span className="text-xs text-slate-500">Mock gateway · Stripe-ready architecture</span>
-                </span>
-                <span className="text-2xl">⚡</span>
-              </label>
+            <div className="checkout-fields">
+              {[
+                [
+                  'customer_name',
+                  'Full name',
+                  'text',
+                  'name',
+                  'Your full name',
+                ],
+                ['email', 'Email address', 'email', 'email', 'you@example.com'],
+                [
+                  'phone',
+                  'Phone number',
+                  'tel',
+                  'tel',
+                  'Your contact number',
+                ],
+              ].map(([key, label, type, auto, placeholder]) => (
+                <label key={key}>
+                  {label}
+                  <input
+                    name={key}
+                    disabled={busy||Boolean(pending)}
+                    type={type}
+                    autoComplete={auto}
+                    maxLength={
+                      key === 'customer_name' ? 150 : key === 'email' ? 254 : 40
+                    }
+                    required
+                    placeholder={placeholder}
+                    value={form[key]}
+                    onChange={(e) =>
+                      setForm({ ...form, [key]: e.target.value })
+                    }
+                  />
+                </label>
+              ))}
             </div>
-
+            <CheckoutAttendees items={items} people={people} config={data.registrationForm?.config} contact={form} disabled={busy||Boolean(pending)} saved={pending?.attendees} onChange={(key,person)=>setPeople(p=>({...p,[key]:person}))}/>
+            <div className="checkout-section-title">
+              <span>03</span>
+              <div>
+                <h2>Review & confirm</h2>
+                <p>Check your ticket choices and the total before booking.</p>
+              </div>
+            </div>
+            <div className="demo-payment">
+              <Icon name="ticket" />
+              <div>
+                <strong>{total===0?'Free registration':data.payment?.mode==='live'?'Secure payment with Razorpay':'Razorpay test checkout'}</strong>
+                <p>
+                  {total===0?'Confirm to receive your entry tickets.':!data.payment?.configured||!data.payment?.has_webhook_secret?'Online payments are not available yet. Please contact the organizer.':data.payment?.mode==='live'?'Complete payment to receive your tickets. Your booking is confirmed after payment verification.':'Test mode is active. No real money is collected, and test balances cannot be withdrawn.'}
+                </p>
+              </div>
+              <span>{total===0?'FREE':data.payment?.mode==='live'?'SECURE':'TEST MODE'}</span>
+            </div>
+            {pending&&<div className="booking-alert"><strong>Booking {pending.order.booking_ref}</strong><p>{pending.order.customer_name} · {pending.order.email}</p><p>Payment status: {pending.payment.status.replaceAll('_',' ')}. Your original total is {formatCurrency(pending.order.total_amount,pending.order.currency)}. Unpaid reservations are held for 15 minutes.</p><button type="button" disabled={busy} onClick={checkPayment}>Check payment</button>{pending.payment.status==='expired'&&<button type="button" disabled={busy} onClick={()=>{sessionStorage.removeItem(storageKey);setPending(null);window.location.reload();}}>Start a new booking</button>}</div>}
             {error && (
-              <div className="mt-5">
-                <Alert>{error}</Alert>
+              <div className="booking-alert" role="alert">
+                {error}
+                <Link to={editLink}>Review ticket availability →</Link>
               </div>
             )}
-
-            <button
-              type="submit"
-              disabled={submitting}
-              className="mt-7 w-full rounded-2xl bg-gradient-to-r from-indigo-500 to-fuchsia-500 py-4 font-display text-lg font-bold text-white shadow-[0_12px_40px_-10px_rgba(139,92,246,0.6)] transition hover:opacity-90 disabled:opacity-60"
-            >
-              {submitting ? (
-                <span className="inline-flex items-center gap-2">
-                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
-                  Processing payment…
-                </span>
-              ) : (
-                `Pay ${formatCurrency(totalAmount)} & Get Tickets`
-              )}
+            <button className="booking-primary" disabled={busy||(total>0&&(!data.payment?.configured||!data.payment?.has_webhook_secret))||(pending&&!pending.payment.can_pay)}>
+              {busy
+                ? 'Preparing payment…'
+                : (pending?'Resume payment':total===0?'Confirm free booking':'Pay securely') + ' · ' + formatCurrency(total)}
+              <Icon name="arrow" />
             </button>
-          </form>
-
-          {/* Summary */}
-          <aside className="h-fit overflow-hidden rounded-3xl bg-white/[0.04] ring-1 ring-white/10 backdrop-blur lg:sticky lg:top-24">
-            <div className={`relative h-24 bg-gradient-to-br ${categoryGradient(event.category)}`}>
-              {event.banner_image && <img src={event.banner_image} alt="" className="h-full w-full object-cover" />}
-              <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 to-transparent" />
-              <p className="absolute bottom-3 left-5 right-5 font-display font-bold text-white">{event.title}</p>
-            </div>
-
-            <div className="p-6">
-              <p className="text-xs text-slate-500">📍 {event.venue}, {event.city}</p>
-
-              <div className="mt-4 space-y-2.5 border-t border-white/5 pt-4">
-                {items.map((item) => (
-                  <div key={item.ticket_type_id} className="flex justify-between text-sm">
-                    <span className="text-slate-400">
-                      {item.qty}× {item.name}
+            <p className="checkout-fineprint">
+              Your total is shown in INR.{' '}
+              {pages.length > 0 && (
+                <>
+                  Read the organizer’s{' '}
+                  {pages.map((p, i) => (
+                    <span key={p.slug}>
+                      {i > 0 ? ', ' : ''}
+                      <Link to={'/pages/' + p.slug} target="_blank" rel="noopener noreferrer">
+                        {p.title}
+                      </Link>
                     </span>
-                    <span className="font-semibold text-slate-200">{formatCurrency(item.price * item.qty)}</span>
+                  ))}
+                  .
+                </>
+              )}
+            </p>
+          </form>
+          <aside className="checkout-summary">
+            <div className="checkout-summary-banner">
+              {event.banner_image && <img src={event.banner_image} alt="" />}
+              <span>{event.category || 'YOUR EXPERIENCE'}</span>
+            </div>
+            <div className="checkout-summary-body">
+              <small>YOU’RE GOING TO</small>
+              <h2>{event.title}</h2>
+              <p>
+                <Icon name="calendar" />
+                {formatDateTime(event.start_datetime)}
+              </p>
+              <p>
+                {event.venue} · {event.city}
+              </p>
+              <div className="checkout-line-items">
+                {items.map((i) => (
+                  <div key={i.id}>
+                    <span>
+                      <b>{i.type?.name || 'Reserved ticket'}</b>
+                      <small>
+                        {i.qty} × {formatCurrency(i.type?.price)}
+                      </small>
+                    </span>
+                    <strong>{formatCurrency(i.qty * (i.type?.price||0))}</strong>
                   </div>
                 ))}
               </div>
-
-              <div className="mt-4 flex items-center justify-between border-t border-white/10 pt-4">
-                <span className="font-display font-bold text-white">Total ({totalQty})</span>
-                <span className="font-display text-2xl font-extrabold text-gradient">{formatCurrency(totalAmount)}</span>
+              <div className="checkout-total">
+                <span>
+                  Total{' '}
+                  <small>
+                    {count} ticket{count === 1 ? '' : 's'} · INR
+                  </small>
+                </span>
+                <strong>{formatCurrency(total)}</strong>
               </div>
-
-              <div className="mt-5 flex items-center gap-2 rounded-xl bg-emerald-500/[0.07] p-3 text-xs text-emerald-300 ring-1 ring-emerald-500/20">
-                🔒 Tickets are issued instantly after payment
+              <Link to={editLink} className="booking-text-link">
+                Edit ticket selection ↗
+              </Link>
+              <div className="checkout-ticket-note">
+                <Icon name="check" />
+                <span>One personal QR ticket for every attendee.</span>
               </div>
             </div>
           </aside>
         </div>
       </div>
     </main>
-  );
-}
-
-function Field({ label, name, type = 'text', value, onChange, placeholder, required, hint }) {
-  return (
-    <div>
-      <label className="mb-1.5 block text-sm font-semibold text-slate-300">
-        {label} {required && <span className="text-fuchsia-400">*</span>}
-      </label>
-      <input
-        type={type}
-        name={name}
-        value={value}
-        onChange={onChange}
-        placeholder={placeholder}
-        required={required}
-        className="w-full rounded-xl bg-white/[0.05] px-4 py-3 text-sm text-white placeholder-slate-500 ring-1 ring-white/10 transition focus:bg-white/[0.08] focus:outline-none focus:ring-2 focus:ring-indigo-400/60"
-      />
-      {hint && <p className="mt-1.5 text-xs text-slate-600">{hint}</p>}
-    </div>
   );
 }

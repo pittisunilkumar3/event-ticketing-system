@@ -1,30 +1,25 @@
-import { Link, NavLink } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
+import {useSiteSettings} from '../settings/SiteSettingsContext';
+import Icon from './Icon';
 
 export default function Navbar() {
-  const linkClass = ({ isActive }) =>
-    `rounded-full px-4 py-2 text-sm font-medium transition ${
-      isActive ? 'bg-white/10 text-white' : 'text-slate-400 hover:text-white'
-    }`;
-
+  const site=useSiteSettings();
+  const { pathname } = useLocation();
   return (
-    <header className="no-print sticky top-0 z-50 border-b border-white/5 bg-slate-950/70 backdrop-blur-xl">
-      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
-        <Link to="/" className="flex items-center gap-2.5">
-          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-fuchsia-500 text-lg shadow-lg shadow-indigo-500/30">
-            🎟️
-          </span>
-          <span className="font-display text-lg font-extrabold tracking-tight text-white">
-            Ticket<span className="text-gradient">Flow</span>
-          </span>
-        </Link>
-
-        <nav className="flex items-center gap-2">
-          <NavLink to="/" className={linkClass} end>
-            Browse Events
-          </NavLink>
-          <NavLink to="/my-bookings" className={linkClass}>
-            My Bookings
-          </NavLink>
+    <header className={`tf-site-header ${site.is_organizer ? 'organizer-site-header' : ''} no-print sticky top-0 z-50 border-b ${pathname !== '/' ? 'tf-browse-header' : ''}`}>
+      <div className="mx-auto flex items-center justify-between">
+        <Link to="/" className="tf-site-brand" aria-label={`${site.company_name} home`}><span>{site.logo ? <img src={site.logo} alt="" className="h-[22px] w-[22px] object-contain"/> : <Icon name="ticket" size={22}/>}</span><span>{site.company_name}</span></Link>
+        <nav className="tf-site-nav" aria-label="Main navigation">
+          {pathname === '/' && !site.is_organizer ? <>
+            <a className="tf-nav-detail" href="#features">Features</a>
+            <a className="tf-nav-detail" href="#how-it-works">How it works</a>
+            <Link to="/events">Browse events</Link>
+            <Link to="/admin/login" className="tf-nav-account">Sign in <Icon name="arrow" size={16}/></Link>
+          </> : <>
+            <Link to="/" className="tf-nav-detail">{site.is_organizer ? 'Home' : 'For organizers'}</Link>
+            <Link to="/events" aria-current={pathname.startsWith('/events') ? 'page' : undefined}>Browse events</Link>
+            <Link to="/my-bookings" aria-current={pathname === '/my-bookings' || pathname.startsWith('/confirmation/') ? 'page' : undefined} className="tf-nav-account">My bookings <Icon name="ticket" size={16}/></Link>
+          </>}
         </nav>
       </div>
     </header>

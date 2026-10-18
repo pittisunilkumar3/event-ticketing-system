@@ -1,9 +1,10 @@
 import { useState } from 'react';
+import {notifySiteSettingsChanged} from '../../settings/SiteSettingsContext';
 import api from '../../api/client';
 import { socialNetworks, emptySocialLinks } from '../../utils/social';
 import { Field, Notice, Icon, errorText, useUnsaved } from './StudioUI';
 
-export default function SocialLinksSettings({ links, onSave }) {
+export default function SocialLinksSettings({ links, onSave, client=api, endpoint="/admin/studio/social-links", platform=false }) {
   const [values, setValues] = useState({ ...emptySocialLinks, ...links });
   const [saved, setSaved] = useState(JSON.stringify({ ...emptySocialLinks, ...links }));
   const [busy, setBusy] = useState(false);
@@ -12,17 +13,17 @@ export default function SocialLinksSettings({ links, onSave }) {
   async function save(event) {
     event.preventDefault(); setBusy(true); setMessage(null);
     try {
-      const { data } = await api.put('/admin/studio/social-links', { socialLinks: values });
+      const { data } = await client.put(endpoint, { socialLinks: values });
       setValues(data.data.socialLinks); setSaved(JSON.stringify(data.data.socialLinks));
-      onSave(data.data.socialLinks);
+      onSave(data.data.socialLinks); notifySiteSettingsChanged();
       setMessage({ type: 'success', text: data.message });
     } catch (err) { setMessage({ text: errorText(err) }); }
     finally { setBusy(false); }
   }
   return <form className="studio-panel studio-social-settings" onSubmit={save}>
-    <div className="studio-panel-title"><Icon name="settings"/><h2>Social media links</h2><span>WEBSITE & EMAILS</span></div>
+    <div className="studio-panel-title"><Icon name="settings"/><h2>Social media links</h2><span>{platform?"PLATFORM WEBSITE":"WEBSITE & EMAILS"}</span></div>
     <div className="studio-form-body">
-      <p className="studio-social-help">Add your profile links once. They appear in the website footer and email templates using brand links. Leave a field empty to hide that platform.</p>
+      <p className="studio-social-help">{platform?"These links appear in the platform website footer. Leave a field empty to hide it.":"Add your profile links once. They appear in the website footer and email templates using brand links. Leave a field empty to hide that platform."}</p>
       <Notice message={message}/>
       <div className="studio-social-fields">{socialNetworks.map(({ key, name, example }) =>
         <Field key={key} label={name} type="url" maxLength={2048} placeholder={example}

@@ -1,10 +1,15 @@
 import { useEffect, useState, useCallback } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import api from '../api/client';
-import { Spinner, EmptyState, Alert } from '../components/ui';
+import { Spinner, Alert } from '../components/ui';
 import { formatDateTime, formatCurrency, StatusBadge } from '../utils/format';
 
 export default function Orders() {
+  const [params, setParams] = useSearchParams();
+  const eventId = params.get('event_id') || '';
+  const bookingGroup=params.get('booking_group')==='test'?'test':'real';
+  const [separated,setSeparated]=useState(false);
+  const [organization,setOrganization]=useState('');
   const [orders, setOrders] = useState([]);
   const [pagination, setPagination] = useState({ total: 0, page: 1, pages: 1 });
   const [search, setSearch] = useState('');
@@ -12,32 +17,42 @@ export default function Orders() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (signal) => {
     try {
       setLoading(true);
       setError('');
       const { data } = await api.get('/admin/orders', {
-        params: { search: search || undefined, status: status || undefined, limit: 20, page: pagination.page },
+        signal,
+        params: { booking_group:bookingGroup, event_id: eventId || undefined, search: search || undefined, status: status || undefined, limit: 20, page: pagination.page },
       });
+      if(signal?.aborted)return;
+      setSeparated(data.data.separate_test_bookings);
+      setOrganization(data.data.organization_name);
       setOrders(data.data.orders);
       setPagination(data.data.pagination);
     } catch (err) {
+      if(signal?.aborted)return;
+      setOrders([]);
       setError(err.response?.data?.message || 'Failed to load orders');
     } finally {
-      setLoading(false);
+      if(!signal?.aborted)setLoading(false);
     }
-  }, [search, status, pagination.page]);
+  }, [search, status, pagination.page, eventId, bookingGroup]);
 
   useEffect(() => {
-    const t = setTimeout(load, search ? 350 : 0);
-    return () => clearTimeout(t);
-  }, [load]);
+    const controller=new AbortController();
+    const t = setTimeout(()=>load(controller.signal), search ? 350 : 0);
+    return () => {clearTimeout(t);controller.abort();};
+  }, [load, search]);
 
   return (
     <div className="space-y-5">
       <h1 className="text-2xl font-extrabold text-slate-900">Orders</h1>
+      {separated&&<p className="text-sm text-slate-500">{organization} · {bookingGroup==='test'?'Test and demo bookings — no real payments collected.':'Real bookings only. Test and demo records are kept separately.'}</p>}
+      {eventId && <div className="flex items-center gap-4 text-sm"><Link className="font-semibold text-orange-700" to={`/admin/events/${eventId}`}>← Back to event</Link><span>Showing this event’s bookings</span><button className="underline" onClick={() => { setParams({}); setPagination(p => ({ ...p, page: 1 })); }}>Show all orders</button></div>}
 
       <div className="flex flex-wrap gap-3">
+        {separated&&<select aria-label="Booking type" value={bookingGroup} onChange={e=>{const next=new URLSearchParams(params);if(e.target.value==='test')next.set('booking_group','test');else next.delete('booking_group');setParams(next);setPagination(p=>({...p,page:1}));}} className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"><option value="real">Real bookings</option><option value="test">Test & demo</option></select>}
         <input
           value={search}
           onChange={(e) => {
@@ -68,10 +83,10 @@ export default function Orders() {
 
       {loading ? (
         <Spinner />
-      ) : orders.length === 0 ? (
-        <EmptyState icon="📦" title="No orders found" subtitle="Orders will appear here when customers book tickets." />
+      ) : error ? null : orders.length === 0 ? (
+        <div className="rounded-2xl border border-slate-200 bg-white p-12 text-center"><h2 className="text-lg font-bold text-slate-900">{search||status||eventId?'No matching orders':separated&&bookingGroup==='real'?'No real bookings yet':'No orders found'}</h2><p className="mt-2 text-sm text-slate-500">{separated&&bookingGroup==='test'?'No test or demo bookings match these filters.':'Customer bookings for this organization will appear here.'}</p></div>
       ) : (
-        <div className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200">
+        <div className="overflow-x-auto rounded-2xl bg-white shadow-sm ring-1 ring-slate-200">
           <table className="w-full text-sm">
             <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
               <tr>
@@ -98,10 +113,11 @@ export default function Orders() {
                   </td>
                   <td className="max-w-[180px] truncate px-3 py-3 text-slate-600">{o.event_title}</td>
                   <td className="px-3 py-3 text-slate-600">{o.ticket_count}</td>
-                  <td className="px-3 py-3 font-bold">{formatCurrency(o.total_amount)}</td>
+                  <td className="px-3 py-3 font-bold">{formatCurrency(o.total_amount,o.currency)}</td>
                   <td className="px-3 py-3 text-xs text-slate-500">{formatDateTime(o.created_at)}</td>
                   <td className="px-5 py-3 text-right">
                     <StatusBadge status={o.status} />
+                    {separated&&['mock','razorpay_test'].includes(o.payment_method)&&<p className="mt-1 text-xs text-slate-500">{o.payment_method==='mock'?'Demo booking':'Test payment'}</p>}
                   </td>
                 </tr>
               ))}

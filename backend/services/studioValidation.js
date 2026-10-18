@@ -8,8 +8,8 @@ function string(value, label, max = 255, required = false) {
 function url(value, { image = false, placeholder = false } = {}) {
   if (!value) return '';
   string(value, 'URL', 2048);
-  if (placeholder && value === '{{booking_url}}') return value;
-  if (image && /^\/uploads\/[a-zA-Z0-9._-]+$/.test(value)) return value;
+  if (placeholder && /^{{\s*(booking_url|submission_url|guidelines_url)\s*}}$/.test(value)) return value;
+  if (image && /^\/uploads\/(?:[a-z][a-z0-9-]{2,39}\/)?[a-zA-Z0-9_-][a-zA-Z0-9._-]*$/.test(value)) return value;
   let parsed;
   try { parsed = new URL(value); } catch { fail('Use a complete http:// or https:// URL.'); }
   if (!['http:', 'https:'].includes(parsed.protocol) || parsed.username || parsed.password) fail('Only HTTP(S) URLs without credentials are allowed.');
@@ -17,8 +17,8 @@ function url(value, { image = false, placeholder = false } = {}) {
 }
 function html(value) {
   return sanitizeHtml(value || '', {
-    allowedTags: ['p','br','strong','em','i','b','u','s','sub','sup','span','h2','h3','h4','ul','ol','li','blockquote','a','hr','code','figure','figcaption','img','table','thead','tbody','tfoot','tr','td','th','caption'],
-    allowedAttributes: { '*': ['style'], a: ['href','title'], img: ['src','alt','width','height'], figure: ['class'], td: ['colspan','rowspan'], th: ['colspan','rowspan'], ol: ['start','reversed'] },
+    allowedTags: ['div','pre','h1','h5','h6','p','br','strong','em','i','b','u','s','sub','sup','span','h2','h3','h4','ul','ol','li','blockquote','a','hr','code','figure','figcaption','img','table','thead','tbody','tfoot','tr','td','th','caption'],
+    allowedAttributes: { '*': ['style','dir'], a: ['href','title'], img: ['src','alt','width','height'], figure: ['class'], td: ['colspan','rowspan'], th: ['colspan','rowspan'], ol: ['start','reversed'] },
     allowedClasses: { figure: ['table','image','image_resized','image-style-side','image-style-block'] },
     allowedStyles: { '*': {
       color: [/^#[\da-f]{3,8}$/i, /^rgb\(\s*\d{1,3},\s*\d{1,3},\s*\d{1,3}\s*\)$/i, /^hsl\(\s*\d{1,3},\s*\d{1,3}%,\s*\d{1,3}%\s*\)$/i],
@@ -69,12 +69,16 @@ function template(kind, input) {
   out.accent = color(c.accent);
   for (const k of (kind === 'ticket' ? ['logo','banner_image'] : ['logo','icon','banner_image'])) out[k] = url(c[k], { image: true });
   if (kind === 'ticket') {
-    if (!['classic','minimal','badge'].includes(c.layout)) fail('Choose a ticket layout.');
+    if (![...require('./ticketLayouts'), ...require('./legacyTicketLayouts')].some(layout => layout.id === c.layout)) fail('Choose a ticket layout.');
     out.layout = c.layout; out.background = color(c.background);
     out.show_attendee = Boolean(c.show_attendee); out.show_price = Boolean(c.show_price);
   } else {
     if (!Number.isInteger(Number(c.format)) || c.format < 1 || c.format > 11) fail('Choose email format 1–11.');
     out.format = Number(c.format);
+    out.attach_ticket_pdf = c.attach_ticket_pdf === true;
+    if(c.attachments!=null && (!Array.isArray(c.attachments)||c.attachments.length>3)) fail('Attach up to three PDF files.');
+    out.attachments=(c.attachments||[]).map(a=>{if(!a||typeof a.id!=='string'||!/^[a-f0-9]{32}$/.test(a.id))fail('Choose a valid PDF attachment.');return {id:a.id};});
+    if(new Set(out.attachments.map(a=>a.id)).size!==out.attachments.length)fail('Choose each attachment once.');
     out.body = html(string(c.body, 'Message', 50000, true));
     out.body_2 = html(string(c.body_2, 'Additional message', 20000));
     if (!sanitizeHtml(out.body, { allowedTags: [], allowedAttributes: {} }).trim()) fail('Write an email message.');
@@ -85,7 +89,7 @@ function template(kind, input) {
     out.social_mode = socialMode(input);
     if (!['brand','custom','hidden'].includes(out.social_mode)) fail('Choose a valid social media option.');
     const tokens = JSON.stringify(out).matchAll(/{{\s*([^{}]+?)\s*}}/g);
-    for (const [,key] of tokens) if (!defaults.placeholders.includes(key)) fail(`Unknown placeholder: {{${key}}}`);
+    for (const [,key] of tokens) if (!defaults.placeholders.includes(key)&&!/^field_f_[a-zA-Z0-9_-]{1,45}$/.test(key)) fail(`Unknown placeholder: {{${key}}}`);
   }
   return out;
 }

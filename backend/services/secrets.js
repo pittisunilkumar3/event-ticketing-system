@@ -1,7 +1,7 @@
 const crypto = require('crypto');
 function key() {
   const value = process.env.SETTINGS_ENCRYPTION_KEY;
-  if (!value || !/^[a-f0-9]{64}$/i.test(value)) throw Object.assign(new Error('Set SETTINGS_ENCRYPTION_KEY to a persistent 64-character hex key before saving SMTP credentials.'), { statusCode: 503 });
+  if (!value || !/^[a-f0-9]{64}$/i.test(value)) throw Object.assign(new Error('Set SETTINGS_ENCRYPTION_KEY to a persistent 64-character hex key before saving encrypted credentials.'), { statusCode: 503 });
   return Buffer.from(value,'hex');
 }
 function encrypt(value) {

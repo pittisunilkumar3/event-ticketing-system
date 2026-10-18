@@ -1,12 +1,5 @@
 import { useEffect, useState } from 'react';
-import CkEditor from '../CkEditor';
-
-// The studio rich editor is the hostel-reference CKEditor 4 (full toolbar,
-// self-hosted in /public/ckeditor4/). Adapter maps the RichEditor prop
-// contract (value/onChange) onto CkEditor's (data/onChange).
-export function RichEditor({ value, onChange }) {
-  return <CkEditor data={value} onChange={onChange} />;
-}
+export { default as RichEditor } from './RichEditor';
 import api from '../../api/client';
 
 export { default as Icon } from '../../components/Icon';
@@ -20,19 +13,19 @@ export function Toggle({ checked, onChange, label, hint }) {
 export function Notice({ message }) {
   return message && <div role="status" className={`studio-notice ${message.type || 'error'}`}>{message.text}</div>;
 }
-export function ImageField({ label, value, onChange }) {
+export function ImageField({ label, value, onChange, onBusy, client=api, uploadUrl="/admin/studio/upload" }) {
   const [busy,setBusy]=useState(false);
   const [error,setError]=useState('');
   async function upload(e) {
     const file=e.target.files[0]; if(!file) return;
     e.target.value=''; setError('');
     if(file.size>5*1024*1024) { setError('Choose an image smaller than 5 MB.'); return; }
-    const form=new FormData(); form.append('image',file); setBusy(true);
-    try { const {data}=await api.post('/admin/studio/upload',form,{headers:{'Content-Type':'multipart/form-data'}}); onChange(data.data.url); }
+    const form=new FormData(); form.append('image',file); setBusy(true); onBusy?.(true);
+    try { const {data}=await client.post(uploadUrl,form,{headers:{'Content-Type':'multipart/form-data'}}); onChange(data.data.url); }
     catch(err) { setError(err.response?.data?.message || 'Upload failed.'); }
-    finally { setBusy(false); }
+    finally { setBusy(false); onBusy?.(false); }
   }
-  return <div className="studio-image-field"><span>{label}</span><label className="studio-upload">{value ? <img src={value} alt={`${label} preview`} /> : <><Icon name="plus"/><small>{busy?'Uploading…':'Upload image'}</small></>}<input type="file" accept="image/png,image/jpeg,image/webp,image/gif" onChange={upload} disabled={busy} /></label>{busy && <small>Uploading…</small>}{value && <button type="button" onClick={()=>onChange('')} className="studio-text-button">Remove</button>}{error && <small className="studio-error">{error}</small>}</div>;
+  return <div className="studio-image-field"><span>{label}</span><label className="studio-upload">{value ? <img src={value} alt={`${label} preview`} /> : <><Icon name="plus"/><small>{busy?'Uploading…':'Upload image'}</small></>}<input aria-label={`Upload ${label}`} type="file" accept="image/png,image/jpeg,image/webp,image/gif" onChange={upload} disabled={busy} /></label>{busy && <small>Uploading…</small>}{value && <button type="button" onClick={()=>onChange('')} className="studio-text-button">Remove</button>}{error && <small className="studio-error">{error}</small>}</div>;
 }
 export function useUnsaved(dirty) {
   useEffect(()=>{ const handler=e=>{if(dirty){e.preventDefault();e.returnValue='';}}; window.addEventListener('beforeunload',handler); return ()=>window.removeEventListener('beforeunload',handler); },[dirty]);

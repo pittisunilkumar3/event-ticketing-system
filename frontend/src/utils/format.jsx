@@ -14,8 +14,8 @@ export function formatDateTime(datetime) {
   return `${formatDate(datetime)} · ${formatTime(datetime)}`;
 }
 
-export function formatCurrency(amount) {
-  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(Number(amount || 0));
+export function formatCurrency(amount, currency = 'INR') {
+  return new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(Number(amount || 0));
 }
 
 /** Gradient per category for event banners without images */
@@ -66,4 +66,8 @@ export function StatusBadge({ status, dark = false }) {
       {label}
     </span>
   );
+}
+
+export function payoutLabel(row) {
+ return ({ready:'Transfer scheduled',submitting:'Sending to bank',unknown:'Awaiting bank confirmation',queued:'Queued at bank',pending:'Awaiting RazorpayX approval',processing:'Bank processing',processed:'Paid',failed:'Transfer failed · funds released',reversed:'Returned · wallet restored',cancelled:'Transfer cancelled · funds released',rejected:'Bank rejected · funds released'})[row.payout_status] || ({pending:'Awaiting superadmin approval',approved:'Approved · transfer not started',paid:'Paid',cancelled:'Cancelled',rejected:'Rejected'})[row.status] || row.status;
 }

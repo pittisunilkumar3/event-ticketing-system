@@ -22,3 +22,13 @@ Thumbs.db
 
 # Build output
 frontend/dist/
+.vite/
+
+# Private database cleanup backups
+backend/backups/
+
+# Private email PDF uploads
+backend/private/
+
+# Generated shared ticket PDF renderer (built by frontend build)
+backend/generated/

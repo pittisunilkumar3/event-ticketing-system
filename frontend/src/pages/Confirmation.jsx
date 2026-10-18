@@ -1,90 +1,68 @@
 import { useEffect, useState } from 'react';
 import { useLocation, useParams, Link } from 'react-router-dom';
 import DesignedTicket from '../components/DesignedTicket';
+import CustomerState from '../components/CustomerState';
+import Icon from '../components/Icon';
 import '../admin/studio/studio.css';
 import api from '../api/client';
-import { Spinner, Alert } from '../components/ui';
-import { formatCurrency } from '../utils/format';
+import { formatCurrency, formatDateTime } from '../utils/format';
+
+const bookingStates = {
+  paid: { label: 'Confirmed', title: 'Your booking, all in one place.', description: 'Keep your reference handy and have your tickets ready when you arrive.', icon: 'check' },
+  pending: { label: 'Pending', title: 'Your booking is pending.', description: 'This booking is not yet confirmed. Check with the organizer before attending.', icon: 'ticket' },
+  cancelled: { label: 'Cancelled', title: 'This booking was cancelled.', description: 'The tickets below are no longer valid for entry.', icon: 'ticket' },
+  refunded: { label: 'Refunded', title: 'This booking was refunded.', description: 'The tickets below are no longer valid for entry.', icon: 'ticket' },
+};
 
 export default function Confirmation() {
   const { ref } = useParams();
   const { state } = useLocation();
-  const [booking, setBooking] = useState(state?.fresh || null);
-  const [loading, setLoading] = useState(!state?.fresh);
+  const [booking, setBooking] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-
   useEffect(() => {
-    if (state?.fresh) return;
-    (async () => {
-      try {
-        setLoading(true);
-        const { data } = await api.get(`/bookings/${ref}`);
-        setBooking(data.data);
-      } catch (err) {
-        setError(err.response?.data?.message || 'Booking not found');
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, [ref]); // eslint-disable-line
+    const controller = new AbortController();
+    setLoading(true);
+    setError('');
+    setBooking(null);
+    api.get(`/bookings/${encodeURIComponent(ref)}`, { signal: controller.signal })
+      .then(({ data }) => { if (!controller.signal.aborted) setBooking(data.data); })
+      .catch(err => { if (!controller.signal.aborted) setError(err.response?.status === 404 ? 'Check the reference on your confirmation and try again.' : 'We couldn’t load your booking right now. Please try again.'); })
+      .finally(() => { if (!controller.signal.aborted) setLoading(false); });
+    return () => controller.abort();
+  }, [ref]);
 
-  if (loading) return <Spinner label="Loading your tickets…" />;
-  if (error)
-    return (
-      <main className="mx-auto max-w-2xl px-4 py-20">
-        <Alert>{error}</Alert>
-        <div className="mt-4 text-center">
-          <Link to="/my-bookings" className="font-semibold text-indigo-300 hover:underline">
-            Try another reference →
-          </Link>
-        </div>
-      </main>
-    );
+  if (loading) return <CustomerState loading eyebrow="YOUR BOOKING" title="Getting your tickets ready…" description="We’re checking the latest details for your booking."/>;
+  if (error || !booking) return <CustomerState eyebrow="YOUR BOOKING" title="We couldn’t open this booking." description={error} to="/my-bookings" action="Find my booking" icon="search"/>;
+  return <BookingReceipt booking={booking} justBooked={Boolean(state?.fresh)}/>;
+}
 
-  const { order, tickets } = booking;
-  const isFresh = Boolean(state?.fresh);
-
+export function BookingReceipt({ booking, justBooked = false }) {
+  const { order, tickets = [] } = booking;
+  const status = bookingStates[order.status] || { label: 'Unconfirmed', title: 'Your booking details.', description: 'Contact the organizer to confirm your booking status.', icon: 'ticket' };
+  const voided = order.status === 'cancelled' || order.status === 'refunded';
+  const ready = order.status === 'paid';
   return (
-    <main className="mx-auto max-w-3xl px-4 py-10">
-      {/* Success banner */}
-      {isFresh && (
-        <div className="animate-pop no-print mb-8 overflow-hidden rounded-3xl bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 p-[1.5px]">
-          <div className="relative overflow-hidden rounded-[22px] bg-slate-950 px-8 py-10 text-center">
-            <div className="pointer-events-none absolute -top-16 left-1/2 h-40 w-64 -translate-x-1/2 rounded-full bg-emerald-500/20 blur-3xl" />
-            <div className="animate-pop mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 text-3xl shadow-lg shadow-emerald-500/40">
-              ✓
-            </div>
-            <h1 className="mt-5 font-display text-3xl font-extrabold text-white">Booking Confirmed!</h1>
-            <p className="mt-2 text-slate-400">
-              Your e-tickets are ready. Save your reference:{' '}
-              <span className="font-mono font-bold text-emerald-300">{order.booking_ref}</span>
-            </p>
-          </div>
+    <main className="customer-page confirmation-page">
+      <div className="confirmation-container">
+        <Link className="customer-back no-print" to="/my-bookings">← Find another booking</Link>
+        <header className={`confirmation-heading no-print ${ready ? 'is-confirmed' : 'is-unconfirmed'}`}>
+          <span className="customer-state-icon"><Icon name={status.icon} size={27}/></span>
+          <p className="customer-eyebrow">{justBooked && ready ? 'YOU’RE ON THE LIST' : 'YOUR BOOKING'}</p>
+          <h1>{justBooked && ready ? 'Your next experience is booked.' : status.title}</h1>
+          <p>{status.description}</p>
+        </header>
+        <section className="confirmation-summary no-print" aria-label="Booking details">
+          <div className="confirmation-reference"><div><span>BOOKING REFERENCE</span><code>{order.booking_ref}</code></div><span className={`confirmation-status status-${order.status}`}>{status.label}</span></div>
+          <div className="confirmation-event"><h2>{order.event_title}</h2>{order.event_start && <p><Icon name="calendar" size={16}/>{formatDateTime(order.event_start)}</p>}{(order.venue || order.city) && <p><Icon name="pin" size={16}/>{[order.venue, order.city].filter(Boolean).join(', ')}</p>}</div>
+          <div className="confirmation-totals"><div><span>Tickets</span><strong>{tickets.length}</strong></div><div><span>Booking total</span><strong>{formatCurrency(order.total_amount,order.currency)}</strong></div></div>
+        </section>
+        <div className="confirmation-ticket-heading no-print"><div><h2>{voided ? 'Cancelled tickets' : 'Your tickets'}</h2><p>{ready ? 'Save a copy or print your tickets before you go.' : 'Ticket validity follows the status of your booking.'}</p></div>{tickets.length > 0 && <button className="customer-button customer-button-secondary" onClick={() => window.print()}><Icon name="printer" size={17}/>Print / Save PDF</button>}</div>
+        <div className="print-tickets confirmation-tickets" style={{ '--page-bg': '#f9faf5' }}>
+          {tickets.map(ticket => <DesignedTicket key={ticket.id} ticket={voided ? { ...ticket, status: 'cancelled' } : ticket} order={order} design={ticket.design || {}}/>)}
         </div>
-      )}
-
-      <div className="no-print mb-6 flex flex-wrap items-center justify-between gap-3 text-sm text-slate-400">
-        <span>Booking <strong className="font-mono text-white">{order.booking_ref}</strong> · {order.status}</span>
-        <span>{tickets.length} ticket(s) · {formatCurrency(order.total_amount)}</span>
-      </div>
-      <div className="print-tickets space-y-7">
-        {tickets.map(ticket => <DesignedTicket key={ticket.id} ticket={ticket} order={order} design={ticket.design || {}} />)}
-      </div>
-
-      {/* Actions */}
-      <div className="no-print mt-7 flex flex-wrap justify-center gap-3">
-        <button
-          onClick={() => window.print()}
-          className="rounded-2xl bg-gradient-to-r from-indigo-500 to-fuchsia-500 px-6 py-3.5 font-display text-sm font-bold text-white shadow-[0_12px_40px_-10px_rgba(139,92,246,0.6)] transition hover:opacity-90"
-        >
-          🖨️ Print / Save as PDF
-        </button>
-        <Link
-          to="/"
-          className="rounded-2xl bg-white/[0.05] px-6 py-3.5 font-display text-sm font-bold text-slate-300 ring-1 ring-white/10 transition hover:bg-white/10 hover:text-white"
-        >
-          Browse more events
-        </Link>
+        {tickets.length === 0 && <p className="confirmation-no-tickets">No tickets have been issued for this booking yet.</p>}
+        <div className="confirmation-footer no-print"><Icon name="ticket" size={22}/><div><h3>More good moments are waiting.</h3><p>See what else is happening.</p></div><Link className="customer-text-link" to="/events">Explore events <Icon name="arrow" size={17}/></Link></div>
       </div>
     </main>
   );

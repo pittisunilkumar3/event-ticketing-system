@@ -3,6 +3,11 @@
  * Usage: npm run seed
  */
 require('dotenv').config();
+// Sample data is only available in explicitly named disposable test databases.
+if (!/^(ticketflow_test_|tf_wallet_test_|tf_saas_test_)\d+_\d+$/.test(process.env.DB_NAME || '')) {
+  console.error('Sample seeding is disabled for application databases. Create events through the organizer workspace.');
+  process.exit(1);
+}
 const bcrypt = require('bcryptjs');
 const db = require('../config/db');
 const Admin = require('../models/Admin');

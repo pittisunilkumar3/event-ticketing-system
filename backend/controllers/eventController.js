@@ -1,6 +1,8 @@
 const Event = require('../models/Event');
 const TicketType = require('../models/TicketType');
 const Ticket = require('../models/Ticket');
+const { eventFields } = require('../services/eventValidation');
+const { fail } = require('../services/studioValidation');
 const { asyncHandler } = require('../middleware/errorHandler');
 
 function slugify(text) {
@@ -13,10 +15,13 @@ function slugify(text) {
 
 /** GET /api/admin/events — list all events (any status) */
 const list = asyncHandler(async (req, res) => {
-  const { status, category, city, search, page = 1, limit = 20 } = req.query;
-  const offset = (Number(page) - 1) * Number(limit);
-  const events = await Event.findAll({ status, category, city, search, limit: Number(limit), offset });
-  const total = await Event.countAll({ status, category, city, search });
+  const { status, category, city, search } = req.query;
+  const page = Math.max(1, Math.floor(Number(req.query.page) || 1));
+  const limit = Math.min(100, Math.max(1, Math.floor(Number(req.query.limit) || 20)));
+  const offset = (page - 1) * limit;
+  const archived = req.query.archived === 'true';
+  const events = await Event.findAll({ status, category, city, search, limit, offset, archived });
+  const total = await Event.countAll({ status, category, city, search, archived });
   res.json({
     success: true,
     data: { events, pagination: { total, page: Number(page), limit: Number(limit), pages: Math.ceil(total / limit) } },
@@ -31,37 +36,16 @@ const detail = asyncHandler(async (req, res) => {
   }
   const ticketTypes = await TicketType.findByEventId(event.id);
   const ticketStats = await Ticket.countByStatus(event.id);
-  res.json({ success: true, data: { event, ticketTypes, ticketStats } });
+  res.json({ success: true, data: { event, ticketTypes, ticketStats, summary: await Event.summary(event.id) } });
 });
 
 /** POST /api/admin/events — create */
 const create = asyncHandler(async (req, res) => {
-  const { title, description, category, venue, city, start_datetime, end_datetime, status } = req.body;
-  if (!title || !start_datetime) {
-    return res.status(400).json({ success: false, message: 'Title and start date/time are required.' });
-  }
-
-  let slug = req.body.slug ? slugify(req.body.slug) : slugify(title);
-  // ensure unique slug
-  let suffix = 1;
-  while (await Event.findBySlug(slug)) {
-    slug = `${slugify(title)}-${++suffix}`;
-  }
-
-  const banner = req.file ? `/uploads/${req.file.filename}` : req.body.banner_image || null;
-
-  const event = await Event.create({
-    title,
-    slug,
-    description,
-    category,
-    venue,
-    city,
-    banner_image: banner,
-    start_datetime,
-    end_datetime: end_datetime || null,
-    status: status || 'draft',
-  });
+  const fields = eventFields({...req.body, ...(req.file ? {banner_image:require('../middleware/upload').url(req)} : {})});
+  const base = slugify(req.body.slug || fields.title) || 'event';
+  let slug = base, suffix = 1;
+  while (await Event.findBySlug(slug)) slug = `${base}-${++suffix}`;
+  const event = await Event.create({...fields,slug});
   res.status(201).json({ success: true, message: 'Event created', data: { event } });
 });
 
@@ -72,22 +56,9 @@ const update = asyncHandler(async (req, res) => {
     return res.status(404).json({ success: false, message: 'Event not found' });
   }
 
-  const fields = { ...req.body };
-  if (fields.title && fields.title !== event.title && !fields.slug) {
-    fields.slug = slugify(fields.title);
-    let suffix = 1;
-    let candidate = fields.slug;
-    let existing = await Event.findBySlug(candidate);
-    while (existing && existing.id !== event.id) {
-      candidate = `${slugify(fields.title)}-${++suffix}`;
-      existing = await Event.findBySlug(candidate);
-    }
-    fields.slug = candidate;
-  }
-  if (req.file) {
-    fields.banner_image = `/uploads/${req.file.filename}`;
-  }
-
+  if (event.archived_at) fail('Restore this event before editing it.',409);
+  const fields = eventFields({...req.body, ...(req.file ? {banner_image:require('../middleware/upload').url(req)} : {})}, event);
+  // Keep existing booking-page links stable when an event is renamed.
   const updated = await Event.update(event.id, fields);
   res.json({ success: true, message: 'Event updated', data: { event: updated } });
 });
@@ -99,7 +70,19 @@ const remove = asyncHandler(async (req, res) => {
     return res.status(404).json({ success: false, message: 'Event not found' });
   }
   await Event.remove(event.id);
-  res.json({ success: true, message: 'Event deleted' });
+  res.json({ success: true, message: 'Event moved to archive. Existing bookings are preserved.' });
 });
 
-module.exports = { list, detail, create, update, remove };
+const status = asyncHandler(async(req,res)=>{
+  const event = await Event.findById(req.params.id);
+  if(!event) fail('Event not found',404);
+  if(event.archived_at) fail('Restore this event before changing its status.',409);
+  if(!['draft','published','cancelled'].includes(req.body.status)) fail('Choose a valid status.');
+  const updated = await Event.update(event.id,{status:req.body.status});
+  res.json({success:true,data:{event:updated},message:req.body.status==='published'?'Event is live.':'Event is off. New bookings are stopped; existing orders are unchanged.'});
+});
+const restore = asyncHandler(async(req,res)=>{
+  if(!await Event.findById(req.params.id)) fail('Event not found',404);
+  res.json({success:true,data:{event:await Event.restore(req.params.id)},message:'Event restored as a draft.'});
+});
+module.exports = { list, detail, create, update, remove, status, restore };

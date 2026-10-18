@@ -1,197 +1,11 @@
-import { useEffect, useState, useCallback } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useCallback, useEffect, useState } from 'react';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import api from '../api/client';
-import { Spinner, Alert } from '../components/ui';
-import { formatDateTime, formatCurrency, StatusBadge, categoryGradient } from '../utils/format';
-
-export default function AdminEventDetail() {
-  const { id } = useParams();
-  const [data, setData] = useState(null);
-  const [error, setError] = useState('');
-  const [modal, setModal] = useState(null); // { mode: 'add' | 'edit', values }
-  const [deleting, setDeleting] = useState(null);
-
-  const load = useCallback(async () => {
-    try {
-      const res = await api.get(`/admin/events/${id}`);
-      setData(res.data.data);
-    } catch (err) {
-      setError(err.response?.data?.message || 'Failed to load event');
-    }
-  }, [id]);
-
-  useEffect(() => {
-    load();
-  }, [load]);
-
-  async function handleDeleteType(tt) {
-    if (!confirm(`Delete ticket type "${tt.name}"?`)) return;
-    setDeleting(tt.id);
-    try {
-      await api.delete(`/admin/ticket-types/${tt.id}`);
-      setModal(null);
-      load();
-    } catch (err) {
-      alert(err.response?.data?.message || 'Delete failed');
-    } finally {
-      setDeleting(null);
-    }
-  }
-
-  if (error) return <Alert>{error}</Alert>;
-  if (!data) return <Spinner />;
-
-  const { event, ticketTypes, ticketStats } = data;
-  const totalCapacity = ticketTypes.reduce((s, tt) => s + tt.quantity, 0);
-  const totalSold = ticketTypes.reduce((s, tt) => s + tt.sold, 0);
-  const fillRate = totalCapacity ? Math.round((totalSold / totalCapacity) * 100) : 0;
-
-  return (
-    <div className="space-y-6">
-      <Link to="/admin/events" className="text-sm font-medium text-slate-500 hover:text-orange-700">
-        ← All events
-      </Link>
-
-      {/* Header card */}
-      <div className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200">
-        <div className={`h-36 bg-gradient-to-br ${categoryGradient(event.category)} relative`}>
-          {event.banner_image && <img src={event.banner_image} alt="" className="h-full w-full object-cover" />}
-          <div className="absolute inset-0 flex items-end justify-between bg-gradient-to-t from-black/60 to-transparent p-5">
-            <div>
-              <span className="rounded-full bg-white/90 px-2.5 py-0.5 text-xs font-bold text-slate-700">{event.category}</span>
-              <h1 className="mt-1 text-2xl font-extrabold text-white">{event.title}</h1>
-            </div>
-            <StatusBadge status={event.status} />
-          </div>
-        </div>
-        <div className="grid gap-4 p-5 sm:grid-cols-4">
-          <Meta label="Starts" value={formatDateTime(event.start_datetime)} />
-          <Meta label="Venue" value={`${event.venue}, ${event.city}`} />
-          <Meta label="Tickets sold" value={`${totalSold} / ${totalCapacity} (${fillRate}%)`} />
-          <div className="flex items-end justify-end gap-2">
-            <Link
-              to={`/admin/events/${id}/edit`}
-              className="rounded-lg bg-orange-50 px-3 py-2 text-sm font-bold text-orange-700 hover:bg-orange-100"
-            >
-              ✏️ Edit event
-            </Link>
-          </div>
-        </div>
-      </div>
-
-      {/* Ticket stats chips */}
-      {ticketStats.length > 0 && (
-        <div className="flex flex-wrap gap-3">
-          {ticketStats.map((s) => (
-            <div key={s.status} className="rounded-xl bg-white px-4 py-2.5 text-sm shadow-sm ring-1 ring-slate-200">
-              <span className="mr-2 font-semibold capitalize text-slate-500">{s.status.replace('_', ' ')}:</span>
-              <span className="font-extrabold text-slate-900">{s.count}</span>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Ticket types */}
-      <div className="rounded-2xl bg-white shadow-sm ring-1 ring-slate-200">
-        <div className="flex items-center justify-between border-b border-slate-100 p-5">
-          <div><h2 className="font-bold text-slate-900">Ticket types & designs</h2><p className="mt-1 text-xs text-slate-500">Choose what to sell, set capacity, and assign a ticket design.</p></div>
-          <button
-            onClick={() => setModal({ mode: 'add', values: emptyType })}
-            className="rounded-lg bg-orange-600 px-3.5 py-2 text-sm font-bold text-white hover:bg-orange-700"
-          >
-            + Add type
-          </button>
-        </div>
-
-        {ticketTypes.length === 0 ? (
-          <p className="p-10 text-center text-sm text-slate-400">
-            No ticket types yet — add one to start selling.
-          </p>
-        ) : (
-          <div className="overflow-x-auto"><table className="w-full text-sm">
-            <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
-              <tr>
-                <th className="px-5 py-3">Name</th>
-                <th className="px-3 py-3">Price</th>
-                <th className="px-3 py-3">Sold / Capacity</th>
-                <th className="px-3 py-3">Availability</th>
-                <th className="px-3 py-3">Sales window</th>
-                <th className="px-5 py-3 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {ticketTypes.map((tt) => {
-                const pct = tt.quantity ? Math.round((tt.sold / tt.quantity) * 100) : 0;
-                return (
-                  <tr key={tt.id} className="hover:bg-slate-50">
-                    <td className="px-5 py-3">
-                      <p className="font-semibold text-slate-800">{tt.name}</p>
-                      {tt.description && <p className="text-xs text-slate-500">{tt.description}</p>}
-                    </td>
-                    <td className="px-3 py-3 font-bold text-orange-700">{formatCurrency(tt.price)}</td>
-                    <td className="px-3 py-3">
-                      <div className="flex items-center gap-2">
-                        <div className="h-2 w-24 overflow-hidden rounded-full bg-slate-200">
-                          <div className="h-full rounded-full bg-orange-500" style={{ width: `${pct}%` }} />
-                        </div>
-                        <span className="text-xs text-slate-500">
-                          {tt.sold}/{tt.quantity}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-3 py-3">
-                      {tt.quantity - tt.sold <= 0 ? (
-                        <span className="font-semibold text-rose-600">Sold out</span>
-                      ) : (
-                        <span className="text-slate-600">{tt.quantity - tt.sold} left</span>
-                      )}
-                    </td>
-                    <td className="px-3 py-3 text-xs text-slate-500">
-                      {tt.sales_start ? formatDateTime(tt.sales_start) : '—'}
-                      {' → '}
-                      {tt.sales_end ? formatDateTime(tt.sales_end) : '—'}
-                    </td>
-                    <td className="px-5 py-3 text-right">
-                      <div className="flex justify-end gap-2 text-xs font-semibold">
-                        <button
-                          onClick={() => setModal({ mode: 'edit', values: toFormValues(tt) })}
-                          className="rounded-lg bg-orange-50 px-2.5 py-1.5 text-orange-700 hover:bg-orange-100"
-                        >
-                          Edit
-                        </button>
-                        <button
-                          onClick={() => handleDeleteType(tt)}
-                          disabled={deleting === tt.id}
-                          className="rounded-lg bg-rose-50 px-2.5 py-1.5 text-rose-600 hover:bg-rose-100 disabled:opacity-50"
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table></div>
-        )}
-      </div>
-
-      {/* Add/Edit modal */}
-      {modal && (
-        <TypeModal
-          eventId={id}
-          modal={modal}
-          onClose={() => setModal(null)}
-          onSaved={() => {
-            setModal(null);
-            load();
-          }}
-        />
-      )}
-    </div>
-  );
-}
-
+import Icon from '../components/Icon';
+import { formatDateTime, formatCurrency } from '../utils/format';
+import './events.css';
+import EventRegistrationForm from './EventRegistrationForm';
+import TicketModal from './TicketTypeModal';
 const emptyType = {
   name: '',
   description: '',
@@ -200,138 +14,505 @@ const emptyType = {
   sales_start: '',
   sales_end: '',
   template_id: '',
+  is_active: true,
+  min_per_order: 1,
+  max_per_order: 10,
+  sort_order: 0,
 };
-
-function toFormValues(tt) {
-  const toInput = (dt) => (dt ? String(dt).replace(' ', 'T').slice(0, 16) : '');
-  return {
-    id: tt.id,
-    name: tt.name,
-    description: tt.description || '',
-    price: tt.price,
-    quantity: tt.quantity,
-    sales_start: toInput(tt.sales_start),
-    sales_end: toInput(tt.sales_end),
-    template_id: tt.template_id || '',
-  };
-}
-
-function TypeModal({ eventId, modal, onClose, onSaved }) {
-  const isEdit = modal.mode === 'edit';
-  const [values, setValues] = useState(modal.values);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState('');
-  const [designs, setDesigns] = useState([]);
-  const [designError, setDesignError] = useState('');
-  useEffect(() => {
-    api.get('/admin/ticket-types/designs').then(({data}) => setDesigns(data.data.templates)).catch(() => setDesignError('Could not load ticket designs. You can still use the default design.'));
-  }, []);
-
-  function setField(e) {
-    setValues({ ...values, [e.target.name]: e.target.value });
-  }
-
-  async function handleSubmit(e) {
-    e.preventDefault();
-    setError('');
-    if (!values.name || values.price === '' || values.quantity === '') {
-      setError('Name, price and quantity are required.');
-      return;
-    }
-    setSaving(true);
-    const payload = {
-      event_id: Number(eventId),
-      name: values.name,
-      description: values.description || null,
-      price: Number(values.price),
-      quantity: Number(values.quantity),
-      sales_start: values.sales_start || null,
-      sales_end: values.sales_end || null,
-      template_id: values.template_id ? Number(values.template_id) : null,
-    };
+const inputDate = (value) =>
+  String(value || '')
+    .replace(' ', 'T')
+    .slice(0, 16);
+export default function AdminEventDetail() {
+  const { id } = useParams(),
+    navigate = useNavigate();
+  const [owner,setOwner]=useState(false);
+  useEffect(()=>{api.get('/auth/me').then(r=>setOwner(r.data.data.admin.role==='super_admin')).catch(()=>{});},[]);
+  const [data, setData] = useState(null),
+    [error, setError] = useState(''),
+    [notice, setNotice] = useState(''),
+    [tab, setTab] = useState('tickets'),
+    [formDirty,setFormDirty] = useState(false),
+    [formTicketId,setFormTicketId] = useState(''),
+    [modal, setModal] = useState(null),
+    [busy, setBusy] = useState(false),
+    [confirm, setConfirm] = useState(null);
+  const load = useCallback(async () => {
     try {
-      if (isEdit) await api.put(`/admin/ticket-types/${values.id}`, payload);
-      else await api.post('/admin/ticket-types', payload);
-      onSaved();
-    } catch (err) {
-      setError(err.response?.data?.message || 'Save failed');
-      setSaving(false);
+      const { data: r } = await api.get('/admin/events/' + id);
+      setData(r.data);
+    } catch (e) {
+      setError(e.response?.data?.message || 'Unable to load event.');
+    }
+  }, [id]);
+  useEffect(() => {
+    load();
+  }, [load]);
+  async function action(kind, type) {
+    setBusy(true);
+    setError('');
+    setNotice('');
+    try {
+      let r;
+      if (kind === 'event-delete') {
+        r = await api.delete('/admin/events/' + id);
+        navigate('/admin/events');
+        return;
+      }
+      if (kind === 'event-restore')
+        r = await api.post('/admin/events/' + id + '/restore');
+      if (kind === 'status')
+        r = await api.patch('/admin/events/' + id + '/status', {
+          status: data.event.status === 'published' ? 'draft' : 'published',
+        });
+      if (kind === 'ticket-delete')
+        r = await api.delete('/admin/ticket-types/' + type.id);
+      if (kind === 'ticket-restore')
+        r = await api.post('/admin/ticket-types/' + type.id + '/restore');
+      if (kind === 'ticket-toggle')
+        r = await api.put('/admin/ticket-types/' + type.id, {
+          is_active: !Number(type.is_active),
+        });
+      setNotice(r.data.message);
+      setConfirm(null);
+      await load();
+    } catch (e) {
+      setError(e.response?.data?.message || 'Could not make this change.');
+      setConfirm(null);
+    } finally {
+      setBusy(false);
     }
   }
-
+  if (!data)
+    return (
+      <div className="event-admin">
+        <div className="ea-empty">{error || 'Opening event workspace…'}</div>
+        <Link to="/admin/events">← All events</Link>
+      </div>
+    );
+  const { event, ticketTypes, ticketStats, summary } = data,
+    types = ticketTypes.filter((t) => !t.archived_at),
+    archived = ticketTypes.filter((t) => t.archived_at),
+    sold = ticketTypes.reduce((s, t) => s + t.sold, 0),
+    capacity = types.reduce((s, t) => s + t.quantity, 0);
+  function edit(type) {
+    setModal({
+      ...type,
+      sales_start: inputDate(type.sales_start),
+      sales_end: inputDate(type.sales_end),
+      template_id: type.template_id || '',
+      description: type.description || '',
+      is_active: Boolean(type.is_active),
+    });
+  }
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
-      <form
-        onClick={(e) => e.stopPropagation()}
-        onSubmit={handleSubmit}
-        role="dialog" aria-modal="true" aria-label={isEdit ? 'Edit ticket type' : 'Add ticket type'}
-        className="max-h-[90dvh] w-full max-w-lg space-y-4 overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl"
-      >
-        <h3 className="text-lg font-bold text-slate-900">{isEdit ? 'Edit ticket type' : 'Add ticket type'}</h3>
-        {error && <Alert>{error}</Alert>}
-        {!isEdit && <div className="flex flex-wrap gap-2">{['General Admission','VIP','Early Bird','Student','Workshop','Free Pass'].map(name=><button key={name} type="button" className="rounded-full bg-orange-50 px-3 py-1.5 text-xs font-semibold text-orange-700" onClick={()=>setValues({...values,name,price:name==='Free Pass'?0:values.price})}>{name}</button>)}</div>}
-
+    <div className="event-admin">
+      <Link to="/admin/events" className="ea-back">
+        ← All events
+      </Link>
+      <div className="ea-detail-cover">
+        {event.banner_image && <img src={event.banner_image} alt="" />}
         <div>
-          <label htmlFor="type-name" className={labelCls}>Name *</label>
-          <input id="type-name" name="name" required value={values.name} onChange={setField} className={inputCls} placeholder="VIP" />
+          <span className="ea-eyebrow">
+            {event.category || 'EVENT'} / EVENT WORKSPACE
+          </span>
+          <h1>{event.title}</h1>
+          <p>
+            {formatDateTime(event.start_datetime)} ·{' '}
+            {[event.venue, event.city].filter(Boolean).join(', ')}
+          </p>
         </div>
-        <div>
-          <label className={labelCls}>Description</label>
-          <input name="description" value={values.description} onChange={setField} className={inputCls} placeholder="Front stage + lounge access" />
+        <span className={'ea-status ' + event.status}>
+          {event.archived_at
+            ? 'Archived'
+            : event.status === 'published'
+              ? '● On / Published'
+              : event.status === 'draft'
+                ? '○ Off / Draft'
+                : 'Cancelled'}
+        </span>
+      </div>
+      <div className="ea-detail-actions">
+        <div className="ea-actions">
+          {event.archived_at ? (
+            <button
+              className="ea-button primary"
+              disabled={busy}
+              onClick={() => action('event-restore')}
+            >
+              Restore event
+            </button>
+          ) : (
+            <>
+              <button
+                className={
+                  'ea-button ' + (event.status === 'published' ? '' : 'primary')
+                }
+                disabled={busy}
+                onClick={() => action('status')}
+              >
+                {event.status === 'published'
+                  ? 'Turn event off'
+                  : 'Publish / turn on'}
+              </button>
+              <Link className="ea-button" to={'/admin/events/' + id + '/edit'}>
+                Edit event
+              </Link>
+              {event.status === 'published' && (
+                <a
+                  className="ea-button"
+                  href={window.location.pathname.startsWith('/o/')?window.location.pathname.split('/admin')[0]+'/events/'+event.slug:'/events/'+event.slug}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  View booking page ↗
+                </a>
+              )}
+              <button
+                className="ea-text danger"
+                onClick={() =>
+                  setConfirm({
+                    kind: 'event-delete',
+                    title: 'Archive this event?',
+                    text: 'This hides the event and stops new bookings. Booking history is kept, and you can restore the event later.',
+                  })
+                }
+              >
+                Delete event
+              </button>
+            </>
+          )}
         </div>
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className={labelCls}>Price (USD) *</label>
-            <input type="number" step="0.01" min="0" name="price" value={values.price} onChange={setField} className={inputCls} placeholder="49.99" />
+        <small>
+          {event.status === 'published'
+            ? 'Customers can see this event.'
+            : 'This event is hidden from new bookings.'}
+        </small>
+      </div>
+      {error && (
+        <div className="ea-alert" role="alert">
+          {error}
+        </div>
+      )}
+      {notice && (
+        <div className="ea-notice" role="status">
+          {notice}
+        </div>
+      )}
+      <div className="ea-stat-grid">
+        {[
+          ['Tickets sold', sold],
+          ['Active capacity', capacity],
+          ['Orders', summary?.orders || 0],
+          ['Paid revenue (INR)', formatCurrency(summary?.revenue || 0)],
+        ].map(([label, value]) => (
+          <div key={label}>
+            <small>{label}</small>
+            <strong>{value}</strong>
           </div>
-          <div>
-            <label className={labelCls}>Quantity *</label>
-            <input type="number" min="1" name="quantity" value={values.quantity} onChange={setField} className={inputCls} placeholder="100" />
-          </div>
-        </div>
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className={labelCls}>Sales start</label>
-            <input type="datetime-local" name="sales_start" value={values.sales_start} onChange={setField} className={inputCls} />
-          </div>
-          <div>
-            <label className={labelCls}>Sales end</label>
-            <input type="datetime-local" name="sales_end" value={values.sales_end} onChange={setField} className={inputCls} />
-          </div>
-        </div>
-
-        <div>
-          <label htmlFor="ticket-design" className={labelCls}>Ticket design</label>
-          <select id="ticket-design" name="template_id" value={values.template_id} onChange={setField} className={inputCls}>
-            <option value="">Default TicketFlow design</option>
-            {values.template_id && !designs.some(t=>t.id===Number(values.template_id)) && <option value={values.template_id}>Previously assigned design (unavailable)</option>}
-            {designs.map(t=><option key={t.id} value={t.id}>{t.name} · {t.config.layout}</option>)}
-          </select>
-          <p className="mt-2 text-xs text-slate-500">{designError || 'New bookings receive this design. Existing tickets keep their original design.'}</p>
-          <Link to="/admin/ticket-designs" className="mt-2 inline-block text-xs font-semibold text-orange-600">Open ticket design studio →</Link>
-        </div>
-        <div className="flex justify-end gap-3 border-t border-slate-100 pt-4">
-          <button type="button" onClick={onClose} className="rounded-xl px-5 py-2.5 text-sm font-bold text-slate-600 ring-1 ring-slate-300 hover:bg-slate-50">
-            Cancel
+        ))}
+      </div>
+      {owner && <div style={{marginBottom:20,textAlign:'right'}}><Link to={`/admin/wallet?event_id=${event.id}`} style={{color:'#a34623',fontWeight:700,fontSize:13}}>View event wallet →</Link></div>}
+      <div className="ea-tabs ea-detail-tabs">
+        {[
+          ['tickets', 'Tickets & pricing'],
+          ['details', 'Event details'],
+          ['registration', 'Registration form'],
+          ['orders', 'Recent bookings'],
+        ].map(([key, label]) => (
+          <button
+            key={key}
+            className={tab === key ? 'active' : ''}
+            onClick={() => {if(key===tab||!formDirty||window.confirm('Discard unsaved registration form changes?'))setTab(key);}}
+          >
+            {label}
           </button>
-          <button type="submit" disabled={saving} className="rounded-xl bg-orange-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-orange-700 disabled:opacity-60">
-            {saving ? 'Saving…' : isEdit ? 'Save changes' : 'Add type'}
-          </button>
+        ))}
+      </div>
+      {tab === 'registration' && <EventRegistrationForm key={event.id} event={event} ticketTypes={data.ticketTypes} initialTicketId={formTicketId} onDirty={setFormDirty}/>}
+      {tab === 'tickets' && (
+        <section className="ea-panel">
+          <header>
+            <div>
+              <h2>Every guest. The right ticket.</h2>
+              <p>
+                Create any ticket type, set the price and control when it’s
+                available.
+              </p>
+            </div>
+            <button
+              className="ea-button primary"
+              disabled={!!event.archived_at}
+              onClick={() => setModal({ ...emptyType })}
+            >
+              <Icon name="plus" />
+              Add ticket type
+            </button>
+          </header>
+          <div className="ea-ticket-list">
+            {types.length === 0 && (
+              <div className="ea-empty">
+                <h3>Your event needs its first ticket.</h3>
+                <p>
+                  Start with General Admission, add VIP access, or create your
+                  own option.
+                </p>
+              </div>
+            )}
+            {types.map((t) => (
+              <article key={t.id} className="ea-ticket-row">
+                <div className="ea-ticket-symbol">
+                  <Icon name="ticket" />
+                </div>
+                <div className="ea-ticket-info">
+                  <div>
+                    <h3>{t.name}</h3>
+                    <span
+                      className={
+                        'ea-pill ' + (Number(t.is_active) ? 'live' : '')
+                      }
+                    >
+                      {!Number(t.is_active)
+                        ? 'Sales off'
+                        : t.sales_start && new Date(t.sales_start) > new Date()
+                          ? 'Scheduled'
+                          : t.sales_end && new Date(t.sales_end) <= new Date()
+                            ? 'Sales ended'
+                            : t.quantity - t.sold < t.min_per_order
+                              ? 'Sold out'
+                              : 'Sales on'}
+                    </span>
+                  </div>
+                  <p>{t.description || 'No description added.'}</p>
+                  <div className="ea-ticket-meta">
+                    <span>
+                      {t.sold} sold / {t.quantity} capacity
+                    </span>
+                    <span>
+                      {t.min_per_order}–{t.max_per_order} per booking
+                    </span>
+                    <span>
+                      {t.sales_start
+                        ? 'From ' + formatDateTime(t.sales_start)
+                        : 'Sales open immediately'}
+                    </span>
+                    {t.sales_end && (
+                      <span>Until {formatDateTime(t.sales_end)}</span>
+                    )}
+                  </div>
+                  <div className="ea-stock-track">
+                    <i
+                      style={{
+                        width: Math.min(100, (t.sold / t.quantity) * 100) + '%',
+                      }}
+                    />
+                  </div>
+                </div>
+                <div className="ea-ticket-price">
+                  <strong>
+                    {Number(t.price) === 0 ? 'Free' : formatCurrency(t.price)}
+                  </strong>
+                  <small>INR · per ticket</small>
+                  <div className="ea-actions">
+                    {owner&&<button className="ea-text" disabled={!!event.archived_at} onClick={()=>{setFormTicketId(t.id);setTab('registration');}}>Registration fields</button>}
+                    <button
+                      className="ea-text"
+                      disabled={!!event.archived_at}
+                      onClick={() => edit(t)}
+                    >
+                      Edit
+                    </button>
+                    <button
+                      className="ea-text"
+                      disabled={busy || !!event.archived_at}
+                      onClick={() => action('ticket-toggle', t)}
+                    >
+                      {Number(t.is_active) ? 'Turn off' : 'Turn on'}
+                    </button>
+                    <button
+                      className="ea-text danger"
+                      disabled={!!event.archived_at}
+                      onClick={() =>
+                        setConfirm({
+                          kind: 'ticket-delete',
+                          type: t,
+                          title: 'Archive ' + t.name + '?',
+                          text: 'New sales will stop. Previously issued tickets and booking history remain available.',
+                        })
+                      }
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>
+          {archived.length > 0 && (
+            <details className="ea-archived-tickets">
+              <summary>Archived ticket types ({archived.length})</summary>
+              {archived.map((t) => (
+                <div key={t.id}>
+                  <span>
+                    {t.name} · {formatCurrency(t.price)} · {t.sold} sold
+                  </span>
+                  <button
+                    className="ea-text"
+                    disabled={busy || !!event.archived_at}
+                    onClick={() => action('ticket-restore', t)}
+                  >
+                    Restore with sales off
+                  </button>
+                </div>
+              ))}
+            </details>
+          )}
+          <div className="ea-panel-note">
+            Turning sales off stops new purchases. Editing a design or price
+            does not change previously issued tickets.
+          </div>
+        </section>
+      )}
+      {tab === 'details' && (
+        <div className="ea-overview-grid">
+          <section className="ea-panel">
+            <header>
+              <h2>The experience</h2>
+            </header>
+            <div className="ea-panel-body">
+              <h3>{event.summary || 'No short introduction added.'}</h3>
+              <p className="ea-prose">
+                {event.description ||
+                  'Add a description to tell your guests what to expect.'}
+              </p>
+              {event.highlights && (
+                <>
+                  <h3>Highlights</h3>
+                  <p className="ea-prose">{event.highlights}</p>
+                </>
+              )}
+              {event.entry_instructions && (
+                <>
+                  <h3>Entry instructions</h3>
+                  <p className="ea-prose">{event.entry_instructions}</p>
+                </>
+              )}
+            </div>
+          </section>
+          <section className="ea-panel">
+            <header>
+              <h2>At a glance</h2>
+            </header>
+            <div className="ea-panel-body">
+              <dl className="ea-facts">
+                {[
+                  ['Starts', formatDateTime(event.start_datetime)],
+                  [
+                    'Ends',
+                    event.end_datetime
+                      ? formatDateTime(event.end_datetime)
+                      : 'Not specified',
+                  ],
+                  ['Venue', event.venue],
+                  [
+                    'Address',
+                    [event.address, event.city].filter(Boolean).join(', '),
+                  ],
+                  ['Admission', event.age_policy],
+                  ['Organizer', event.organizer_name],
+                  ['Contact', event.organizer_email],
+                  ['Event link', '/events/' + event.slug],
+                ].map(([k, v]) => (
+                  <div key={k}>
+                    <dt>{k}</dt>
+                    <dd>{v || 'Not specified'}</dd>
+                  </div>
+                ))}
+              </dl>
+              <div className="ea-actions">
+                {ticketStats.map((s) => (
+                  <span key={s.status} className="ea-pill">
+                    {s.count} {s.status.replace('_', ' ')}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </section>
         </div>
-      </form>
+      )}
+      {tab === 'orders' && (
+        <section className="ea-panel">
+          <header>
+            <h2>Recent bookings</h2>
+            <Link className="ea-text" to={'/admin/orders?event_id=' + id}>
+              View all event orders →
+            </Link>
+          </header>
+          <div className="ea-orders">
+            {summary?.recentOrders?.length ? (
+              summary.recentOrders.map((o) => (
+                <Link key={o.id} to={'/admin/orders/' + o.id}>
+                  <span>
+                    <strong>{o.customer_name}</strong>
+                    <small>
+                      {o.booking_ref} · {formatDateTime(o.created_at)}
+                    </small>
+                  </span>
+                  <span className="ea-pill">{o.status}</span>
+                  <b>{formatCurrency(o.total_amount,o.currency)}</b>
+                  <Icon name="arrow" size={16} />
+                </Link>
+              ))
+            ) : (
+              <div className="ea-empty">
+                Bookings will appear here when guests choose their tickets.
+              </div>
+            )}
+          </div>
+        </section>
+      )}
+      {modal && (
+        <TicketModal
+          values={modal}
+          eventId={id}
+          event={event}
+          onClose={() => setModal(null)}
+          onSave={() => {
+            setModal(null);
+            setNotice('Ticket type saved.');
+            load();
+          }}
+        />
+      )}
+      {confirm && (
+        <div className="ea-modal-backdrop">
+          <div
+            className="ea-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="confirm-title"
+          >
+            <h2 id="confirm-title">{confirm.title}</h2>
+            <p>{confirm.text}</p>
+            <div className="ea-actions">
+              <button
+                className="ea-button"
+                disabled={busy}
+                onClick={() => setConfirm(null)}
+              >
+                Keep it
+              </button>
+              <button
+                className="ea-button danger"
+                disabled={busy}
+                onClick={() => action(confirm.kind, confirm.type)}
+              >
+                {busy ? 'Archiving…' : 'Move to archive'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
-
-function Meta({ label, value }) {
-  return (
-    <div>
-      <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">{label}</p>
-      <p className="text-sm font-medium text-slate-800">{value}</p>
-    </div>
-  );
-}
-
-const inputCls =
-  'w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-100';
-const labelCls = 'mb-1 block text-sm font-semibold text-slate-700';

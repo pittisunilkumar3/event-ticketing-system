@@ -1,0 +1,1315 @@
+/* One renderer is shared by the design library, live preview and issued tickets. */
+.ticket-artwork {
+  display: none;
+}
+.designed-ticket.ticket-layout-classic {
+  border-left: 4px solid var(--ticket-accent);
+}
+.designed-ticket .ticket-design-header h2 {
+  display: block;
+  overflow: visible;
+  overflow-wrap: anywhere;
+}
+.designed-ticket .ticket-brand-row {
+  flex-wrap: wrap;
+}
+.designed-ticket .ticket-meta-grid {
+  min-width: 0;
+}
+.designed-ticket .ticket-design-footer p {
+  overflow-wrap: anywhere;
+}
+.designed-ticket.ticket-is-preview .ticket-status-chip {
+  color: var(--ticket-ink);
+  background: color-mix(in srgb, var(--ticket-ink) 10%, transparent);
+}
+.designed-ticket .ticket-qr {
+  min-width: 112px;
+}
+.designed-ticket .ticket-qr svg {
+  display: block;
+  flex-shrink: 0;
+}
+
+/* Departure board: information first, contrasting boarding stub. */
+.designed-ticket.ticket-layout-boarding {
+  border-radius: 6px;
+  border: 1px solid #b4c4da;
+}
+.designed-ticket.ticket-layout-boarding .ticket-design-header {
+  background: var(--ticket-accent);
+  color: var(--ticket-accent-ink);
+  padding-bottom: 16px;
+}
+.designed-ticket.ticket-layout-boarding .ticket-design-header::after {
+  background: none;
+}
+.designed-ticket.ticket-layout-boarding .ticket-design-header h2 {
+  font-size: 25px;
+  letter-spacing: -0.5px;
+}
+.designed-ticket.ticket-layout-boarding .ticket-stub {
+  background: var(--ticket-accent);
+  color: var(--ticket-accent-ink);
+  border-color: #fff7;
+}
+.designed-ticket.ticket-layout-boarding .ticket-meta-grid {
+  font-family: ui-monospace, monospace;
+}
+.designed-ticket.ticket-layout-boarding .ticket-date-chip {
+  flex-direction: column;
+  align-items: start;
+}
+
+/* Filmstrip: perforations and a letterpress-like serif title. */
+.designed-ticket.ticket-layout-cinema {
+  border-radius: 2px;
+  padding-block: 19px;
+  border-inline: 2px solid var(--ticket-accent);
+}
+.designed-ticket.ticket-layout-cinema::before,
+.designed-ticket.ticket-layout-cinema::after {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 16px;
+  background: repeating-linear-gradient(
+    90deg,
+    var(--ticket-accent) 0 11px,
+    transparent 11px 21px
+  );
+  border-block: 4px solid var(--ticket-accent);
+}
+.designed-ticket.ticket-layout-cinema::after {
+  top: auto;
+  bottom: 0;
+}
+.designed-ticket.ticket-layout-cinema .ticket-design-header h2 {
+  font-family: Georgia, serif;
+  font-size: 32px;
+  font-weight: 400;
+}
+.designed-ticket.ticket-layout-cinema .ticket-design-header::before,
+.designed-ticket.ticket-layout-cinema .ticket-design-header::after {
+  display: none;
+}
+.designed-ticket.ticket-layout-cinema .ticket-stub {
+  border-left: 2px dotted var(--ticket-accent);
+}
+.designed-ticket.ticket-layout-cinema .ticket-type-label {
+  border-radius: 0;
+  text-transform: uppercase;
+  letter-spacing: 3px;
+}
+
+/* Poster: large display lettering and a horizontal entry strip. */
+.designed-ticket.ticket-layout-festival {
+  max-width: 380px;
+  flex-direction: column;
+  border-radius: 2px;
+}
+.designed-ticket.ticket-layout-festival .ticket-design-header {
+  padding: 32px 26px;
+  background: radial-gradient(
+    circle at 95% 80%,
+    color-mix(in srgb, var(--ticket-accent) 30%, transparent) 0 60px,
+    transparent 61px
+  );
+}
+.designed-ticket.ticket-layout-festival .ticket-design-header h2 {
+  font-size: 43px;
+  text-transform: uppercase;
+  line-height: 0.99;
+  letter-spacing: -2px;
+}
+.designed-ticket.ticket-layout-festival .ticket-type-label {
+  transform: rotate(-4deg);
+  border-radius: 0;
+  font-size: 12px;
+  margin-block: 14px 4px;
+}
+.designed-ticket.ticket-layout-festival .ticket-stub {
+  background: var(--ticket-accent);
+  color: var(--ticket-accent-ink);
+}
+
+/* Editorial: left-hand scan column and magazine-style typography. */
+.designed-ticket.ticket-layout-editorial {
+  flex-direction: row-reverse;
+  border-radius: 0;
+  box-shadow: none;
+  border-block: 3px solid var(--ticket-ink);
+}
+.designed-ticket.ticket-layout-editorial .ticket-stub {
+  border-left: 0;
+  border-right: 1px solid var(--ticket-ink);
+  background: none;
+}
+.designed-ticket.ticket-layout-editorial .ticket-design-header h2 {
+  font:
+    italic 34px/1.08 Georgia,
+    serif;
+  letter-spacing: -1px;
+}
+.designed-ticket.ticket-layout-editorial .ticket-design-header::before,
+.designed-ticket.ticket-layout-editorial .ticket-design-header::after {
+  display: none;
+}
+.designed-ticket.ticket-layout-editorial .ticket-type-label {
+  border-radius: 0;
+  box-shadow: none;
+  background: none;
+  color: var(--ticket-ink);
+  border-block: 1px solid var(--ticket-ink);
+  padding-inline: 0;
+}
+.designed-ticket.ticket-layout-editorial .ticket-notch {
+  display: none;
+}
+
+/* Invitation: generous centered typography, double border and botanical corners. */
+.designed-ticket.ticket-layout-invitation {
+  flex-direction: column;
+  max-width: 390px;
+  padding: 13px;
+  border: 1px solid var(--ticket-accent);
+  border-radius: 150px 150px 10px 10px;
+}
+.designed-ticket.ticket-layout-invitation .ticket-main {
+  border: 1px solid var(--ticket-accent);
+  border-radius: 135px 135px 0 0;
+}
+.designed-ticket.ticket-layout-invitation .ticket-design-header {
+  padding: 65px 26px 25px;
+  text-align: center;
+}
+.designed-ticket.ticket-layout-invitation .ticket-brand-row {
+  justify-content: center;
+}
+.designed-ticket.ticket-layout-invitation .ticket-design-header h2 {
+  font:
+    italic 33px/1.15 Georgia,
+    serif;
+}
+.designed-ticket.ticket-layout-invitation .ticket-design-header::before {
+  width: 35px;
+  height: 55px;
+  border: 1px solid var(--ticket-accent);
+  border-radius: 100% 0;
+  left: calc(50% - 18px);
+  top: 10px;
+  background: none;
+  transform: rotate(25deg);
+}
+.designed-ticket.ticket-layout-invitation .ticket-design-header::after {
+  display: none;
+}
+.designed-ticket.ticket-layout-invitation .ticket-type-label {
+  background: none;
+  color: var(--ticket-ink);
+  box-shadow: none;
+  border-bottom: 1px solid var(--ticket-accent);
+  border-radius: 0;
+}
+.designed-ticket.ticket-layout-invitation .ticket-design-content {
+  display: block;
+  text-align: center;
+}
+.designed-ticket.ticket-layout-invitation .ticket-date-chip {
+  display: none;
+}
+.designed-ticket.ticket-layout-invitation .ticket-stub {
+  background: transparent;
+}
+
+/* Receipt: single-column transaction-style information, always a real QR code. */
+.designed-ticket.ticket-layout-receipt {
+  max-width: 305px;
+  flex-direction: column;
+  border-radius: 0;
+  padding-bottom: 14px;
+  font-family: ui-monospace, monospace;
+  border: 1px solid #ddd6c7;
+}
+.designed-ticket.ticket-layout-receipt::after {
+  content: "";
+  height: 10px;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background:
+    linear-gradient(135deg, transparent 50%, var(--page-bg, #ebe8e2) 50%) 0
+      0/14px 14px,
+    linear-gradient(225deg, transparent 50%, var(--page-bg, #ebe8e2) 50%) 0
+      0/14px 14px;
+}
+.designed-ticket.ticket-layout-receipt .ticket-design-header {
+  text-align: center;
+}
+.designed-ticket.ticket-layout-receipt .ticket-design-header h2 {
+  font:
+    700 23px/1.25 ui-monospace,
+    monospace;
+}
+.designed-ticket.ticket-layout-receipt .ticket-brand-row {
+  justify-content: center;
+}
+.designed-ticket.ticket-layout-receipt .ticket-design-header::before,
+.designed-ticket.ticket-layout-receipt .ticket-design-header::after,
+.designed-ticket.ticket-layout-receipt .ticket-date-chip {
+  display: none;
+}
+.designed-ticket.ticket-layout-receipt .ticket-type-label {
+  background: none;
+  color: var(--ticket-ink);
+  box-shadow: none;
+  border-block: 1px dashed;
+  border-radius: 0;
+}
+.designed-ticket.ticket-layout-receipt .ticket-meta-grid {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+.designed-ticket.ticket-layout-receipt .ticket-meta-grid > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 15px;
+}
+.designed-ticket.ticket-layout-receipt .ticket-meta-grid strong {
+  text-align: right;
+  max-width: 65%;
+}
+.designed-ticket.ticket-layout-receipt .ticket-stub {
+  background: none;
+}
+.designed-ticket.ticket-layout-receipt .ticket-barcode {
+  display: none;
+}
+
+/* Stadium: scorecard-like header, strong rules and diagonal entry color. */
+.designed-ticket.ticket-layout-sports {
+  border-radius: 0 28px 0 28px;
+}
+.designed-ticket.ticket-layout-sports .ticket-design-header {
+  border-bottom: 5px solid var(--ticket-accent);
+}
+.designed-ticket.ticket-layout-sports .ticket-design-header h2 {
+  font-size: 32px;
+  text-transform: uppercase;
+  font-style: italic;
+}
+.designed-ticket.ticket-layout-sports .ticket-stub {
+  background:
+    repeating-linear-gradient(-45deg, transparent 0 20px, #ffffff12 20px 23px),
+    var(--ticket-accent);
+  color: var(--ticket-accent-ink);
+}
+.designed-ticket.ticket-layout-sports .ticket-date-chip {
+  padding: 12px;
+  background: var(--ticket-accent);
+  color: var(--ticket-accent-ink);
+  border: 0;
+  flex-direction: column;
+}
+.designed-ticket.ticket-layout-sports .ticket-date-chip strong {
+  color: inherit;
+}
+
+/* Tour credential: lanyard slot, access band, scan section at the bottom. */
+.designed-ticket.ticket-layout-concert {
+  flex-direction: column;
+  max-width: 350px;
+  border-radius: 20px;
+  border: 2px solid var(--ticket-accent);
+  padding-top: 20px;
+}
+.designed-ticket.ticket-layout-concert::before {
+  content: "";
+  position: absolute;
+  top: 10px;
+  left: calc(50% - 25px);
+  width: 50px;
+  height: 6px;
+  background: var(--page-bg, #ebe8e2);
+  border-radius: 10px;
+}
+.designed-ticket.ticket-layout-concert .ticket-design-header {
+  text-align: center;
+}
+.designed-ticket.ticket-layout-concert .ticket-design-header h2 {
+  font-size: 35px;
+  text-transform: uppercase;
+}
+.designed-ticket.ticket-layout-concert .ticket-type-label {
+  display: block;
+  margin: 20px -26px -22px;
+  padding: 15px;
+  border-radius: 0;
+  font-size: 15px;
+}
+.designed-ticket.ticket-layout-concert .ticket-design-content {
+  padding-top: 30px;
+}
+.designed-ticket.ticket-layout-concert .ticket-stub {
+  background: var(--ticket-accent);
+  color: var(--ticket-accent-ink);
+}
+.designed-ticket.ticket-layout-concert .ticket-date-chip {
+  display: none;
+}
+
+/* Art card: an abstract composition above the event caption. */
+.designed-ticket.ticket-layout-exhibition {
+  flex-direction: column;
+  max-width: 380px;
+  border-radius: 0;
+}
+.designed-ticket.ticket-layout-exhibition .ticket-artwork {
+  display: block;
+  height: 180px;
+  position: relative;
+  overflow: hidden;
+  background: var(--ticket-accent);
+}
+.designed-ticket.ticket-layout-exhibition .ticket-artwork span {
+  position: absolute;
+  width: 180px;
+  height: 180px;
+  border-radius: 50%;
+  background: var(--ticket-bg);
+  left: 35px;
+  top: 40px;
+}
+.designed-ticket.ticket-layout-exhibition .ticket-artwork i {
+  position: absolute;
+  width: 80px;
+  height: 240px;
+  background: var(--ticket-ink);
+  opacity: 0.8;
+  right: 50px;
+  top: -40px;
+  transform: rotate(30deg);
+}
+.designed-ticket.ticket-layout-exhibition .ticket-design-header h2 {
+  font-size: 29px;
+  font-weight: 500;
+}
+.designed-ticket.ticket-layout-exhibition .ticket-design-header::before,
+.designed-ticket.ticket-layout-exhibition .ticket-design-header::after,
+.designed-ticket.ticket-layout-exhibition .ticket-date-chip {
+  display: none;
+}
+.designed-ticket.ticket-layout-exhibition .ticket-design-header {
+  border-bottom: 1px solid var(--ticket-ink);
+}
+
+/* Gift voucher: a frame around the body and a left-side redemption panel. */
+.designed-ticket.ticket-layout-voucher {
+  flex-direction: row-reverse;
+  padding: 12px;
+  border-radius: 12px;
+}
+.designed-ticket.ticket-layout-voucher .ticket-main {
+  border: 1px solid var(--ticket-accent);
+}
+.designed-ticket.ticket-layout-voucher .ticket-stub {
+  background: var(--ticket-accent);
+  color: var(--ticket-accent-ink);
+  border: 0;
+}
+.designed-ticket.ticket-layout-voucher .ticket-design-header h2 {
+  font:
+    32px/1.15 Georgia,
+    serif;
+}
+.designed-ticket.ticket-layout-voucher .ticket-design-header::before,
+.designed-ticket.ticket-layout-voucher .ticket-design-header::after,
+.designed-ticket.ticket-layout-voucher .ticket-notch {
+  display: none;
+}
+.designed-ticket.ticket-layout-voucher .ticket-date-chip {
+  display: none;
+}
+
+/* Gala: restrained double frame, serif lettering and a circular entry seal. */
+.designed-ticket.ticket-layout-luxe {
+  border: 5px double var(--ticket-accent);
+  border-radius: 3px;
+}
+.designed-ticket.ticket-layout-luxe .ticket-design-header h2 {
+  font:
+    30px/1.2 Georgia,
+    serif;
+  color: var(--ticket-accent);
+}
+.designed-ticket.ticket-layout-luxe .ticket-design-header::after {
+  display: none;
+}
+.designed-ticket.ticket-layout-luxe .ticket-design-header::before {
+  height: 1px;
+  top: 12px;
+  left: 26px;
+  right: 26px;
+  background: var(--ticket-accent);
+}
+.designed-ticket.ticket-layout-luxe .ticket-stub {
+  border-left: 1px solid var(--ticket-accent);
+  background: transparent;
+}
+.designed-ticket.ticket-layout-luxe .ticket-admit {
+  border: 1px solid var(--ticket-accent);
+  border-radius: 50%;
+  padding: 20px 8px;
+  color: var(--ticket-accent);
+  font-family: Georgia, serif;
+}
+.designed-ticket.ticket-layout-luxe .ticket-type-label {
+  border: 1px solid var(--ticket-accent);
+  background: none;
+  color: var(--ticket-accent);
+  box-shadow: none;
+}
+.designed-ticket.ticket-layout-luxe .ticket-notch {
+  display: none;
+}
+
+/* Keepsake: photo-style top, wide caption margin and a horizontal QR footer. */
+.designed-ticket.ticket-layout-polaroid {
+  flex-direction: column;
+  max-width: 390px;
+  padding: 16px 16px 0;
+  border-radius: 2px;
+}
+.designed-ticket.ticket-layout-polaroid .ticket-artwork {
+  display: block;
+  height: 185px;
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 72% 30%, #f4d599 0 35px, transparent 36px),
+    linear-gradient(150deg, transparent 55%, var(--ticket-accent) 55%),
+    linear-gradient(30deg, #73836a 45%, #d7ddc5 45%);
+}
+.designed-ticket .ticket-artwork img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 1;
+}
+.designed-ticket.ticket-layout-polaroid .ticket-design-header {
+  padding: 24px 10px 16px;
+}
+.designed-ticket.ticket-layout-polaroid .ticket-design-header h2 {
+  font:
+    italic 29px/1.2 Georgia,
+    serif;
+}
+.designed-ticket.ticket-layout-polaroid .ticket-design-header::before,
+.designed-ticket.ticket-layout-polaroid .ticket-design-header::after,
+.designed-ticket.ticket-layout-polaroid .ticket-design-banner,
+.designed-ticket.ticket-layout-polaroid .ticket-date-chip {
+  display: none;
+}
+.designed-ticket.ticket-layout-polaroid .ticket-design-content {
+  padding: 18px 10px;
+}
+.designed-ticket.ticket-layout-polaroid .ticket-stub {
+  background: none;
+}
+
+/* Pocket passport: ruled paper and a prominent stamped date. */
+.designed-ticket.ticket-layout-passport {
+  flex-direction: column;
+  max-width: 335px;
+  border-radius: 4px 20px 20px 4px;
+  border-left: 10px solid var(--ticket-accent);
+}
+.designed-ticket.ticket-layout-passport .ticket-design-header {
+  border-bottom: 2px solid var(--ticket-accent);
+}
+.designed-ticket.ticket-layout-passport .ticket-design-header h2 {
+  font:
+    27px/1.2 Georgia,
+    serif;
+}
+.designed-ticket.ticket-layout-passport .ticket-design-content {
+  flex-direction: column;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent 0 23px,
+    color-mix(in srgb, var(--ticket-accent) 9%, transparent) 23px 24px
+  );
+}
+.designed-ticket.ticket-layout-passport .ticket-date-chip {
+  width: max-content;
+  padding: 10px 16px;
+  border: 2px solid var(--ticket-accent);
+  border-radius: 50%;
+  transform: rotate(-8deg);
+  align-self: center;
+  margin-bottom: 12px;
+}
+.designed-ticket.ticket-layout-passport .ticket-design-header::before,
+.designed-ticket.ticket-layout-passport .ticket-design-header::after {
+  display: none;
+}
+
+/* Graphic block: unapologetic heavy rules and an accent scan panel. */
+.designed-ticket.ticket-layout-brutalist {
+  border: 3px solid var(--ticket-ink);
+  border-radius: 0;
+  box-shadow: 8px 8px 0 var(--ticket-ink);
+}
+.designed-ticket.ticket-layout-brutalist .ticket-design-header {
+  border-bottom: 3px solid var(--ticket-ink);
+}
+.designed-ticket.ticket-layout-brutalist .ticket-design-header h2 {
+  font-size: 36px;
+  line-height: 1;
+  text-transform: uppercase;
+  letter-spacing: -2px;
+}
+.designed-ticket.ticket-layout-brutalist .ticket-stub {
+  border-left: 3px solid var(--ticket-ink);
+  background: var(--ticket-accent);
+  color: var(--ticket-accent-ink);
+}
+.designed-ticket.ticket-layout-brutalist .ticket-design-header::before,
+.designed-ticket.ticket-layout-brutalist .ticket-design-header::after,
+.designed-ticket.ticket-layout-brutalist .ticket-notch {
+  display: none;
+}
+.designed-ticket.ticket-layout-brutalist .ticket-type-label {
+  border-radius: 0;
+  border: 2px solid var(--ticket-ink);
+  box-shadow: none;
+}
+.designed-ticket.ticket-layout-brutalist .ticket-date-chip {
+  display: none;
+}
+
+/* Split: two color fields, with metadata below the title and a quiet scan rail. */
+.designed-ticket.ticket-layout-split {
+  border-radius: 22px 0 22px 0;
+}
+.designed-ticket.ticket-layout-split .ticket-design-header {
+  padding-block: 35px;
+}
+.designed-ticket.ticket-layout-split .ticket-design-content {
+  background: var(--ticket-accent);
+  color: var(--ticket-accent-ink);
+  flex: 1;
+}
+.designed-ticket.ticket-layout-split .ticket-date-chip strong {
+  color: inherit;
+}
+.designed-ticket.ticket-layout-split .ticket-design-content::before,
+.designed-ticket.ticket-layout-split .ticket-design-header::after {
+  display: none;
+}
+.designed-ticket.ticket-layout-split .ticket-stub {
+  width: 150px;
+  background: var(--ticket-bg);
+  border-left: 1px solid color-mix(in srgb, var(--ticket-ink) 20%, transparent);
+}
+.designed-ticket.ticket-layout-split .ticket-notch {
+  display: none;
+}
+
+/* Spotlight: circular artwork, centered title and an accent entry strip. */
+.designed-ticket.ticket-layout-vertical {
+  flex-direction: column;
+  max-width: 365px;
+  border-radius: 130px 130px 12px 12px;
+  padding-top: 24px;
+}
+.designed-ticket.ticket-layout-vertical .ticket-artwork {
+  display: block;
+  width: 95px;
+  height: 95px;
+  border: 1px solid var(--ticket-accent);
+  border-radius: 50%;
+  margin: 0 auto;
+  background: repeating-radial-gradient(
+    circle,
+    transparent 0 9px,
+    var(--ticket-accent) 10px 11px
+  );
+  overflow: hidden;
+  position: relative;
+}
+.designed-ticket.ticket-layout-vertical .ticket-design-header {
+  text-align: center;
+}
+.designed-ticket.ticket-layout-vertical .ticket-brand-row {
+  justify-content: center;
+}
+.designed-ticket.ticket-layout-vertical .ticket-design-header h2 {
+  font-size: 34px;
+}
+.designed-ticket.ticket-layout-vertical .ticket-design-header::before,
+.designed-ticket.ticket-layout-vertical .ticket-design-header::after,
+.designed-ticket.ticket-layout-vertical .ticket-date-chip {
+  display: none;
+}
+.designed-ticket.ticket-layout-vertical .ticket-stub {
+  background: var(--ticket-accent);
+  color: var(--ticket-accent-ink);
+}
+
+/* Portrait / pocket formats use a full-width scan footer, without reducing the QR. */
+.designed-ticket:is(
+    .ticket-layout-festival,
+    .ticket-layout-invitation,
+    .ticket-layout-receipt,
+    .ticket-layout-concert,
+    .ticket-layout-exhibition,
+    .ticket-layout-polaroid,
+    .ticket-layout-passport,
+    .ticket-layout-vertical
+  )
+  .ticket-stub {
+  width: 100%;
+  border-left: 0;
+  border-top: 1px dashed color-mix(in srgb, var(--ticket-ink) 35%, transparent);
+  flex-direction: row;
+  justify-content: center;
+  gap: 22px;
+  padding: 18px;
+}
+.designed-ticket:is(
+    .ticket-layout-festival,
+    .ticket-layout-invitation,
+    .ticket-layout-receipt,
+    .ticket-layout-concert,
+    .ticket-layout-exhibition,
+    .ticket-layout-polaroid,
+    .ticket-layout-passport,
+    .ticket-layout-vertical
+  )
+  .ticket-admit {
+  writing-mode: vertical-rl;
+}
+.designed-ticket:is(
+    .ticket-layout-festival,
+    .ticket-layout-invitation,
+    .ticket-layout-receipt,
+    .ticket-layout-concert,
+    .ticket-layout-exhibition,
+    .ticket-layout-polaroid,
+    .ticket-layout-passport,
+    .ticket-layout-vertical
+  )
+  .ticket-notch {
+  display: none;
+}
+.designed-ticket:is(
+    .ticket-layout-badge,
+    .ticket-layout-festival,
+    .ticket-layout-invitation,
+    .ticket-layout-receipt,
+    .ticket-layout-concert,
+    .ticket-layout-exhibition,
+    .ticket-layout-polaroid,
+    .ticket-layout-passport,
+    .ticket-layout-vertical
+  )
+  .ticket-barcode {
+  display: none;
+}
+
+/* The collection uses actual ticket renders, scaled only inside non-interactive thumbnails. */
+.ticket-collection {
+  scroll-margin-top: 95px;
+  margin-bottom: 35px;
+}
+.ticket-collection .studio-panel-title > span {
+  margin-left: auto;
+}
+.ticket-collection-tools {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 20px 24px;
+  align-items: center;
+}
+.ticket-collection-tools > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  flex: 1;
+}
+.ticket-collection-tools button {
+  font-size: 12px;
+  padding: 8px 13px;
+  border-radius: 20px;
+  color: #786e61;
+  cursor: pointer;
+}
+.ticket-collection-tools button[aria-pressed="true"] {
+  color: #823e23;
+  background: #f4e5d8;
+}
+.studio #ticket-collection .ticket-collection-tools > input {
+  width: 210px;
+  max-width: 100%;
+  flex-shrink: 0;
+  padding: 10px 12px;
+  border: 1px solid #ded7cb;
+  border-radius: 7px;
+  font-size: 12px;
+  color: #3d382f;
+  background: #fff;
+}
+.ticket-collection-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  padding: 0 24px 24px;
+}
+.ticket-collection-card {
+  min-width: 0;
+  text-align: left;
+  border: 1px solid #ded9cf;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #fff;
+  cursor: pointer;
+  transition:
+    box-shadow 0.18s,
+    border-color 0.18s;
+}
+.ticket-collection-card:hover {
+  border-color: #b78c6a;
+  box-shadow: 0 6px 20px #55402115;
+}
+.ticket-collection-card.selected {
+  border-color: #b1633d;
+  box-shadow: 0 0 0 1px #b1633d;
+}
+.ticket-collection-card:focus-visible,
+.ticket-collection-tools :focus-visible {
+  outline: 3px solid #c97545;
+  outline-offset: 3px;
+}
+.ticket-thumbnail {
+  position: relative;
+  height: 185px;
+  overflow: hidden;
+  background: #eae6de;
+  --page-bg: #eae6de;
+  pointer-events: none;
+}
+.ticket-thumbnail-inner {
+  position: absolute;
+  top: 26px;
+  left: 50%;
+  width: 660px;
+  margin-left: -99px;
+  transform: scale(0.3);
+  transform-origin: top left;
+}
+.ticket-thumbnail.format-portrait .ticket-thumbnail-inner,
+.ticket-thumbnail.format-compact .ticket-thumbnail-inner {
+  top: 10px;
+  width: 390px;
+  margin-left: -45px;
+  transform: scale(0.23);
+}
+.ticket-thumbnail.format-horizontal .designed-ticket {
+  flex-direction: row;
+}
+.ticket-thumbnail.format-horizontal
+  :is(.ticket-layout-editorial, .ticket-layout-voucher) {
+  flex-direction: row-reverse;
+}
+.ticket-collection-caption {
+  padding: 14px;
+}
+.ticket-collection-caption strong {
+  display: block;
+  color: #302d27;
+  font-size: 13px;
+  font-weight: 650;
+}
+.ticket-collection-caption span {
+  display: block;
+  color: #987c63;
+  font-size: 10px;
+  margin-top: 5px;
+}
+.ticket-collection-caption p {
+  color: #82796d;
+  font-size: 11px;
+  line-height: 1.6;
+  margin: 9px 0 0;
+}
+.ticket-editor-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 15px;
+  align-items: center;
+  scroll-margin-top: 100px;
+  margin: 35px 0 20px;
+}
+.ticket-editor-heading h2 {
+  font-size: 25px;
+  font-weight: 650;
+  margin-top: 7px;
+  letter-spacing: -0.8px;
+}
+.ticket-editor-heading a {
+  font-size: 12px;
+  color: #9b5839;
+}
+.ticket-editor-workspace {
+  display: grid;
+  grid-template-columns: 310px minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+.ticket-editor-workspace .studio-ticket-preview {
+  min-width: 0;
+  padding: 25px 20px;
+}
+.ticket-design-fields {
+  border: 0;
+  margin: 0;
+  min-width: 0;
+}
+@media (max-width: 1450px) {
+  .ticket-collection-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@media (max-width: 1050px) {
+  .ticket-collection-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .ticket-editor-workspace {
+    grid-template-columns: 1fr;
+  }
+  .ticket-editor-workspace .studio-ticket-preview {
+    position: static;
+    grid-row: 1;
+  }
+  .ticket-collection-tools {
+    flex-wrap: wrap;
+  }
+}
+@media (max-width: 560px) {
+  .ticket-collection-grid {
+    padding: 0 14px 14px;
+    gap: 10px;
+    grid-template-columns: 1fr;
+  }
+  .ticket-collection-tools {
+    padding: 14px;
+  }
+  .studio #ticket-collection .ticket-collection-tools > input {
+    width: 100%;
+  }
+  .ticket-editor-heading {
+    align-items: start;
+    flex-direction: column;
+  }
+  .ticket-editor-workspace .studio-ticket-preview {
+    padding: 20px 12px;
+  }
+  .designed-ticket:not(.ticket-layout-editorial):not(.ticket-layout-voucher) {
+    flex-direction: column;
+  }
+  .designed-ticket:is(.ticket-layout-editorial, .ticket-layout-voucher) {
+    flex-direction: column;
+  }
+  .designed-ticket .ticket-stub {
+    width: 100%;
+    border-left: 0;
+    border-right: 0;
+    border-top: 1px dashed;
+  }
+  .designed-ticket .ticket-design-footer {
+    gap: 8px;
+  }
+  .designed-ticket .ticket-design-header h2 {
+    font-size: 27px;
+  }
+  .designed-ticket .ticket-design-content {
+    padding: 18px;
+  }
+  .ticket-thumbnail.format-horizontal .designed-ticket {
+    flex-direction: row;
+  }
+  .ticket-thumbnail.format-horizontal .ticket-stub {
+    width: 138px;
+    flex-direction: column;
+    border-top: 0;
+    border-left: 1px dashed;
+  }
+}
+@media print {
+  .designed-ticket {
+    box-shadow: none !important;
+    break-inside: avoid;
+  }
+  .designed-ticket .ticket-design-header h2 {
+    font-size: 24px;
+  }
+  .designed-ticket .ticket-qr svg {
+    width: 96px;
+    height: 96px;
+  }
+}
+
+/* Eight visual editions compose with all twenty structural formats. */
+.designed-ticket[class*="ticket-edition-"] {
+  background: var(--ticket-bg);
+  color: var(--ticket-ink);
+}
+.designed-ticket[class*="ticket-edition-"] .ticket-design-header::after {
+  background: none;
+}
+.designed-ticket[class*="ticket-edition-"] .ticket-date-chip strong,
+.designed-ticket[class*="ticket-edition-"] .ticket-serial {
+  color: inherit;
+}
+.designed-ticket[class*="ticket-edition-"] .ticket-type-label {
+  background: var(--ticket-accent);
+  color: var(--ticket-accent-ink);
+}
+.designed-ticket.ticket-edition-engraved {
+  border: 5px double var(--ticket-accent);
+  border-radius: 3px;
+}
+.designed-ticket.ticket-edition-engraved .ticket-design-header h2 {
+  font-family: Georgia, serif;
+  font-weight: 400;
+  letter-spacing: -0.5px;
+  line-height: 1.2;
+}
+.designed-ticket.ticket-edition-engraved .ticket-eyebrow {
+  letter-spacing: 3px;
+  font-size: 8px;
+}
+.designed-ticket.ticket-edition-engraved .ticket-type-label {
+  border: 1px solid var(--ticket-accent);
+  outline: 1px solid var(--ticket-accent);
+  outline-offset: 3px;
+  border-radius: 0;
+  margin-top: 16px;
+}
+.designed-ticket.ticket-edition-engraved .ticket-stub {
+  background: repeating-linear-gradient(
+    45deg,
+    transparent 0 8px,
+    color-mix(in srgb, var(--ticket-accent) 8%, transparent) 8px 9px
+  );
+  border-color: var(--ticket-accent);
+  color: var(--ticket-ink);
+}
+.designed-ticket.ticket-edition-blueprint {
+  border: 1px solid var(--ticket-accent);
+  border-radius: 0;
+  background-image:
+    linear-gradient(
+      color-mix(in srgb, var(--ticket-accent) 8%, transparent) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--ticket-accent) 8%, transparent) 1px,
+      transparent 1px
+    );
+  background-size: 18px 18px;
+}
+.designed-ticket.ticket-edition-blueprint .ticket-design-header h2 {
+  font-family: ui-monospace, "Courier New", monospace;
+  text-transform: uppercase;
+  font-size: 26px;
+  letter-spacing: -1px;
+  line-height: 1.2;
+}
+.designed-ticket.ticket-edition-blueprint .ticket-meta-grid {
+  font-family: ui-monospace, monospace;
+  gap: 14px;
+}
+.designed-ticket.ticket-edition-blueprint .ticket-type-label {
+  border-radius: 0;
+  border: 1px solid currentColor;
+  background: transparent;
+  color: inherit;
+}
+.designed-ticket.ticket-edition-blueprint .ticket-stub {
+  background: var(--ticket-bg);
+  color: var(--ticket-ink);
+  border: 1px dashed var(--ticket-accent);
+}
+.designed-ticket.ticket-edition-confetti {
+  border: 2px solid var(--ticket-accent);
+  border-radius: 22px;
+}
+.designed-ticket.ticket-edition-confetti .ticket-design-header {
+  background-color: var(--ticket-bg);
+  color: var(--ticket-ink);
+  background-image: radial-gradient(
+    circle at 4px 4px,
+    color-mix(in srgb, var(--ticket-accent) 12%, transparent) 2px,
+    transparent 3px
+  );
+  background-size: 22px 22px;
+}
+.designed-ticket.ticket-edition-confetti .ticket-design-header h2 {
+  font-family: "Trebuchet MS", sans-serif;
+  font-weight: 900;
+  letter-spacing: -1.5px;
+  line-height: 1.08;
+}
+.designed-ticket.ticket-edition-confetti .ticket-type-label {
+  border-radius: 30px;
+  padding: 8px 16px;
+  transform: rotate(-2deg);
+}
+.designed-ticket.ticket-edition-confetti .ticket-stub {
+  border-color: var(--ticket-accent);
+  background: color-mix(in srgb, var(--ticket-accent) 12%, var(--ticket-bg));
+  color: var(--ticket-ink);
+}
+.designed-ticket.ticket-edition-neon {
+  border: 1px solid var(--ticket-accent);
+  box-shadow:
+    0 0 0 4px color-mix(in srgb, var(--ticket-accent) 15%, transparent),
+    0 18px 40px #0003;
+  border-radius: 14px;
+}
+.designed-ticket.ticket-edition-neon .ticket-design-header h2 {
+  font-family: Impact, "Arial Narrow", sans-serif;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  text-shadow: 2px 2px 0
+    color-mix(in srgb, var(--ticket-accent) 35%, transparent);
+}
+.designed-ticket.ticket-edition-neon .ticket-type-label {
+  border: 1px solid var(--ticket-accent);
+  background: var(--ticket-bg);
+  color: var(--ticket-accent);
+  border-radius: 0;
+  box-shadow: 0 0 12px color-mix(in srgb, var(--ticket-accent) 25%, transparent);
+}
+.designed-ticket.ticket-edition-neon .ticket-stub {
+  background: var(--ticket-bg);
+  color: var(--ticket-ink);
+  border-color: var(--ticket-accent);
+}
+.designed-ticket.ticket-edition-neon .ticket-qr > div {
+  box-shadow:
+    0 0 0 3px var(--ticket-accent),
+    0 0 20px color-mix(in srgb, var(--ticket-accent) 30%, transparent);
+}
+.designed-ticket.ticket-edition-linen {
+  border: 1px solid
+    color-mix(in srgb, var(--ticket-accent) 30%, var(--ticket-bg));
+  border-radius: 12px;
+  background-image:
+    repeating-linear-gradient(
+      0deg,
+      transparent 0 3px,
+      color-mix(in srgb, var(--ticket-ink) 3%, transparent) 3px 4px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      transparent 0 3px,
+      color-mix(in srgb, var(--ticket-ink) 3%, transparent) 3px 4px
+    );
+}
+.designed-ticket.ticket-edition-linen .ticket-design-header h2 {
+  font-family: Georgia, serif;
+  font-style: italic;
+  font-weight: 400;
+  letter-spacing: -1px;
+  line-height: 1.2;
+}
+.designed-ticket.ticket-edition-linen .ticket-design-header {
+  border-bottom: 1px solid
+    color-mix(in srgb, var(--ticket-accent) 30%, transparent);
+}
+.designed-ticket.ticket-edition-linen .ticket-type-label {
+  border-radius: 4px;
+  font-weight: 400;
+  letter-spacing: 2px;
+}
+.designed-ticket.ticket-edition-linen .ticket-stub {
+  background: transparent;
+  color: var(--ticket-ink);
+  outline: 1px solid color-mix(in srgb, var(--ticket-accent) 30%, transparent);
+  outline-offset: -8px;
+}
+.designed-ticket.ticket-edition-deco {
+  border: 5px double var(--ticket-accent);
+  border-radius: 22px 0 22px 0;
+  background-image: repeating-linear-gradient(
+    90deg,
+    transparent 0 29px,
+    color-mix(in srgb, var(--ticket-accent) 8%, transparent) 29px 30px
+  );
+}
+.designed-ticket.ticket-edition-deco .ticket-design-header {
+  text-align: center;
+}
+.designed-ticket.ticket-edition-deco .ticket-design-header h2 {
+  font-family: Georgia, serif;
+  font-weight: 400;
+  text-transform: uppercase;
+  font-size: 26px;
+  letter-spacing: 2px;
+  line-height: 1.3;
+}
+.designed-ticket.ticket-edition-deco .ticket-type-label {
+  border-radius: 0;
+  border-inline: 5px double var(--ticket-accent);
+  background: var(--ticket-bg);
+  color: var(--ticket-accent);
+}
+.designed-ticket.ticket-edition-deco .ticket-stub {
+  border: 4px double var(--ticket-accent);
+  background: var(--ticket-bg);
+  color: var(--ticket-ink);
+}
+.designed-ticket.ticket-edition-mono {
+  border: 3px solid var(--ticket-ink);
+  border-radius: 0;
+  box-shadow: 7px 7px 0 color-mix(in srgb, var(--ticket-ink) 18%, transparent);
+}
+.designed-ticket.ticket-edition-mono .ticket-design-header h2 {
+  font-family: Arial, sans-serif;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: -1.5px;
+  line-height: 1;
+  border-bottom: 5px solid currentColor;
+  padding-bottom: 16px;
+}
+.designed-ticket.ticket-edition-mono .ticket-eyebrow {
+  font-family: ui-monospace, monospace;
+  letter-spacing: 0;
+}
+.designed-ticket.ticket-edition-mono .ticket-type-label {
+  color: inherit;
+  background: transparent;
+  border: 2px solid currentColor;
+  border-radius: 0;
+  box-shadow: none;
+}
+.designed-ticket.ticket-edition-mono .ticket-stub {
+  color: var(--ticket-ink);
+  background: var(--ticket-bg);
+  border-color: var(--ticket-ink);
+}
+.designed-ticket.ticket-edition-sunset {
+  border: 1px solid
+    color-mix(in srgb, var(--ticket-accent) 40%, var(--ticket-bg));
+  border-radius: 28px 28px 6px 6px;
+  background-image: radial-gradient(
+    ellipse at 100% 0%,
+    color-mix(in srgb, var(--ticket-accent) 18%, transparent),
+    transparent 65%
+  );
+}
+.designed-ticket.ticket-edition-sunset .ticket-design-header h2 {
+  font-family: Georgia, serif;
+  font-weight: 400;
+  letter-spacing: -1px;
+  line-height: 1.16;
+  text-decoration: underline;
+  text-decoration-color: color-mix(
+    in srgb,
+    var(--ticket-accent) 35%,
+    transparent
+  );
+  text-decoration-thickness: 5px;
+  text-underline-offset: 4px;
+}
+.designed-ticket.ticket-edition-sunset .ticket-type-label {
+  border-radius: 30px 30px 0 0;
+  padding: 10px 18px 6px;
+}
+.designed-ticket.ticket-edition-sunset .ticket-stub {
+  color: var(--ticket-ink);
+  background:
+    repeating-radial-gradient(
+      circle at 50% 0,
+      transparent 0 19px,
+      color-mix(in srgb, var(--ticket-accent) 12%, transparent) 20px 21px
+    ),
+    var(--ticket-bg);
+  border-color: var(--ticket-accent);
+}
+.ticket-collection {
+  scroll-margin-top: 84px;
+}
+.ticket-collection-pagination {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding: 18px 24px;
+  border-top: 1px solid #e8e3da;
+  color: #786e61;
+  font-size: 12px;
+}
+.ticket-collection-pagination > div {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+}
+@media (max-width: 560px) {
+  .ticket-collection-pagination {
+    padding: 16px 14px;
+  }
+  .ticket-collection-pagination > div {
+    width: 100%;
+    justify-content: space-between;
+    gap: 8px;
+  }
+}
+
+.ticket-thumbnail .ticket-thumbnail-inner.ticket-thumbnail-fitted {
+  top: 50%;
+  left: 50%;
+  margin-left: 0;
+  transform-origin: center;
+}
+.ticket-thumbnail .ticket-composed.ct-horizontal {
+  grid-template-columns: var(--ct-columns);
+  grid-template-areas: var(--ct-areas);
+}
+
+/* Full attendee names need their own readable row, including compact tickets. */
+.designed-ticket .ticket-meta-grid > .ticket-attendee,
+.designed-ticket .ct-details > .ticket-attendee {
+  display: block;
+  grid-column: 1 / -1;
+  order: -1;
+  min-width: 0;
+  max-width: 100%;
+}
+.designed-ticket .ticket-meta-grid > .ticket-attendee strong,
+.designed-ticket .ct-details > .ticket-attendee strong {
+  display: block;
+  max-width: 100%;
+  font-size: 15px;
+  font-weight: 650;
+  line-height: 1.45;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: normal;
+  overflow: visible;
+  text-overflow: clip;
+  -webkit-line-clamp: unset;
+  text-align: inherit;
+}

@@ -7,7 +7,11 @@ const uploadDir = path.join(__dirname, '..', 'uploads');
 if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
 
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, uploadDir),
+  destination: (req, file, cb) => {
+    const directory=req.platformAdmin ? path.join(uploadDir,'platform') : req.organization && !req.organization.is_legacy ? path.join(uploadDir,req.organization.slug) : uploadDir;
+    fs.mkdirSync(directory,{recursive:true});
+    cb(null,directory);
+  },
   filename: (req, file, cb) => {
     const ext = path.extname(file.originalname).toLowerCase();
     const name = crypto.randomBytes(8).toString('hex');
@@ -28,3 +32,5 @@ const upload = multer({
 });
 
 module.exports = upload;
+
+module.exports.url = (req) => `/uploads/${req.platformAdmin ? 'platform/' : req.organization && !req.organization.is_legacy ? req.organization.slug+'/' : ''}${req.file.filename}`;

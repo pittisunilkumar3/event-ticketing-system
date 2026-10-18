@@ -1,0 +1,18 @@
+{
+  "company_name": "TicketFlow",
+  "site_title": "TicketFlow \u2014 Event Tickets",
+  "tagline": "Your events. Your way.",
+  "description": "Discover events, book in seconds, and get your e-tickets instantly \u2014 all in one place.",
+  "site_url": "http://localhost:5173",
+  "support_email": "",
+  "phone": "",
+  "address": "",
+  "country": "",
+  "logo": "",
+  "favicon": "",
+  "footer_text": "Made for memorable moments.",
+  "copyright_text": "\u00a9 {year} {company}. All rights reserved.",
+  "accent_color": "#ea580c",
+  "hero_title": "",
+  "hero_image": ""
+}

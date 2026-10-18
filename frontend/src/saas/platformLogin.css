@@ -1,0 +1,57 @@
+.platform-login { min-height:100dvh; display:grid; grid-template-columns:1fr 1fr; background:#faf8f3; color:#302e29; }
+.platform-login-story { display:flex; flex-direction:column; padding:40px clamp(32px,5vw,80px); background:#282b27; color:#f8f4eb; position:relative; overflow:hidden; }
+.platform-login-story::after { content:''; position:absolute; width:420px; height:420px; border:1px solid #e8b18618; border-radius:50%; bottom:-330px; right:-120px; box-shadow:0 0 0 48px #e8b18606,0 0 0 96px #e8b18604; pointer-events:none; }
+.platform-login-brand { display:flex; align-items:center; gap:12px; width:fit-content; color:#f8f4eb; font-family:var(--font-display); font-size:22px; font-weight:600; letter-spacing:-.6px; overflow-wrap:anywhere; }
+.platform-login-brand>span { display:grid; place-items:center; flex-shrink:0; width:44px; height:44px; background:#efac7e; color:#40352a; border-radius:12px; transform:rotate(-7deg); }
+.platform-login-brand img { width:30px; height:30px; object-fit:contain; transform:rotate(7deg); }
+.platform-login-story-body { margin:auto 0; padding:64px 0; position:relative; z-index:1; }
+.platform-login-eyebrow { font-size:10px; line-height:1.6; letter-spacing:2px; font-weight:600; }
+.platform-login-story .platform-login-eyebrow { color:#cabaaa; }
+.platform-login-story h2 { font-family:var(--font-display); font-size:clamp(36px,4.2vw,62px); line-height:1.1; letter-spacing:-2px; font-weight:500; margin:23px 0; }
+.platform-login-story h2 span { color:#efac7e; }
+.platform-login-story-body>p:last-of-type { max-width:360px; color:#bebeb3; font-size:14px; line-height:1.9; }
+.platform-login-features { margin-top:38px; max-width:390px; }
+.platform-login-features>div { display:grid; grid-template-columns:24px 1fr; column-gap:14px; row-gap:5px; padding:17px 0; border-top:1px solid #ffffff14; }
+.platform-login-features svg { grid-row:span 2; color:#dda780; margin-top:3px; }
+.platform-login-features span { font-size:13px; font-weight:600; }
+.platform-login-features small { font-size:12px; color:#aaa99e; }
+.platform-login-story-footer { font-size:11px; color:#aaa99e; line-height:1.7; position:relative; z-index:1; }
+.platform-login-panel { display:grid; place-items:center; padding:60px clamp(28px,5vw,80px); }
+.platform-login-form-wrap { width:100%; max-width:380px; }
+.platform-login-symbol { display:grid; place-items:center; width:50px; height:50px; border:1px solid #e4d9c9; border-radius:14px; background:#f1ebe0; color:#876549; margin-bottom:27px; }
+.platform-login-panel .platform-login-eyebrow { color:#936444; margin-bottom:12px; }
+.platform-login-panel h1 { font-family:var(--font-display); font-size:clamp(32px,3.4vw,44px); font-weight:600; line-height:1.15; letter-spacing:-1.7px; margin:0 0 14px; }
+.platform-login-intro { font-size:14px; color:#77736b; line-height:1.7; }
+.platform-login form { margin-top:34px; display:flex; flex-direction:column; }
+.platform-login label { font-size:12px; font-weight:600; margin-bottom:10px; }
+.platform-login input { width:100%; height:52px; padding:0 15px; border:1px solid #d9d3c8; border-radius:8px; background:#fffefa; color:#302e29; font:inherit; font-size:16px; transition:border-color .15s,box-shadow .15s; }
+.platform-login input::placeholder { color:#938c7f; font-size:14px; }
+.platform-login input:focus { outline:none; border-color:#ac724e; box-shadow:0 0 0 3px #ac724e16; }
+.platform-login input+label { margin-top:24px; }
+.platform-login-password { position:relative; }
+.platform-login-password input { padding-right:66px; }
+.platform-login-password button { position:absolute; top:4px; right:4px; height:44px; min-width:54px; border-radius:5px; background:transparent; color:#73614f; font-size:12px; cursor:pointer; }
+.platform-login-submit { display:flex; align-items:center; justify-content:center; gap:14px; min-height:52px; margin-top:28px; padding:14px; border:1px solid #b8562d; border-radius:8px; background:#b8562d; color:white; font-size:13px; font-weight:600; cursor:pointer; transition:background .15s; }
+.platform-login-submit:hover { background:#9e4724; }
+.platform-login button:disabled,.platform-login input:disabled { opacity:.65; cursor:wait; }
+.platform-login-error { padding:12px 14px; margin-top:18px; border:1px solid #e9c8b9; border-radius:8px; background:#fff0e9; color:#9b3628; font-size:13px; line-height:1.6; }
+.platform-login-links { border-top:1px solid #e5dfd5; margin-top:28px; padding-top:23px; text-align:center; }
+.platform-login-links p { font-size:12px; line-height:1.9; color:#77736b; }
+.platform-login-links p a { display:inline-flex; align-items:center; gap:5px; color:#8f492a; font-weight:600; min-height:36px; }
+.platform-login-back { display:inline-flex; align-items:center; gap:8px; min-height:44px; margin-top:10px; font-size:12px; color:#77736b; }
+.platform-login-links a:hover { color:#b8562d; text-decoration:underline; text-underline-offset:4px; }
+.platform-login a:focus-visible,.platform-login button:focus-visible { outline:2px solid #bc794e; outline-offset:4px; }
+@media(max-width:760px) {
+  .platform-login { grid-template-columns:1fr; }
+  .platform-login-story { padding:25px 28px 30px; }
+  .platform-login-story-body { padding:28px 0 0; }
+  .platform-login-story h2 { font-size:34px; letter-spacing:-1px; margin:15px 0 0; }
+  .platform-login-story h2 br { display:none; }
+  .platform-login-story h2 span { display:block; }
+  .platform-login-story-body>p:last-of-type,.platform-login-features,.platform-login-story-footer { display:none; }
+  .platform-login-panel { padding:36px 28px; }
+  .platform-login-symbol { display:none; }
+  .platform-login-panel h1 { font-size:34px; }
+  .platform-login form { margin-top:28px; }
+}
+@media(prefers-reduced-motion:reduce) { .platform-login input,.platform-login-submit { transition:none; } }

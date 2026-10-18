@@ -1,10 +1,45 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
+import {useSiteSettings} from '../settings/SiteSettingsContext';
 import api from '../api/client';
-import '../admin/studio/studio.css';
-export default function PolicyPage(){
-  const {slug}=useParams();
-  const [page,setPage]=useState(null),[error,setError]=useState('');
-  useEffect(()=>{const controller=new AbortController();setPage(null);setError('');api.get(`/pages/${slug}`,{signal:controller.signal}).then(({data})=>setPage(data.data.page)).catch(err=>{if(!controller.signal.aborted)setError(err.response?.data?.message || 'Unable to load this page.');});return()=>controller.abort();},[slug]);
-  return <main className="public-policy"><Link to="/" className="text-sm text-orange-300">← Back to events</Link>{error?<p className="py-12 text-slate-400">{error}</p>:!page?<p className="py-12 text-slate-400">Loading page…</p>:<><h1>{page.title}</h1><p className="mb-8 text-xs text-slate-500">Last updated {String(page.updated_at).slice(0,10)}</p><div className="policy-content" dangerouslySetInnerHTML={{__html:page.body}}/></>}</main>;
+import CustomerState from '../components/CustomerState';
+import Icon from '../components/Icon';
+import {watchSiteContent} from '../settings/watchSiteContent';
+
+export default function PolicyPage() {
+  const { slug } = useParams();
+  const [page, setPage] = useState(null);
+  const [error, setError] = useState('');
+  useEffect(() => {
+    let controller;
+    setPage(null);
+    setError('');
+    const load=()=>{
+      controller?.abort();
+      const request=new AbortController();controller=request;
+      api.get(`/pages/${encodeURIComponent(slug)}`, { signal: request.signal })
+        .then(({ data }) => { if (!request.signal.aborted) {setPage(data.data.page);setError('');} })
+        .catch(err => { if (!request.signal.aborted) {setPage(null);setError(err.response?.status === 404 ? 'This information hasn’t been published yet. You can return to the event listings.' : 'This page couldn’t be loaded. Please try again later.');} });
+    };
+    load();const stop=watchSiteContent(load);
+    return () => {controller?.abort();stop();};
+  }, [slug]);
+  if (error) return <CustomerState icon="page" eyebrow="INFORMATION" title="This page isn’t available." description={error}/>;
+  if (!page) return <CustomerState loading icon="page" eyebrow="INFORMATION" title="Opening this page…"/>;
+  return <PolicyDocument page={page}/>;
+}
+
+export function PolicyDocument({ page }) {
+  const site=useSiteSettings();
+  const updated = page.updated_at ? new Date(String(page.updated_at).replace(' ', 'T')) : null;
+  return (
+    <main className="customer-page policy-page">
+      <div className="policy-container">
+        <Link className="customer-back" to={site.is_organizer?"/events":"/"}>← {site.is_organizer?"Back to events":"Back to home"}</Link>
+        <header className="policy-heading"><span className="customer-icon"><Icon name="page" size={25}/></span><p className="customer-eyebrow">THE DETAILS THAT MATTER</p><h1>{page.title}</h1>{updated && Number.isFinite(updated.getTime()) && <p>Last updated {updated.toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' })}</p>}</header>
+        <article className="customer-policy-content" dangerouslySetInnerHTML={{ __html: page.body }}/>
+        <Link className="customer-text-link policy-back" to={site.is_organizer?"/events":"/"}>Back to exploring <Icon name="arrow" size={17}/></Link>
+      </div>
+    </main>
+  );
 }

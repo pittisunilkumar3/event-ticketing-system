@@ -9,7 +9,18 @@
     "migrate": "node migrations/migrate.js",
     "seed": "node seeders/seed.js",
     "test": "node --test tests/studio.test.js",
-    "test:integration": "node tests/studio.integration.js"
+    "test:integration": "node tests/studio.integration.js",
+    "migrate:saas": "node saas/migrate.js",
+    "platform-admin": "node saas/create-admin.js",
+    "test:saas": "node tests/saas.integration.js",
+    "test:account": "node --test tests/account.test.js",
+    "test:login": "node tests/login.integration.js",
+    "test:mail": "node --test tests/platformMail.test.js",
+    "test:website": "node tests/platform-website.integration.js",
+    "test:forms": "node --test tests/registrationForms.test.js",
+    "test:forms:integration": "node tests/registrationForms.integration.js",
+    "test:wallet": "node tests/eventWallet.integration.js",
+    "test:booking-payments": "node tests/bookingPayments.integration.js"
   },
   "keywords": [
     "ticketing",
@@ -18,6 +29,7 @@
   ],
   "license": "MIT",
   "dependencies": {
+    "@sparticuz/chromium": "^153.0.0",
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
@@ -26,6 +38,8 @@
     "multer": "^1.4.5-lts.1",
     "mysql2": "^3.11.0",
     "nodemailer": "^10.0.16",
+    "puppeteer-core": "^25.14.0",
+    "qrcode": "^1.5.4",
     "sanitize-html": "^2.18.0"
   }
 }

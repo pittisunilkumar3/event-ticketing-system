@@ -1,0 +1,14 @@
+import assert from 'node:assert/strict';
+import {watchSiteContent} from '../src/settings/watchSiteContent.js';
+const windowTarget=new EventTarget(),documentTarget=new EventTarget();
+let timer,cleared=false,count=0;
+globalThis.window=Object.assign(windowTarget,{setInterval(fn,delay){assert.equal(delay,30000);timer=fn;return 1;},clearInterval(id){assert.equal(id,1);cleared=true;}});
+globalThis.document=Object.assign(documentTarget,{visibilityState:'visible'});
+const stop=watchSiteContent(()=>count++);
+for(const type of ['focus','site-settings-changed'])window.dispatchEvent(new Event(type));
+const storage=new Event('storage');storage.key='site-settings-updated';window.dispatchEvent(storage);
+document.dispatchEvent(new Event('visibilitychange'));
+timer();assert.equal(count,5);
+document.visibilityState='hidden';timer();document.dispatchEvent(new Event('visibilitychange'));assert.equal(count,5);
+stop();assert.equal(cleared,true);window.dispatchEvent(new Event('focus'));assert.equal(count,5);
+console.log('Public content refresh: saved edits, tab focus, cross-tab storage, visible polling, hidden tabs and cleanup passed.');

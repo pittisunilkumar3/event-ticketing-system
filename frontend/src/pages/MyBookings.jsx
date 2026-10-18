@@ -1,61 +1,61 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useEffect, useRef, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import api from '../api/client';
-import { Alert, GlowOrbs } from '../components/ui';
+import Icon from '../components/Icon';
 
 export default function MyBookings() {
   const navigate = useNavigate();
-  const [ref, setRef] = useState('');
+  const [reference, setReference] = useState('');
   const [error, setError] = useState('');
   const [checking, setChecking] = useState(false);
+  const request = useRef(null);
+  useEffect(() => () => request.current?.abort(), []);
 
   async function handleSubmit(e) {
     e.preventDefault();
-    const clean = ref.trim().toUpperCase();
-    if (!clean) return;
+    const clean = reference.trim().toUpperCase();
+    if (!clean || checking) return;
+    request.current?.abort();
+    const controller = new AbortController();
+    request.current = controller;
     setError('');
     setChecking(true);
     try {
-      const { data } = await api.get(`/bookings/${clean}`);
-      navigate(`/confirmation/${clean}`, { state: { fresh: data.data } });
+      await api.get(`/bookings/${encodeURIComponent(clean)}`, { signal: controller.signal });
+      if (!controller.signal.aborted) navigate(`/confirmation/${encodeURIComponent(clean)}`);
     } catch (err) {
-      setError(err.response?.data?.message || 'Booking not found. Check your reference.');
-      setChecking(false);
+      if (!controller.signal.aborted) setError(err.response?.status === 404 ? 'We couldn’t find that booking. Check the reference and try again.' : 'We couldn’t check your booking right now. Please try again.');
+    } finally {
+      if (!controller.signal.aborted) setChecking(false);
     }
   }
 
   return (
-    <main className="relative">
-      <GlowOrbs />
-      <div className="relative mx-auto max-w-xl px-4 py-20">
-        <div className="animate-fade-up overflow-hidden rounded-3xl bg-white/[0.04] p-9 ring-1 ring-white/10 backdrop-blur">
-          <div className="text-center">
-            <span className="inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500/20 to-fuchsia-500/20 text-4xl ring-1 ring-white/10">
-              🔎
-            </span>
-            <h1 className="mt-5 font-display text-2xl font-extrabold text-white">Find my booking</h1>
-            <p className="mt-2 text-sm text-slate-500">
-              Enter the booking reference from your confirmation
-            </p>
-          </div>
-
-          <form onSubmit={handleSubmit} className="mt-7 space-y-4">
-            <input
-              type="text"
-              value={ref}
-              onChange={(e) => setRef(e.target.value)}
-              placeholder="TKT-XXXXXXX"
-              className="w-full rounded-2xl bg-white/[0.05] px-5 py-4 text-center font-mono text-lg font-bold uppercase tracking-[0.2em] text-white placeholder-slate-600 ring-1 ring-white/10 transition focus:bg-white/[0.08] focus:outline-none focus:ring-2 focus:ring-indigo-400/60"
-            />
-            {error && <Alert>{error}</Alert>}
-            <button
-              type="submit"
-              disabled={checking || !ref.trim()}
-              className="w-full rounded-2xl bg-gradient-to-r from-indigo-500 to-fuchsia-500 py-4 font-display font-bold text-white shadow-[0_12px_40px_-10px_rgba(139,92,246,0.6)] transition hover:opacity-90 disabled:opacity-40"
-            >
-              {checking ? 'Searching…' : 'View my tickets →'}
-            </button>
-          </form>
+    <main className="customer-page lookup-page">
+      <div className="customer-container">
+        <Link className="customer-back" to="/events">← Back to events</Link>
+        <div className="lookup-layout">
+          <section className="lookup-story">
+            <p className="customer-eyebrow">YOUR PLANS, ALL TOGETHER</p>
+            <h1>Your next memory.<br/><span>Right here.</span></h1>
+            <p>Find your booking, get your tickets, and get ready for the good part.</p>
+            <div className="lookup-ticket" aria-hidden="true"><div><Icon name="ticket" size={25}/><span>GOOD TIMES AHEAD</span></div><strong>Keep the plans.<br/>Bring the excitement.</strong><footer><span>YOUR TICKET TO BEING THERE</span><Icon name="arrow" size={24}/></footer></div>
+            <span className="lookup-story-note"><Icon name="calendar" size={17}/> From the first plan to the front door.</span>
+          </section>
+          <section className="lookup-form-panel" aria-labelledby="lookup-title">
+            <span className="customer-icon"><Icon name="search" size={25}/></span>
+            <h2 id="lookup-title">Find my booking</h2>
+            <p>Enter the reference shown on your booking confirmation.</p>
+            <form onSubmit={handleSubmit} className="customer-form">
+              <label htmlFor="booking-reference">Booking reference</label>
+              <input id="booking-reference" className="reference-input" type="text" value={reference} onChange={e => { setReference(e.target.value); setError(''); }} placeholder="TKT-XXXXXXX" autoCapitalize="characters" autoComplete="off" spellCheck={false} maxLength={100} required disabled={checking} aria-invalid={Boolean(error)} aria-describedby={error ? 'reference-help reference-error' : 'reference-help'}/>
+              <p id="reference-help" className="customer-field-help">Use the full reference, including TKT-.</p>
+              {error && <p id="reference-error" className="customer-alert" role="alert">{error}</p>}
+              <button className="customer-button" disabled={checking || !reference.trim()}>{checking ? 'Finding your booking…' : 'View my booking'}<Icon name="arrow" size={18}/></button>
+            </form>
+            <div className="lookup-help"><Icon name="mail" size={20}/><div><h3>Looking for your reference?</h3><p>Check your saved confirmation page or booking email, if you received one.</p></div></div>
+            <Link to="/events" className="customer-text-link">Still making plans? Explore events <Icon name="arrow" size={16}/></Link>
+          </section>
         </div>
       </div>
     </main>

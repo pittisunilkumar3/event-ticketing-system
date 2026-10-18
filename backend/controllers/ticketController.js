@@ -13,17 +13,18 @@ const lookup = asyncHandler(async (req, res) => {
 /** POST /api/admin/tickets/checkin — check in by ticket code */
 const checkIn = asyncHandler(async (req, res) => {
   const { ticket_code } = req.body;
-  if (!ticket_code) {
-    return res.status(400).json({ success: false, message: 'ticket_code is required.' });
+  if (typeof ticket_code !== 'string' || !ticket_code.trim() || ticket_code.length > 100) {
+    return res.status(400).json({ success: false, message: 'Enter a valid ticket code.' });
   }
 
-  const ticket = await Ticket.findByCode(ticket_code.toUpperCase());
+  const ticket = await Ticket.findByCode(ticket_code.trim().toUpperCase());
   if (!ticket) {
     return res.status(404).json({ success: false, message: 'Ticket not found. Invalid code.' });
   }
   if (ticket.status === 'cancelled' || ticket.order_status === 'cancelled' || ticket.order_status === 'refunded') {
     return res.status(409).json({ success: false, message: '❌ Ticket has been cancelled or refunded.' });
   }
+  if (ticket.order_status !== 'paid') return res.status(409).json({success:false,message:'This booking has not been paid.'});
   if (ticket.status === 'checked_in') {
     return res.status(409).json({
       success: false,

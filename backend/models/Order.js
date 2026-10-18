@@ -1,9 +1,12 @@
 const crypto = require('crypto');
 const db = require('../config/db');
+const wallet = require('../services/eventWallet');
 const TicketType = require('./TicketType');
 const Ticket = require('./Ticket');
 const Studio = require('./Studio');
 const { enqueue } = require('../services/mailer');
+const { availability } = require('../services/eventValidation');
+const { fail } = require('../services/studioValidation');
 const defaultTicketDesign = require('../services/studioDefaults').ticket;
 
 function generateBookingRef() {
@@ -15,15 +18,16 @@ const Order = {
    * Create order + issue tickets inside a DB transaction.
    * items: [{ ticket_type_id, qty }]
    */
-  async createWithTickets({ event_id, customer_name, email, phone, items }) {
+  async createWithTickets({ event_id, customer_name, email, phone, items, registration_answers, form_revision, registration_files=[], payment=null }) {
     const conn = await db.getConnection();
 
     try {
       await conn.beginTransaction();
+      const gateway = payment ? await require('../services/bookingPayments').lockedConfig(conn) : null;
 
       // 1. Validate event exists & is published
       const [eventRows] = await conn.query(
-        "SELECT id, title, status FROM events WHERE id = ? AND status = 'published' LIMIT 1",
+        "SELECT * FROM events WHERE id = ? AND status = 'published' AND archived_at IS NULL LIMIT 1 FOR UPDATE",
         [event_id]
       );
       if (!eventRows.length) {
@@ -32,11 +36,21 @@ const Order = {
         throw err;
       }
 
+      const forms=require('../services/registrationForms');
+      const registrationForm=await forms.get(event_id,conn);
+      const ticketForms=await forms.forTickets(event_id,conn);
+      forms.checkVersions(items,ticketForms,registrationForm,form_revision);
+      const perAttendee = Boolean(payment) || items.some(item=>item.attendees!==undefined);
+      if(!perAttendee&&items.some(item=>ticketForms.get(Number(item.ticket_type_id))?.source==='ticket'))fail('Enter one attendee for every selected ticket.');
+      const attendees = perAttendee ? require('../services/attendees').validate(items,ticketForms,registration_files) : null;
+      const answers = perAttendee ? [] : forms.answersFor(registrationForm.config,registration_answers,registration_files);
+
       // 2. Validate ticket types belong to event, are on sale, reserve inventory
       let total = 0;
       const resolvedItems = [];
-      for (const item of items) {
-        const [rows] = await conn.query('SELECT * FROM ticket_types WHERE id = ? AND event_id = ? LIMIT 1', [
+      if(items.length>50 || new Set(items.map(i=>Number(i.ticket_type_id))).size!==items.length) fail('Select each ticket type once, up to 50 types.');
+      for (const item of [...items].sort((a,b)=>a.ticket_type_id-b.ticket_type_id)) {
+        const [rows] = await conn.query('SELECT * FROM ticket_types WHERE id = ? AND event_id = ? LIMIT 1 FOR UPDATE', [
           item.ticket_type_id,
           event_id,
         ]);
@@ -47,53 +61,58 @@ const Order = {
           throw err;
         }
         const qty = Number(item.qty);
-        if (!Number.isInteger(qty) || qty < 1 || qty > 10) {
-          const err = new Error('Quantity must be between 1 and 10');
+        if (!Number.isInteger(qty) || qty < tt.min_per_order || qty > tt.max_per_order) {
+          const err = new Error(`Choose between ${tt.min_per_order} and ${tt.max_per_order} tickets for "${tt.name}".`);
           err.statusCode = 400;
           throw err;
         }
-        const now = new Date();
-        if (tt.sales_start && new Date(tt.sales_start) > now) {
-          const err = new Error(`Sales for "${tt.name}" have not started yet`);
-          err.statusCode = 400;
-          throw err;
-        }
-        if (tt.sales_end && new Date(tt.sales_end) < now) {
-          const err = new Error(`Sales for "${tt.name}" have ended`);
-          err.statusCode = 400;
-          throw err;
-        }
+        const saleStatus=availability(eventRows[0],tt);
+        if(saleStatus!=='on_sale') fail(`"${tt.name}" is not available for booking (${saleStatus.replace('_',' ')}).`,409);
         const reserved = await TicketType.reserve(tt.id, qty, conn);
         if (!reserved) {
           const err = new Error(`Not enough tickets available for "${tt.name}"`);
           err.statusCode = 409;
           throw err;
         }
-        total += Number(tt.price) * qty;
+        total += wallet.minorUnits(tt.price) * qty;
         resolvedItems.push({ ticketType: tt, qty });
       }
 
-      // 3. Create order (mock payment => instantly paid)
+      // Paid checkout holds stock; tickets and credit wait for verified capture.
+      const pending = Boolean(payment && total > 0);
+      if (pending && (!gateway.key_id || !gateway.key_secret || !gateway.webhook_secret)) fail('Online booking payments are not configured yet. Please contact the organizer.',503);
+      const method = payment ? (pending ? 'razorpay_'+(gateway.key_id.startsWith('rzp_live_')?'live':'test') : 'free') : 'mock';
+      // 3. Create order
       const bookingRef = generateBookingRef();
       const [orderResult] = await conn.query(
-        `INSERT INTO orders (event_id, booking_ref, customer_name, email, phone, total_amount, status, payment_method)
-         VALUES (?, ?, ?, ?, ?, ?, 'paid', 'mock')`,
-        [event_id, bookingRef, customer_name, email, phone || null, total]
+        `INSERT INTO orders (event_id, booking_ref, customer_name, email, phone, total_amount, status, payment_method, checkout_request_hash, currency)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [event_id, bookingRef, customer_name, email, phone || null, wallet.decimal(total), pending ? 'pending' : 'paid', method, payment?.request_hash || null, payment ? 'INR' : 'USD']
       );
       const orderId = orderResult.insertId;
+      if (pending) await require('../services/bookingPayments').register(conn, { ...payment, event_id, order_id:orderId, amount_minor:total, currency:'INR', gateway });
+      else await wallet.credit(conn, orderId);
 
       // 4. Issue tickets
       const tickets = [];
       for (const { ticketType, qty } of resolvedItems) {
         const template = ticketType.template_id ? await Studio.template(ticketType.template_id, conn) : null;
-        const design = { ...(template?.active && template.kind === 'ticket' ? template.config : defaultTicketDesign), type_name: ticketType.name, price: ticketType.price };
+        const design = { ...(template?.active && template.kind === 'ticket' ? template.config : defaultTicketDesign), type_name: ticketType.name, price: ticketType.price, currency:payment?'INR':'USD' };
+        const emailSnapshot=await require('../services/ticketEmails').snapshot(ticketType,conn);
+        const people = attendees ? await require('../services/attendees').save(conn,orderId,ticketType.id,attendees.get(ticketType.id),ticketForms.get(ticketType.id)) : null;
+        if (pending) {
+          await conn.query('INSERT INTO booking_reserved_items(order_id,ticket_type_id,qty,design_json,email_snapshot) VALUES (?,?,?,?,?)',[orderId,ticketType.id,qty,JSON.stringify(design),JSON.stringify(emailSnapshot)]);
+          continue;
+        }
         for (let i = 0; i < qty; i++) {
           const ticket = await Ticket.create(
             {
               order_id: orderId,
               ticket_type_id: ticketType.id,
-              attendee_name: customer_name,
+              attendee_name: people ? people[i].name : customer_name,
+              attendee_id: people ? people[i].id : null,
               design_snapshot: design,
+              email_snapshot: emailSnapshot,
             },
             conn
           );
@@ -101,7 +120,8 @@ const Order = {
         }
       }
 
-      await enqueue(conn, orderId, 'booking_confirmed');
+      if (!perAttendee) await forms.snapshot(conn,orderId,registrationForm,answers,registration_files);
+      if (!pending) await enqueue(conn, orderId, 'booking_confirmed');
       await conn.commit();
 
       const order = await this.findById(orderId);
@@ -114,9 +134,11 @@ const Order = {
     }
   },
 
-  async findAll({ status, event_id, search, limit = 50, offset = 0 } = {}) {
+  async findAll({ status, event_id, search, booking_group, limit = 50, offset = 0 } = {}) {
     const where = [];
     const params = [];
+    if (booking_group === 'real') where.push("payment_method NOT IN ('mock','razorpay_test')");
+    if (booking_group === 'test') where.push("payment_method IN ('mock','razorpay_test')");
     if (status) {
       where.push('o.status = ?');
       params.push(status);
@@ -145,9 +167,11 @@ const Order = {
     return rows;
   },
 
-  async countAll({ status, event_id, search } = {}) {
+  async countAll({ status, event_id, search, booking_group } = {}) {
     const where = [];
     const params = [];
+    if (booking_group === 'real') where.push("payment_method NOT IN ('mock','razorpay_test')");
+    if (booking_group === 'test') where.push("payment_method IN ('mock','razorpay_test')");
     if (status) {
       where.push('status = ?');
       params.push(status);
@@ -192,14 +216,17 @@ const Order = {
     const conn = await db.getConnection();
     try {
       await conn.beginTransaction();
+      if (!['cancelled','refunded'].includes(newStatus)) fail('Invalid order status.');
 
-      await conn.query('SELECT id FROM orders WHERE id=? FOR UPDATE', [id]);
-      const order = await this.findById(id, conn);
+      const [[eventOwner]]=await conn.query('SELECT event_id FROM orders WHERE id=?',[id]);
+      if(eventOwner) await conn.query('SELECT id FROM events WHERE id=? FOR UPDATE',[eventOwner.event_id]);
+      const [[order]] = await conn.query('SELECT * FROM orders WHERE id=? FOR UPDATE', [id]);
       if (!order) {
         const err = new Error('Order not found');
         err.statusCode = 404;
         throw err;
       }
+      if (order.payment_method.startsWith('razorpay_')) fail('Use the payment refund flow for gateway bookings.',409);
       if (['cancelled', 'refunded'].includes(order.status)) {
         const err = new Error(`Order is already ${order.status}`);
         err.statusCode = 409;
@@ -221,6 +248,8 @@ const Order = {
       for (const row of ttRows) {
         await TicketType.release(row.ticket_type_id, row.qty, conn);
       }
+
+      if (order.status === 'paid') await wallet.reverse(conn, id, newStatus);
 
       // 3. Update order status
       await conn.query('UPDATE orders SET status = ? WHERE id = ?', [newStatus, id]);

@@ -13,6 +13,7 @@ const email = {
   button_name: 'View my tickets', button_url: '{{booking_url}}',
   footer_text: 'Questions about your booking? Contact the event organizer.',
   copyright_text: '© {{year}} {{company_name}}. All rights reserved.',
+  attachments: [], attach_ticket_pdf: false,
   page_links: ['privacy-policy', 'terms-and-conditions', 'refund-policy', 'cancellation-policy', 'contact'],
   social_links: { ...social_links }, social_mode: 'brand',
 };
@@ -25,7 +26,7 @@ const pages = [
   ['privacy-policy', 'Privacy Policy'], ['terms-and-conditions', 'Terms & Conditions'],
   ['refund-policy', 'Refund Policy'], ['cancellation-policy', 'Cancellation Policy'], ['contact', 'Contact Us'],
 ];
-const brand = { company_name: 'TicketFlow', site_url: 'http://localhost:5173', support_email: '', logo: '' };
+const brand = require('../../shared/siteSettings.json');
 const smtp = { enabled: false, host: '', port: 587, encryption: 'starttls', username: '', from_name: 'TicketFlow', from_email: '', reply_to: '', password_encrypted: '' };
-const placeholders = ['customer_name', 'email', 'event_title', 'event_date', 'venue', 'city', 'booking_ref', 'booking_url', 'amount', 'ticket_count', 'status', 'company_name', 'support_email', 'year'];
+const placeholders = ['attendee_name','attendee_email','attendee_phone','ticket_type','ticket_code','registration_id','ticket','ticket_qr','ticket_pdf','attachments','registration_fields','submission_url','guidelines_url','customer_name', 'email', 'event_title', 'event_date', 'venue', 'city', 'booking_ref', 'booking_url', 'amount', 'ticket_count', 'status', 'company_name', 'support_email', 'year'];
 module.exports = { ticket, email, emailEvents, pages, brand, smtp, placeholders, social_links };

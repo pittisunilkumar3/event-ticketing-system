@@ -1,0 +1,21 @@
+.checkout-attendees { margin:32px 0; padding-top:28px; border-top:1px solid #e0e4d8; }
+.checkout-person { border:1px solid #d9e1d0; border-radius:12px; padding:22px; margin:26px 0; min-width:0; background:#fcfdf9; }
+.checkout-person legend { padding:0 8px; font-size:15px; font-weight:700; color:#2f452a; max-width:100%; overflow-wrap:anywhere; }
+.checkout-person legend span { display:inline-block; font-size:11px; font-weight:400; margin-left:8px; color:#67745f; }
+.attendee-copy { color:#47683b; font-size:12px; text-decoration:underline; text-underline-offset:3px; margin-bottom:18px; }
+.attendee-contact-fields { display:grid; grid-template-columns:1fr 1fr; gap:18px; }
+.attendee-contact-fields label { font-size:12px; font-weight:600; color:#4b5944; min-width:0; }
+.attendee-contact-fields label:first-child { grid-column:1/-1; }
+.attendee-contact-fields input { margin-top:8px; width:100%; padding:12px; font-size:14px; border:1px solid #cfd9c4; background:#fff; border-radius:8px; color:#283322; }
+.attendee-custom { margin-top:24px; padding-top:22px; border-top:1px solid #e0e6d7; }
+.attendee-custom h3 { font-size:17px; font-weight:650; margin-bottom:10px; }
+.attendee-custom>p { font-size:12px; line-height:1.7; color:#64735b; margin-bottom:18px; white-space:pre-wrap; }
+.attendee-answers { display:grid; gap:14px; margin-top:18px; font-size:13px; }
+.attendee-answers dt { color:#71806b; font-size:11px; margin-bottom:3px; }
+.attendee-answers dd { overflow-wrap:anywhere; white-space:pre-wrap; color:#293626; }
+.attendee-answers button { text-decoration:underline; color:#466b38; }
+.checkout-person>h3 { font-size:17px; font-weight:650; }
+.checkout-person>p { color:#627359; font-size:13px; margin-top:6px; }
+@media(max-width:600px) { .checkout-person { padding:18px; } .attendee-contact-fields { grid-template-columns:1fr; } }
+
+.checkout-person>legend+.attendee-custom { margin-top:0; padding-top:0; border-top:0; }

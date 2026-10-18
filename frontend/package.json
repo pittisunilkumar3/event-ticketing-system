@@ -5,15 +5,16 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "vite build && npm run build:ticket-pdf",
     "lint": "oxlint",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test:tickets": "node tests/ticket-layouts.mjs",
+    "build:ticket-pdf": "vite build --config vite.ticket-pdf.config.js"
   },
   "dependencies": {
-    "@ckeditor/ckeditor5-react": "^12.0.0",
     "@tailwindcss/vite": "^4.3.3",
     "axios": "^1.20.0",
-    "ckeditor5": "^49.0.0",
+    "pdfjs-dist": "^6.4.299",
     "qrcode.react": "^4.2.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",

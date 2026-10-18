@@ -1,238 +1,250 @@
-import { useEffect, useMemo, useState } from 'react';
-import { useNavigate, useParams, Link } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import {
+  useNavigate,
+  useParams,
+  useSearchParams,
+  Link,
+} from 'react-router-dom';
 import api from '../api/client';
-import { Spinner, Alert, GlowOrbs } from '../components/ui';
-import { formatDate, formatTime, formatDateTime, formatCurrency, categoryGradient } from '../utils/format';
-
+import {watchEventContent} from '../settings/watchEventContent';
+import { formatDate, formatTime, formatCurrency } from '../utils/format';
+import Icon from '../components/Icon';
+import CustomerState from '../components/CustomerState';
+import './booking.css';
+import './eventDetail.css';
+import EventTickets from './EventTickets';
+import {canSelectTicket, nextQuantity, validQuantity} from './ticketSelection';
+import {checkoutDestination} from './checkoutNavigation';
 export default function EventDetail() {
-  const { slug } = useParams();
-  const navigate = useNavigate();
-  const [event, setEvent] = useState(null);
-  const [ticketTypes, setTicketTypes] = useState([]);
-  const [selection, setSelection] = useState({});
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-
+  const { slug } = useParams(),
+    navigate = useNavigate(),
+    [params] = useSearchParams();
+  const [data, setData] = useState(null),
+    [error, setError] = useState(''),
+    [selection, setSelection] = useState({});
   useEffect(() => {
-    (async () => {
-      try {
-        setLoading(true);
-        const { data } = await api.get(`/events/${slug}`);
-        setEvent(data.data.event);
-        setTicketTypes(data.data.ticketTypes);
-      } catch (err) {
-        setError(err.response?.data?.message || 'Event not found');
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, [slug]);
-
-  const totalQty = useMemo(() => Object.values(selection).reduce((a, b) => a + b, 0), [selection]);
-  const totalAmount = useMemo(
-    () => ticketTypes.reduce((sum, tt) => sum + (selection[tt.id] || 0) * Number(tt.price), 0),
-    [selection, ticketTypes]
-  );
-
-  function setQty(ttId, delta, max) {
-    setSelection((prev) => {
-      const next = Math.min(Math.max((prev[ttId] || 0) + delta, 0), Math.min(max, 10));
-      return { ...prev, [ttId]: next };
-    });
-  }
-
-  function handleCheckout() {
-    if (totalQty === 0) return;
-    const items = Object.entries(selection)
-      .filter(([, qty]) => qty > 0)
-      .map(([ticket_type_id, qty]) => {
-        const tt = ticketTypes.find((t) => t.id === Number(ticket_type_id));
-        return { ticket_type_id: Number(ticket_type_id), qty, name: tt.name, price: Number(tt.price) };
+    let initial = true;
+    setData(null);
+    setError('');
+    return watchEventContent(api.defaults.baseURL, signal => {
+    api
+      .get('/events/' + slug, { signal })
+      .then(({ data: r }) => {
+        if (signal.aborted) return;
+        setError('');
+        setData(r.data);
+        const requested = Object.fromEntries(
+          (params.get('tickets') || '').split(',').map((x) => x.split(':'))
+        );
+        const useRequested = initial;
+        setSelection(previous =>
+          Object.fromEntries(
+            r.data.ticketTypes.map((t) => {
+              return [t.id, validQuantity(t, useRequested ? requested[t.id] || 0 : previous[t.id] || 0)];
+            })
+          )
+        );
+        initial = false;
+      })
+      .catch((e) => {
+        if (!signal.aborted) {
+          setData(null);
+          setError(e.response?.data?.message || 'Unable to load this event.');
+        }
       });
-    navigate(`/checkout/${slug}`, { state: { event, items, totalAmount, totalQty } });
+    });
+  }, [slug, params]);
+  if (!data) return <CustomerState loading={!error} eyebrow="YOUR NEXT EXPERIENCE" title={error ? 'This event isn’t available.' : 'Opening your next experience…'} description={error || 'We’re getting the latest event and ticket details.'} action="Explore events" icon="calendar"/>;
+  const { event, ticketTypes } = data;
+  const selected = ticketTypes.filter(t => validQuantity(t, selection[t.id]) > 0);
+  const lowest = ticketTypes
+    .filter(canSelectTicket)
+    .reduce((m, t) => Math.min(m, Number(t.price)), Infinity);
+  const setQty = (t, delta) => setSelection(s => ({...s, [t.id]: nextQuantity(t, s[t.id], delta)}));
+  function checkout() {
+    if (!selected.length) return;
+    const cart = selected.map((t) => t.id + ':' + selection[t.id]).join(',');
+    const destination = checkoutDestination(data, slug, cart);
+    if (data.checkout_path) window.location.assign(destination);
+    else navigate(destination);
   }
-
-  if (loading) return <Spinner label="Loading event…" />;
-  if (error)
-    return (
-      <main className="mx-auto max-w-2xl px-4 py-20">
-        <Alert>{error}</Alert>
-        <div className="mt-4 text-center">
-          <Link to="/" className="font-semibold text-indigo-300 hover:underline">
-            ← Back to all events
-          </Link>
-        </div>
-      </main>
-    );
-
   return (
-    <main>
-      {/* ============ CINEMATIC HERO ============ */}
-      <section className={`relative h-[380px] overflow-hidden bg-gradient-to-br ${categoryGradient(event.category)}`}>
-        {event.banner_image && <img src={event.banner_image} alt={event.title} className="h-full w-full object-cover" />}
-        <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-slate-950/10" />
-
-        <Link
-          to="/"
-          className="absolute left-4 top-4 flex h-10 w-10 items-center justify-center rounded-full bg-slate-950/60 text-white ring-1 ring-white/20 backdrop-blur transition hover:bg-slate-950/90"
-        >
-          ←
-        </Link>
-
-        <div className="absolute inset-x-0 bottom-0 mx-auto max-w-6xl px-4 pb-8">
-          <div className="animate-fade-up">
-            <span className="rounded-full bg-white/15 px-3 py-1 text-xs font-bold uppercase tracking-widest text-white ring-1 ring-white/25 backdrop-blur">
-              {event.category}
-            </span>
-            <h1 className="mt-3 max-w-3xl font-display text-4xl font-extrabold leading-tight tracking-tight text-white sm:text-5xl">
-              {event.title}
-            </h1>
-            <div className="mt-4 flex flex-wrap gap-2.5">
-              <HeroChip>📅 {formatDate(event.start_datetime)}</HeroChip>
-              <HeroChip>🕐 {formatTime(event.start_datetime)}</HeroChip>
-              <HeroChip>📍 {event.venue}, {event.city}</HeroChip>
+    <main className="booking-page event-detail-page">
+      <section
+        className={
+          'event-stage ' + (!event.banner_image ? 'event-stage-art' : '')
+        }
+      >
+        {event.banner_image && (
+          <img className="event-stage-image" src={event.banner_image} alt="" />
+        )}
+        <div className="event-stage-shade" />
+        <div className="booking-container event-stage-content">
+          <Link className="booking-back" to="/events">
+            ← All experiences
+          </Link>
+          <div className="event-stage-bottom">
+            <div>
+              <span className="booking-kicker">
+                {event.category || 'Live experience'} <i />{' '}
+                {event.city || 'Coming together'}
+              </span>
+              <h1>{event.title}</h1>
+              <p>{event.summary || 'Be there for the moments that matter.'}</p>
+              <div className="event-stage-meta">
+                <span>
+                  <Icon name="calendar" />
+                  {formatDate(event.start_datetime)}
+                </span>
+                <span>
+                  {formatTime(event.start_datetime)} ·{' '}
+                  {event.venue || 'Venue to be announced'}
+                </span>
+              </div>
             </div>
+            <a className="event-date-stamp" href="#tickets">
+              <small>
+                {new Date(
+                  event.start_datetime.replace(' ', 'T')
+                ).toLocaleString('en', { month: 'short' })}
+              </small>
+              <strong>
+                {new Date(event.start_datetime.replace(' ', 'T')).getDate()}
+              </strong>
+              <span>GET TICKETS ↗</span>
+            </a>
           </div>
         </div>
       </section>
-
-      {/* ============ CONTENT ============ */}
-      <div className="relative">
-        <GlowOrbs />
-        <div className="relative mx-auto grid max-w-6xl gap-8 px-4 py-10 lg:grid-cols-[1fr_400px]">
-          {/* Left: about */}
-          <div className="space-y-5">
-            <div className="rounded-3xl bg-white/[0.04] p-7 ring-1 ring-white/10 backdrop-blur">
-              <h2 className="font-display text-xl font-bold text-white">About this event</h2>
-              <p className="mt-3 whitespace-pre-line leading-relaxed text-slate-400">
-                {event.description || 'No description available.'}
-              </p>
-            </div>
-
-            <div className="grid gap-4 sm:grid-cols-2">
-              <InfoCard icon="🕒" label="Doors open" value={formatDateTime(event.start_datetime)} />
-              {event.end_datetime && <InfoCard icon="🏁" label="Ends" value={formatDateTime(event.end_datetime)} />}
-              <InfoCard icon="🏙️" label="City" value={event.city} />
-              <InfoCard icon="🎫" label="Ticket types" value={`${ticketTypes.length} available`} />
-            </div>
-          </div>
-
-          {/* Right: booking panel */}
-          <div className="lg:sticky lg:top-24 lg:h-fit">
-            <div className="overflow-hidden rounded-3xl bg-white/[0.04] ring-1 ring-white/10 backdrop-blur">
-              <div className="border-b border-white/5 p-6 pb-4">
-                <h2 className="font-display text-xl font-bold text-white">Select tickets</h2>
-                <p className="mt-0.5 text-sm text-slate-500">Max 10 per ticket type</p>
-              </div>
-
-              <div className="space-y-3 p-6 pt-4">
-                {ticketTypes.map((tt) => {
-                  const soldOut = tt.available === 0;
-                  const ended = !tt.is_on_sale;
-                  const qty = selection[tt.id] || 0;
-                  const pct = tt.quantity ? Math.min(Math.round((tt.sold / tt.quantity) * 100), 100) : 0;
-                  const selected = qty > 0;
-
-                  return (
-                    <div
-                      key={tt.id}
-                      className={`rounded-2xl border p-4 transition ${
-                        selected
-                          ? 'border-indigo-400/50 bg-indigo-500/10 ring-1 ring-indigo-400/30'
-                          : 'border-white/10 bg-white/[0.03]'
-                      }`}
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0">
-                          <p className="font-semibold text-white">{tt.name}</p>
-                          {tt.description && <p className="mt-0.5 line-clamp-1 text-xs text-slate-500">{tt.description}</p>}
-                          {soldOut ? (
-                            <p className="mt-1.5 text-xs font-bold text-rose-400">Sold out</p>
-                          ) : ended ? (
-                            <p className="mt-1.5 text-xs font-bold text-slate-500">Sales ended</p>
-                          ) : tt.available < 20 ? (
-                            <p className="mt-1.5 text-xs font-bold text-amber-300">🔥 Only {tt.available} left!</p>
-                          ) : (
-                            <p className="mt-1.5 text-xs text-slate-500">{tt.available} available</p>
-                          )}
-                        </div>
-                        <p className="shrink-0 font-display text-xl font-extrabold text-gradient">
-                          {formatCurrency(tt.price)}
-                        </p>
-                      </div>
-
-                      {/* capacity bar */}
-                      <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/5">
-                        <div
-                          className={`h-full rounded-full ${pct >= 80 ? 'bg-gradient-to-r from-amber-400 to-rose-500' : 'bg-gradient-to-r from-indigo-500 to-fuchsia-500'}`}
-                          style={{ width: `${pct}%` }}
-                        />
-                      </div>
-
-                      {!soldOut && !ended && (
-                        <div className="mt-3.5 flex items-center justify-end gap-3">
-                          <button
-                            onClick={() => setQty(tt.id, -1, tt.available)}
-                            disabled={qty === 0}
-                            className="flex h-9 w-9 items-center justify-center rounded-full border border-white/15 text-lg font-bold text-slate-300 transition hover:bg-white/10 disabled:opacity-25"
-                          >
-                            −
-                          </button>
-                          <span className="w-7 text-center font-display text-lg font-extrabold text-white">{qty}</span>
-                          <button
-                            onClick={() => setQty(tt.id, 1, tt.available)}
-                            disabled={qty >= Math.min(tt.available, 10)}
-                            className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-lg font-bold text-white ring-1 ring-white/15 transition hover:bg-indigo-500 hover:ring-indigo-400 disabled:opacity-25"
-                          >
-                            +
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-
-              {/* total + CTA */}
-              <div className="border-t border-white/5 bg-slate-950/40 p-6">
-                <div className="flex items-center justify-between text-sm text-slate-400">
-                  <span>
-                    {totalQty} ticket{totalQty === 1 ? '' : 's'} selected
-                  </span>
-                  <span className="font-display text-2xl font-extrabold text-white">{formatCurrency(totalAmount)}</span>
-                </div>
-                <button
-                  onClick={handleCheckout}
-                  disabled={totalQty === 0}
-                  className="mt-4 w-full rounded-2xl bg-gradient-to-r from-indigo-500 to-fuchsia-500 py-4 font-display font-bold text-white shadow-[0_12px_40px_-10px_rgba(139,92,246,0.6)] transition hover:opacity-90 disabled:cursor-not-allowed disabled:from-slate-800 disabled:to-slate-800 disabled:text-slate-500 disabled:shadow-none"
-                >
-                  {totalQty === 0 ? 'Select tickets to continue' : `Checkout · ${formatCurrency(totalAmount)}`}
-                </button>
-                <p className="mt-3 text-center text-xs text-slate-600">🔒 Secure checkout · Instant e-tickets</p>
-              </div>
-            </div>
-          </div>
+      <div className="event-section-nav">
+        <div className="booking-container">
+          <a href="#about">The experience</a>
+          <a href="#details">Good to know</a>
+          <a href="#tickets">Tickets & pricing</a>
+          <span>
+            {Number.isFinite(lowest)
+              ? lowest === 0
+                ? 'Free tickets available'
+                : 'From ' + formatCurrency(lowest)
+              : 'Stay tuned for ticket availability'}
+          </span>
         </div>
+      </div>
+      <div className="booking-container event-body">
+        <EventTickets ticketTypes={ticketTypes} selection={selection} onQuantity={setQty} onCheckout={checkout}/>
+        <div className="event-story">
+          <section id="about">
+            <span className="booking-kicker">THE EXPERIENCE</span>
+            <h2>About the experience.</h2>
+            <p className="event-description">
+              {event.description ||
+                'The organizer will share more details about this experience soon.'}
+            </p>
+            {event.highlights && (
+              <div className="event-highlights">
+                {event.highlights
+                  .split('\n')
+                  .filter(Boolean)
+                  .map((line, i) => (
+                    <div key={i}>
+                      <Icon name="check" />
+                      {line}
+                    </div>
+                  ))}
+              </div>
+            )}
+          </section>
+          <section id="details" className="event-details-section">
+            <span className="booking-kicker">PLAN YOUR VISIT</span>
+            <h2>Good to know.</h2>
+            <div className="event-facts">
+              <Fact
+                icon="calendar"
+                label="When"
+                value={formatDate(event.start_datetime)}
+                extra={
+                  formatTime(event.start_datetime) +
+                  (event.end_datetime
+                    ? ' – ' +
+                      formatDate(event.end_datetime) +
+                      ', ' +
+                      formatTime(event.end_datetime)
+                    : '')
+                }
+              />
+              <Fact
+                icon="pin"
+                label="Where"
+                value={event.venue || 'Venue to be announced'}
+                extra={[event.address, event.city].filter(Boolean).join(', ')}
+              />
+              <Fact
+                icon="ticket"
+                label="Admission"
+                value={event.age_policy || 'See ticket descriptions'}
+                extra="Choose the pass that suits your visit."
+              />
+              <Fact
+                icon="grid"
+                label="Your ticket"
+                value="A unique QR entry pass"
+                extra="Your booking reference gives you access to your tickets."
+              />
+            </div>
+            {event.entry_instructions && (
+              <div className="event-entry">
+                <h3>Before you arrive</h3>
+                <p>{event.entry_instructions}</p>
+              </div>
+            )}
+            {(event.venue || event.address) && (
+              <a
+                className="booking-text-link"
+                target="_blank"
+                rel="noreferrer"
+                href={
+                  'https://www.google.com/maps/search/?api=1&query=' +
+                  encodeURIComponent(
+                    [event.venue, event.address, event.city]
+                      .filter(Boolean)
+                      .join(', ')
+                  )
+                }
+              >
+                Find the venue on maps ↗
+              </a>
+            )}
+          </section>
+          {event.organizer_name && (
+            <section className="event-organizer">
+              <div className="organizer-monogram">
+                {event.organizer_name[0]}
+              </div>
+              <div>
+                <small>CURATED BY</small>
+                <h3>{event.organizer_name}</h3>
+                {event.organizer_email && (
+                  <a href={'mailto:' + event.organizer_email}>
+                    Contact the organizer ↗
+                  </a>
+                )}
+              </div>
+            </section>
+          )}
+        </div>
+
       </div>
     </main>
   );
 }
-
-function HeroChip({ children }) {
+function Fact({ icon, label, value, extra }) {
   return (
-    <span className="rounded-full bg-white/10 px-3.5 py-1.5 text-sm font-medium text-white ring-1 ring-white/20 backdrop-blur">
-      {children}
-    </span>
-  );
-}
-
-function InfoCard({ icon, label, value }) {
-  return (
-    <div className="flex items-start gap-3.5 rounded-2xl bg-white/[0.04] p-5 ring-1 ring-white/10">
-      <span className="text-2xl">{icon}</span>
+    <div className="event-fact">
+      <Icon name={icon} />
       <div>
-        <p className="text-[11px] font-bold uppercase tracking-widest text-slate-500">{label}</p>
-        <p className="mt-0.5 text-sm font-medium text-slate-200">{value}</p>
+        <small>{label}</small>
+        <h3>{value}</h3>
+        <p>{extra}</p>
       </div>
     </div>
   );

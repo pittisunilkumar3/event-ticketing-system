@@ -1,0 +1,21 @@
+[Unit]
+Description=TicketFlow ticketing API
+After=network.target ticketflow-db.service
+Requires=ticketflow-db.service
+[Service]
+Type=simple
+User=ticketflow
+Group=ticketflow
+WorkingDirectory=/opt/ticketflow/app/backend
+Environment=NODE_ENV=production
+ExecStart=/opt/ticketflow/runtime/bin/node server.js
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/ticketflow/app/backend/uploads /opt/ticketflow/app/backend/private
+UMask=0027
+[Install]
+WantedBy=multi-user.target
