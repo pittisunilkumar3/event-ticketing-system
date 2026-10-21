@@ -2,6 +2,7 @@ import {TicketExtras} from './TicketPresentation';
 import {TicketDataContext,resolveTicketText} from './ticketVariables';
 import {useContext,useEffect,useRef,useState} from 'react';
 import {TICKET_WIDTH,MAX_TICKET_HEIGHT,transformFrame,ticketExtent} from './ticketGeometry';
+import {ticketSize} from './ticketSize';
 import { QRCodeSVG } from 'qrcode.react';
 import { formatDate, formatTime, formatCurrency } from '../utils/format';
 import TicketText, {TicketTextContext} from './TicketText';
@@ -14,12 +15,13 @@ export default function TicketCanvas({design, ticket={}, order={}, preview=false
   const wrapper=useRef(null), canvasRef=useRef(null), gesture=useRef(null);
   const [scale,setScale]=useState(1), [draft,setDraft]=useState(null);
   const free=Boolean(design.canvas), height=draft?.canvasHeight??design.canvas?.height;
+  const customSize=Boolean(ticketSize(design.ticket_size));
   useEffect(()=>{
-    if(!free||!wrapper.current)return;
+    if(!free||customSize||!wrapper.current)return;
     const resize=()=>setScale(wrapper.current.clientWidth/TICKET_WIDTH);
     resize();const observer=new ResizeObserver(resize);observer.observe(wrapper.current);
     return ()=>observer.disconnect();
-  },[free]);
+  },[free,customSize]);
   function startDrag(event,block,edge) {
     if(event.button!==0||!free||!onBlockChange)return;
     event.preventDefault();event.stopPropagation();event.currentTarget.focus({preventScroll:true});
@@ -74,7 +76,9 @@ export default function TicketCanvas({design, ticket={}, order={}, preview=false
     if(type==='text')return <div className="canvas-custom-text">{resolveTicketText(block.text || (onBlockSelect?'Your text':''),booking)}</div>;
     return <>{labels[type]&&<small><TicketText name={labels[type]}/></small>}<div><TicketText name={type}>{values[type]}</TicketText></div></>;
   }
-  const ticketNode=<article ref={canvasRef} className={`designed-ticket ticket-canvas ${free?'ticket-freeform':''} ${ticket.status==='cancelled'?'ticket-void':''}`} style={{'--canvas-bg':bg,'--canvas-ink':ink,'--canvas-accent':design.accent||'#f97316',...(free?{width:TICKET_WIDTH,height,transform:`scale(${scale})`}:{})}}>
+  // Custom card dimensions and artwork scaling are owned by TicketPresentation,
+  // exactly as for the built-in layouts. Do not apply the legacy scale a second time.
+  const ticketNode=<article ref={canvasRef} className={`designed-ticket ticket-canvas ${free?'ticket-freeform':''} ${ticket.status==='cancelled'?'ticket-void':''}`} style={{'--canvas-bg':bg,'--canvas-ink':ink,'--canvas-accent':design.accent||'#f97316',...(free?(customSize?{position:'relative'}:{width:TICKET_WIDTH,height,transform:`scale(${scale})`}):{})}}>
     {ticket.status==='cancelled'&&<span className="ticket-void-stamp">VOID</span>}
     {design.layout_blocks.map(original=>{
       const block=draft?.id===original.id?{...original,frame:draft.frame,...(draft.font_size?{font_size:draft.font_size}:{})}:original;
@@ -95,5 +99,5 @@ export default function TicketCanvas({design, ticket={}, order={}, preview=false
     {free&&onCanvasHeight&&<button type="button" className="canvas-extend" aria-label="Resize ticket height" onPointerDown={event=>startDrag(event,null,'ticket')} onPointerMove={drag} onPointerUp={endDrag} onPointerCancel={event=>endDrag(event,true)} onKeyDown={event=>{if(['ArrowUp','ArrowDown'].includes(event.key)){event.preventDefault();onCanvasHeight(Math.max(ticketExtent(design.layout_blocks),Math.min(MAX_TICKET_HEIGHT,height+(event.key==='ArrowDown'?20:-20))));}}}>↕</button>}
     <TicketExtras design={design} ticket={ticket} order={order} preview={preview}/>
   </article>;
-  return <TicketTextContext.Provider value={{design}}>{free?<div className="ticket-freeform-wrap" ref={wrapper} style={{aspectRatio:`${TICKET_WIDTH} / ${height}`}}>{ticketNode}</div>:ticketNode}</TicketTextContext.Provider>;
+  return <TicketTextContext.Provider value={{design}}>{free&&!customSize?<div className="ticket-freeform-wrap" ref={wrapper} style={{aspectRatio:`${TICKET_WIDTH} / ${height}`}}>{ticketNode}</div>:ticketNode}</TicketTextContext.Provider>;
 }

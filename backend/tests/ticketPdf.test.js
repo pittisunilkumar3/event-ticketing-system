@@ -199,3 +199,13 @@ test('pasted components keep typography, transforms and live variables in the sh
  assert.match(html,/font-weight:650;line-height:1.45;letter-spacing:2px;font-style:italic;text-transform:uppercase;text-align:center/);
  assert.match(html,/font-size:26px!important/);assert.match(html,/color:#22cc88!important/);
 });
+
+test('resized freeform tickets share one sizing system with existing ticket layouts',()=>{
+ const size={width:720,height:480,contentWidth:900,contentHeight:600,referenceWidth:760};
+ const design=require('../services/studioValidation').template('ticket',{...defaults,canvas:{height:1000},layout_blocks:[],ticket_size:size,extra_elements:[{id:'extra_qr',type:'qr',label:'QR',x:10,y:10,w:20,h:30,font_size:18,color:'#ffffff'}]});
+ const html=renderTicketDocument({design,ticket,order});
+ assert.ok(html.includes('width:900px;max-width:none;margin:0;height:600px;'));
+ assert.match(html,/zoom:0.8/);assert.match(html,/class="ticket-presentation" style="height:480px;overflow:clip"/);
+ assert.doesNotMatch(html,/class="ticket-freeform-wrap"|transform:scale\(/);
+ assert.match(html,/ticket-extra-qr/);
+});

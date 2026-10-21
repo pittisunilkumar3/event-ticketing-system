@@ -630,3 +630,18 @@ Final canvas polish also selects text when clicking the gap between wrapped titl
 - Live verified copy/paste and moved-copy PDF preview. All temporary live edits undone without saving; existing user drafts preserved. Earlier PDF comparison also verified the customized preview's size/color/rotation/position using an unsaved test draft.
 - Backup: `/root/ticketflow-backup-ticket-copy-paste-20261021-0uPn6f`. Frontend index SHA256: `040504ce5516209057660320427ea599d2b71df130e773509ca5a525cff48c05`. Service active.
 - Proof: `deployment/ticket-copy-paste-live.png`, `deployment/ticket-copy-paste-pdf-live.png`.
+
+### 2026-10-21 — New design button repair
+
+- Reproduced the live New design button returning to the collection without opening an editor: it depended on a browser `window.prompt` that did not appear in the in-app browser.
+- New design now opens the blank canvas immediately with an editable name in the existing toolbar. Empty names show an inline message and receive focus; saved names are trimmed. Existing designs retain their current toolbar and content.
+- Tested the full new-design lifecycle against isolated local storage using the production validator: open canvas, reject an empty name, add QR, save, reload collection and reopen the saved design. Live verification confirms immediate canvas opening, focused name input, and compact 240px toolbar field. No live test design saved.
+- Production build, geometry/UI regression checks and diff check passed. Focused lint reports only the pre-existing preview-field effect warning. Backups: `/root/ticketflow-backup-new-design-20261021-9HABvv` (original), `/root/ticketflow-backup-new-design-20261021-0GrUAC` (toolbar sizing). Final index SHA256 `1deb448599aa8e5f007750d98cd24d0477ab53bd1003eb25d82b313181ffce80`; service active. Proof: `deployment/ticket-new-design-live.png`.
+
+### 2026-10-22 — Consistent new-ticket design and sizing
+
+- New design now starts from the standard ticket layout with organizer branding, matching the existing design editor. The draft name remains editable in the toolbar.
+- Fixed legacy blank/freeform tickets overriding the shared card dimensions and applying scaling twice. Custom dimensions and proportional scaling now use the same renderer as built-in tickets and their PDFs.
+- Verified local create/save/reload/reopen, independent 900×600 sizing, proportional reduction to 720×480, and a one-page 540×360pt PDF with an undistorted QR. Production build, 47 backend tests, 180 layout checks, clipboard/geometry checks and diff check passed. Focused lint only reports the pre-existing preview-field effect warning.
+- Backup: `/root/ticketflow-backup-consistent-designer-20261022-yDI3x1`. Shared PDF bundle deployed and service restarted successfully. Frontend index SHA256 `f3498ce494e9077b1872a4b9f2483a680b452c6a5fc6111da2bad5ecd02a13ad`.
+- Live verification: New design opens the classic layout with Cinematica branding and attendee/ticket form preview; selecting attendee text exposes edit/style/delete and eight resize handles. Live PDF preview generated successfully. No production template saved; existing drafts preserved. Proof: `deployment/ticket-consistent-new-design-live.png`.

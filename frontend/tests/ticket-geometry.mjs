@@ -40,3 +40,12 @@ const elementStyle=await source(new URL('../src/admin/studio/TicketElementStyle.
 assert.ok(elementStyle.includes('onPointerDown={e=>e.stopPropagation()}'));
 assert.ok(elementStyle.includes("onKeyDown={e=>{e.stopPropagation();"));
 console.log('PASS: Style controls receive pointer events and isolate canvas shortcuts.');
+
+assert.ok(!editor.includes('window.prompt('));
+assert.match(editor,/aria-label="Design name"/);
+assert.match(editor,/name:selected.name.trim\(\)/);
+console.log('PASS: New design uses the canvas name field instead of a browser prompt.');
+assert.match(editor,/config: newTicketConfig\(data\)/);
+assert.ok(!editor.includes('canvas:{height:1000}, layout_blocks:[]'));
+assert.match(editor,/brand:data.brand\?\.company_name/);
+console.log('PASS: new designs start with the same layout and organizer branding as existing tickets.');

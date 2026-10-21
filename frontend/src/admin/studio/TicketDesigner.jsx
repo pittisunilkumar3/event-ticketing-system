@@ -12,6 +12,12 @@ function withText(config, name, value) {
   const field = textCatalog[name].field;
   return field ? {...config, [field]: value} : {...config, text: {...config.text, [name]: value}};
 }
+function newTicketConfig(data) {
+  return {...structuredClone(data.defaults.ticket),
+    brand:data.brand?.company_name||data.defaults.ticket.brand,
+    logo:data.brand?.logo||data.defaults.ticket.logo,
+    layout_blocks:null,canvas:null};
+}
 import {
   Field,
   Notice,
@@ -82,7 +88,7 @@ export default function TicketDesigner({ data, onUpdate }) {
       name: "My ticket design",
       kind: "ticket",
       active: true,
-      config: { ...data.defaults.ticket, canvas:{height:1000}, layout_blocks:[] },
+      config: newTicketConfig(data),
     },
   );
   const [saved, setSaved] = useState(JSON.stringify(selected));
@@ -92,6 +98,7 @@ export default function TicketDesigner({ data, onUpdate }) {
   const [editingText, setEditingText] = useState(null);
   const [modalOpen,setModalOpen]=useState(false);
   const modal=useRef(null);
+  const designNameInput=useRef(null);
   const [past,setPast]=useState([]),[future,setFuture]=useState([]);
   const editConfig=useCallback(next => {
     setMessage(null);
@@ -132,24 +139,27 @@ export default function TicketDesigner({ data, onUpdate }) {
     setSelected(JSON.parse(saved));setEditingText(null);setModalOpen(false);
   }
   function create() {
-    const name=window.prompt('Name your ticket design','My ticket design');
-    if(!name?.trim())return;
     select({
-      name: name.trim().slice(0,120),
+      name: "My ticket design",
       kind: "ticket",
       active: true,
-      config: { ...data.defaults.ticket, canvas:{height:1000}, layout_blocks:[] },
+      config: newTicketConfig(data),
     });
   }
   async function save(e) {
     e.preventDefault();
     if (editingText || uploading) return;
+    if(!selected.name.trim()){
+      setMessage({text:'Enter a name for your ticket design.'});
+      designNameInput.current?.focus();
+      return;
+    }
     setSaving(true);
     setMessage(null);
     try {
       const { data: r } = await api[selected.id ? "put" : "post"](
         `/admin/studio/templates${selected.id ? "/" + selected.id : ""}`,
-        selected,
+        {...selected,name:selected.name.trim()},
       );
       setSelected(r.data.template);
       setSaved(JSON.stringify(r.data.template));
@@ -341,7 +351,7 @@ export default function TicketDesigner({ data, onUpdate }) {
       {modalOpen&&<dialog ref={modal} className="studio ticket-preview-modal" aria-label="Ticket design preview" onCancel={event=>{event.preventDefault();if(pdfUrl)setPdfUrl('');else if(!pdfBusy)closeEditor();}}>
         <section className="studio-ticket-preview" inert={Boolean(pdfUrl)}>
           <div className="ticket-component-toolbar">
-            <strong>{selected.name}</strong>
+            {selected.id?<strong>{selected.name}</strong>:<input ref={designNameInput} className="ticket-new-design-name" aria-label="Design name" placeholder="Name your ticket design" autoFocus maxLength={120} value={selected.name} disabled={saving||uploading} onChange={e=>{setSelected(s=>({...s,name:e.target.value}));setMessage(null);}}/>}
             <button type="button" className="studio-button" disabled={!past.length||saving||uploading||!!editingText} onClick={()=>travel()}>Undo</button>
             <button type="button" className="studio-button" disabled={!future.length||saving||uploading||!!editingText} onClick={()=>travel(true)}>Redo</button>
             <button type="button" className="studio-button" disabled={saving||uploading||pdfBusy} onClick={closeEditor}>Close preview</button>
