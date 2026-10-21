@@ -8,14 +8,16 @@ import {
 import api from '../api/client';
 import {getPublicData} from '../settings/publicStartup';
 import {watchEventContent} from '../settings/watchEventContent';
-import { formatDate, formatTime, formatCurrency } from '../utils/format';
+import { formatEventDates, formatEventTimes, formatTime, formatCurrency } from '../utils/format';
 import Icon from '../components/Icon';
+import EventVenueLink, {eventMapsUrl} from '../components/EventVenueLink';
 import CustomerState from '../components/CustomerState';
 import './booking.css';
 import './eventDetail.css';
 import './eventThemes.css';
 import {eventThemeId} from './eventTheme';
 import EventTickets from './EventTickets';
+import EventDateStamp from './EventDateStamp';
 import PremiereHero from './PremiereHero';
 import ShowcaseHero, {showcaseThemes} from './ShowcaseHero';
 import EventDescription from './EventDescription';
@@ -104,25 +106,15 @@ export function EventPageView({data,selection={},onQuantity=()=>{},onCheckout=()
               <div className="event-stage-meta">
                 <span>
                   <Icon name="calendar" />
-                  {formatDate(event.start_datetime)}
+                  {formatEventDates(event.start_datetime, event.end_datetime)}
                 </span>
                 <span>
                   {formatTime(event.start_datetime)} ·{' '}
-                  {event.venue || 'Venue to be announced'}
+                  {<EventVenueLink event={event}/>}
                 </span>
               </div>
             </div>
-            <a className="event-date-stamp" href="#tickets">
-              <small>
-                {new Date(
-                  event.start_datetime.replace(' ', 'T')
-                ).toLocaleString('en', { month: 'short' })}
-              </small>
-              <strong>
-                {new Date(event.start_datetime.replace(' ', 'T')).getDate()}
-              </strong>
-              <span>GET TICKETS ↗</span>
-            </a>
+            <EventDateStamp start={event.start_datetime} end={event.end_datetime} />
           </div>
         </div>
       </section>}
@@ -168,21 +160,13 @@ export function EventPageView({data,selection={},onQuantity=()=>{},onCheckout=()
               <Fact
                 icon="calendar"
                 label="When"
-                value={formatDate(event.start_datetime)}
-                extra={
-                  formatTime(event.start_datetime) +
-                  (event.end_datetime
-                    ? ' – ' +
-                      formatDate(event.end_datetime) +
-                      ', ' +
-                      formatTime(event.end_datetime)
-                    : '')
-                }
+                value={formatEventDates(event.start_datetime, event.end_datetime)}
+                extra={formatEventTimes(event.start_datetime,event.end_datetime)}
               />
               <Fact
                 icon="pin"
                 label="Where"
-                value={event.venue || 'Venue to be announced'}
+                value={<EventVenueLink event={event}/>}
                 extra={[event.address, event.city].filter(Boolean).join(', ')}
               />
               <Fact
@@ -209,14 +193,7 @@ export function EventPageView({data,selection={},onQuantity=()=>{},onCheckout=()
                 className="booking-text-link"
                 target="_blank"
                 rel="noreferrer"
-                href={
-                  'https://www.google.com/maps/search/?api=1&query=' +
-                  encodeURIComponent(
-                    [event.venue, event.address, event.city]
-                      .filter(Boolean)
-                      .join(', ')
-                  )
-                }
+                href={eventMapsUrl(event)}
               >
                 Find the venue on maps ↗
               </a>

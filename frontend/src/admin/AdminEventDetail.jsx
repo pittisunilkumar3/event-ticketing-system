@@ -3,7 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import api from '../api/client';
 import { siteBase } from '../saas/context';
 import Icon from '../components/Icon';
-import { formatDateTime, formatCurrency } from '../utils/format';
+import { formatDateTime, formatEventDates, formatTime, formatCurrency } from '../utils/format';
 import './events.css';
 import EventRegistrationForm from './EventRegistrationForm';
 import TicketModal from './TicketTypeModal';
@@ -128,7 +128,7 @@ export default function AdminEventDetail() {
           </span>
           <h1>{event.title}</h1>
           <p>
-            {formatDateTime(event.start_datetime)} ·{' '}
+            {formatEventDates(event.start_datetime,event.end_datetime)} · {formatTime(event.start_datetime)} ·{' '}
             {[event.venue, event.city].filter(Boolean).join(', ')}
           </p>
         </div>

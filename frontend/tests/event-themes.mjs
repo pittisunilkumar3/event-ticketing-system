@@ -30,6 +30,35 @@ try {
   const empty=render(EventPageView,{data:{event:{...event,page_theme:id,banner_image:null},ticketTypes:[]}});
   assert.match(empty,/showcase-no-art/);assert.match(empty,/Explore the event/);assert.doesNotMatch(empty,/showcase-art|showcase-price/);
  }
+ const {formatEventDates,eventDateInput}=await server.ssrLoadModule('/src/utils/format.jsx');
+ assert.equal(eventDateInput('2026-12-12 09:00:00'),'2026-12-12T09:00');
+ assert.equal(eventDateInput(null),'');
+ assert.equal(formatEventDates('2026-12-31 09:00:00','2027-01-01 18:00:00'),'31 Dec 2026 – 1 Jan 2027');
+ assert.equal(formatEventDates('2026-11-30 09:00:00','2026-12-01 18:00:00'),'30 Nov – 1 Dec 2026');
+ assert.equal(formatEventDates('2026-12-12 09:00:00','2026-12-12 18:00:00'),'12 Dec 2026');
+ assert.equal(formatEventDates('2026-12-12 09:00:00',null),'12 Dec 2026');
+ for(const theme of themes){
+  const page=render(EventPageView,{data:{event:{...event,page_theme:theme.id,start_datetime:'2026-12-12 09:00:00',end_datetime:'2026-12-13 18:00:00'},ticketTypes:[]}});
+  assert.match(page,/12–13 Dec 2026/);
+  assert.match(page,/9:00 AM/);
+ }
+ const {default:DateStamp}=await server.ssrLoadModule('/src/pages/EventDateStamp.jsx');
+ const stamp=(start,end)=>render(DateStamp,{start,end});
+ assert.match(stamp('2026-12-12 09:00:00','2026-12-13 18:00:00'),/<small>Dec<\/small><strong>12–13<\/strong>/);
+ assert.match(stamp('2026-12-12 09:00:00',null),/<small>Dec<\/small><strong>12<\/strong>/);
+ assert.match(stamp('2026-12-12 09:00:00','2026-12-12 18:00:00'),/<strong>12<\/strong>/);
+ assert.match(stamp('2026-12-31 09:00:00','2027-01-01 18:00:00'),/<strong>31 Dec 2026 – 1 Jan 2027<\/strong>/);
+ const {eventMapsUrl}=await server.ssrLoadModule('/src/components/EventVenueLink.jsx');
+ const location={venue:'T-Hub',address:'T-Hub, Hyderabad, Telangana, India',city:'Hyderabad'};
+ assert.equal(new URL(eventMapsUrl(location)).searchParams.get('query'),'T-Hub, Hyderabad, Telangana, India');
+ assert.equal(eventMapsUrl({}),null);
+ assert.equal(new URL(eventMapsUrl({venue:'Hall & Studio',city:'New Delhi'})).searchParams.get('query'),'Hall & Studio, New Delhi');
+ for(const theme of themes){
+  const page=render(EventPageView,{data:{event:{...event,...location,page_theme:theme.id},ticketTypes:[]}});
+  assert.equal((page.match(/class="event-venue-link"/g)||[]).length,2,theme.id);
+  assert.match(page,/aria-label="T-Hub — Open in Google Maps">T-Hub<\/a>/);
+  assert.match(page,/target="_blank" rel="noopener noreferrer"/);
+ }
  const picker=render(Picker,{value:'poster',onChange:()=>{},event,ticketTypes:[ticket]});
  assert.equal((picker.match(/type="radio"/g)||[]).length,themes.length);assert.equal((picker.match(/checked=""/g)||[]).length,1);
  for(const theme of themes)assert.ok(picker.includes('Preview '+theme.name));

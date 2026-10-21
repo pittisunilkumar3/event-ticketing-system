@@ -16,29 +16,32 @@
 .event-detail-page .event-section-nav span { color:#526248; font-size:12px; }
 .event-detail-page .event-body { display:block; padding-top:44px; }
 .event-ticket-section { scroll-margin-top:100px; }
-.event-ticket-intro { display:flex; align-items:end; justify-content:space-between; gap:24px; margin-bottom:26px; }
-.event-ticket-intro h2 { font-size:clamp(26px,3vw,36px); font-weight:750; line-height:1.2; margin-top:10px; }
+.event-ticket-intro { display:flex; align-items:end; justify-content:space-between; gap:16px; margin-bottom:14px; }
+.event-ticket-intro h2 { font-size:clamp(24px,3vw,32px); font-weight:750; line-height:1.2; margin-top:0; }
 .event-ticket-intro>p { color:#667169; font-size:13px; max-width:260px; line-height:1.7; }
 .event-ticket-layout { display:grid; grid-template-columns:minmax(0,1fr) 340px; gap:28px; align-items:start; }
-.event-ticket-list { display:grid; gap:14px; min-width:0; }
-.event-pass { background:#fff; border:1px solid #dfe3da; border-radius:16px; padding:25px; display:grid; grid-template-columns:42px minmax(0,1fr) auto; gap:18px; transition:background .18s,border-color .18s,box-shadow .18s; }
+.event-ticket-list { display:grid; gap:8px; min-width:0; }
+.event-pass { background:#fff; border:1px solid #dfe3da; border-radius:12px; padding:8px 14px; display:grid; grid-template-columns:minmax(0,1fr) auto; gap:10px; transition:background .18s,border-color .18s,box-shadow .18s; }
 .event-pass.is-selected { border-color:#517244; background:#f3f7ed; box-shadow:inset 0 0 0 1px #517244; }
 .event-pass.is-unavailable { background:#f0f0eb; border-style:dashed; }
-.event-pass-icon { width:42px; height:42px; border-radius:12px; background:#f0f3e9; display:grid; place-items:center; color:#5c7151; }
-.is-selected .event-pass-icon { background:#344d32; color:#fff; }
-.is-unavailable .event-pass-icon { background:#e5e6df; color:#747c70; }
-.event-pass-status { font-size:10px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:#59684e; min-height:18px; }
+.event-pass-status { font-size:10px; line-height:14px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:#59684e; }
 .event-pass-selected { display:inline-flex; gap:5px; color:#34542d; }
-.event-pass-info h3 { font-size:19px; line-height:1.4; margin:4px 0 8px; font-weight:700; overflow-wrap:anywhere; }
+.event-pass-info h3 { font-size:16px; line-height:1.3; margin:2px 0 0; font-weight:700; overflow-wrap:anywhere; }
 .event-pass-info p { font-size:13px; line-height:1.7; color:#5e6961; }
-.event-pass-info>small { display:block; font-size:11px; line-height:1.6; color:#687368; margin-top:14px; }
-.event-pass-action { display:flex; align-items:flex-end; flex-direction:column; justify-content:space-between; gap:20px; }
-.event-pass-price { font-size:23px; line-height:1.3; font-weight:750; text-align:right; letter-spacing:-.05em; font-variant-numeric:tabular-nums; }
-.event-pass-price small { display:block; letter-spacing:0; font-size:11px; font-weight:400; color:#657064; margin-top:4px; }
-.event-quantity { display:flex; align-items:center; background:#fff; border:1px solid #cdd7c4; border-radius:9px; overflow:hidden; }
-.event-quantity button { display:grid; place-items:center; width:44px; height:44px; font-size:22px; color:#2a4028; border:0; background:transparent; }
+.event-pass-details summary { width:fit-content; min-height:28px; align-content:center; cursor:pointer; color:var(--theme-ink,#344d32); font-size:12px; font-weight:600; border-radius:4px; }
+.event-pass-details summary:hover { text-decoration:underline; text-underline-offset:3px; }
+.event-pass-details summary:focus-visible { outline:2px solid currentColor; outline-offset:3px; }
+.event-pass-details .event-pass-details-hide,.event-pass-details[open] .event-pass-details-show { display:none; }
+.event-pass-details[open] .event-pass-details-hide { display:inline; }
+.event-pass-details p { margin-top:4px; overflow-wrap:anywhere; white-space:pre-line; }
+.event-pass-info>small { display:block; font-size:11px; line-height:1.5; color:#687368; margin-top:0; }
+.event-pass-action { display:flex; align-items:flex-end; flex-direction:column; justify-content:center; gap:6px; align-self:start; }
+.event-pass-price { font-size:18px; line-height:1.3; font-weight:750; text-align:right; letter-spacing:-.05em; font-variant-numeric:tabular-nums; }
+.event-pass-price small { display:block; letter-spacing:0; font-size:11px; font-weight:400; color:#657064; margin-top:2px; }
+.event-quantity { display:flex; align-items:center; width:fit-content; background:#fff; border:1px solid #cdd7c4; border-radius:7px; overflow:hidden; }
+.event-quantity button { display:grid; place-items:center; width:32px; height:32px; font-size:19px; color:#2a4028; border:0; background:transparent; }
 .event-quantity button:not(:disabled):hover { background:#e8efdf; }
-.event-quantity output { min-width:30px; text-align:center; font-size:14px; font-weight:700; font-variant-numeric:tabular-nums; }
+.event-quantity output { min-width:22px; text-align:center; font-size:13px; font-weight:700; font-variant-numeric:tabular-nums; }
 .event-quantity button:focus-visible { outline-offset:-4px; border-radius:7px; }
 .event-pass-closed { padding:7px 10px; font-size:11px; color:#6c716a; background:#e4e5de; border-radius:6px; }
 .event-booking-summary { position:sticky; top:106px; padding:26px; border:1px solid #dbe1d2; background:#fff; border-radius:18px; box-shadow:0 12px 30px #21391b08; }
@@ -72,8 +75,6 @@
 .event-detail-page .event-organizer { grid-column:1/-1; margin-top:0; }
 @media(max-width:1050px) {
  .event-ticket-layout { grid-template-columns:minmax(0,1fr) 300px; gap:20px; }
- .event-pass { padding:20px; gap:14px; grid-template-columns:minmax(0,1fr) auto; }
- .event-pass-icon { display:none; }
  .event-booking-summary { padding:22px; }
  .event-detail-page .event-story { gap:35px; }
 }
@@ -81,7 +82,7 @@
  .event-detail-page .event-stage { min-height:360px; }
  .event-detail-page .event-stage-bottom { margin-top:50px; }
  .event-detail-page .event-stage h1 { font-size:clamp(34px,6vw,48px); }
- .event-ticket-intro { align-items:start; flex-direction:column; gap:10px; }
+ .event-ticket-intro { align-items:start; flex-direction:column; gap:6px; }
  .event-ticket-intro>p { max-width:none; }
  .event-ticket-layout { grid-template-columns:1fr; }
  .event-booking-summary { position:static; }
@@ -94,17 +95,10 @@
  .event-detail-page .event-stage-content { padding-bottom:32px; }
  .event-detail-page .event-stage-meta { font-size:12px; }
  .event-detail-page .event-section-nav>.booking-container { gap:18px; font-size:11px; }
- .event-pass { padding:18px; gap:12px; }
- .event-pass-info h3 { font-size:17px; }
- .event-pass-price { font-size:20px; }
- .event-pass-action { gap:18px; }
- .event-quantity output { min-width:24px; }
+ .event-pass { padding:8px 10px; gap:8px; }
+ .event-pass-info h3 { font-size:16px; }
+ .event-pass-price { font-size:18px; }
  .event-detail-page .event-facts { grid-template-columns:1fr; }
-}
-@media(max-width:360px) {
- .event-pass { grid-template-columns:1fr; }
- .event-pass-action { flex-direction:row; align-items:center; }
- .event-pass-price { text-align:left; }
 }
 @media(prefers-reduced-motion:reduce) { .event-detail-page *, .event-detail-page *::before { transition:none!important; scroll-behavior:auto; } }
 
@@ -145,3 +139,7 @@
  .experience-card header { flex-direction:column; gap:10px; }
  .experience-dinner { padding:20px; }
 }
+
+.event-date-stamp-range strong{font-size:36px;white-space:nowrap}.event-date-stamp-long strong{font-size:19px;line-height:1.35;max-width:125px;padding:0 10px;text-align:center;white-space:normal}.event-date-stamp-long small{letter-spacing:2px}
+
+.event-venue-link{color:inherit;text-decoration:underline;text-underline-offset:3px;text-decoration-thickness:1px}.event-venue-link:hover{text-decoration-thickness:2px}.event-venue-link:focus-visible{outline:2px solid currentColor;outline-offset:4px;border-radius:2px}

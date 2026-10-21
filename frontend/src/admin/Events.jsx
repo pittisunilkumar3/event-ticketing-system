@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../api/client';
 import Icon from '../components/Icon';
-import { formatDateTime, formatCurrency } from '../utils/format';
+import { formatEventDates, formatTime, formatCurrency } from '../utils/format';
 import './events.css';
 export default function Events() {
   const [data, setData] = useState({
@@ -156,7 +156,7 @@ export default function Events() {
                 </b>
               </Link>
               <div className="ea-event-card-body">
-                <small>{formatDateTime(event.start_datetime)}</small>
+                <small>{formatEventDates(event.start_datetime,event.end_datetime)} · {formatTime(event.start_datetime)}</small>
                 <Link to={'/admin/events/' + event.id}>
                   <h2>{event.title}</h2>
                 </Link>

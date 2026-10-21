@@ -896,3 +896,5 @@
     gap: 15px;
   }
 }
+
+.ea-schedule-preview{display:flex;flex-wrap:wrap;gap:6px 18px;padding:14px 16px;margin:0 0 20px;border:1px solid #e4e5df;border-radius:10px;background:#f8f9f5;font-size:14px}.ea-schedule-preview span{color:#59645d}

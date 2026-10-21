@@ -36,6 +36,19 @@ const db=require('../config/db'),{migrateTenant,migratePlatform,sqlName}=require
  assert.equal((await req(a.path+'/admin/events/'+second.id,'GET',null,a.token)).event.page_theme,'poster');
  assert.equal((await req(b.path+'/admin/events/'+other.id,'GET',null,b.token)).event.page_theme,'classic');
  const admin=(await req(a.path+'/admin/events/'+event.id,'GET',null,a.token)).ticketTypes.find(t=>t.id===type.id);assert.equal(admin.is_on_sale,true);assert.equal(admin.available,50);
+ async function submitForm(path,method,values,status){const form=new FormData();for(const [key,value] of Object.entries(values))form.append(key,value);const response=await fetch(base+path,{method,headers:{Authorization:'Bearer '+a.token},body:form});const json=await response.json();assert.equal(response.status,status,JSON.stringify(json));return json.data;}
+ const schedule={title:'Schedule roundtrip',start_datetime:'2035-12-12T09:00',end_datetime:'2035-12-13T18:00',status:'published'};
+ const scheduled=(await submitForm(a.path+'/admin/events','POST',schedule,201)).event;
+ assert.equal(scheduled.start_datetime,'2035-12-12 09:00:00');assert.equal(scheduled.end_datetime,'2035-12-13 18:00:00');
+ const edited=(await submitForm(a.path+'/admin/events/'+scheduled.id,'PUT',{start_datetime:'2035-12-14T09:30',end_datetime:'2035-12-15T19:00'},200)).event;
+ assert.equal(edited.start_datetime,'2035-12-14 09:30:00');assert.equal(edited.end_datetime,'2035-12-15 19:00:00');
+ for(const path of [a.path+'/admin/events/'+scheduled.id,a.path+'/events/'+scheduled.slug,'/api/events/'+scheduled.slug]){const saved=(await req(path,'GET',null,a.token)).event;assert.equal(saved.start_datetime,edited.start_datetime);assert.equal(saved.end_datetime,edited.end_datetime);}
+ await req(a.path+'/admin/events','POST',{...schedule,end_datetime:'2035-12-11T18:00'},a.token,400);
+ await req(a.path+'/admin/events/'+scheduled.id,'PUT',{end_datetime:'2035-12-14T09:30'},a.token,400);
+ await req(a.path+'/admin/events/'+scheduled.id,'PUT',{start_datetime:'2035-02-30T09:00'},a.token,400);
+ const cleared=(await req(a.path+'/admin/events/'+scheduled.id,'PUT',{end_datetime:''},a.token)).event;assert.equal(cleared.end_datetime,null);
+ console.log('PASS schedule: create/edit/reload and organizer/platform dates retain wall-clock times, invalid ranges rejected, optional end cleared.');
+ if(process.env.SCHEDULE_UI_QA==='1'){console.log('QA_API='+base);console.log('QA_EVENT='+scheduled.id);await new Promise(r=>process.once('SIGTERM',r));}
  console.log('PASS event themes: migration rerun, defaults, create/update/reload, all public/platform themes, invalid inputs, auth/isolation, partial updates and unchanged ticket availability.');
 })().catch(e=>{console.error(e);process.exitCode=1;}).finally(async()=>{
  if(server)await new Promise(r=>server.close(r));

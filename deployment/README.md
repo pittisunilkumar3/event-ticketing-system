@@ -427,3 +427,51 @@ Added owner-only Delete beside Edit with an explicit confirmation dialog. Migrat
 Validation: all ten isolated coupon/tax integration scenarios passed, including deletion permissions, stale revisions, repeated deletion, checkout repricing, stale quote rejection, replacement profiles, and capture of an existing reservation after deletion. Five tax/email/payment-policy unit tests, checkout tax/coupon rendering, all 15 checkout themes and production build passed. Tests use mocked payments and email.
 
 The eleven existing payment/withdrawal regression scenarios also passed. Applied migration 025 to production tenant databases and deployed the tax service/routes and frontend after backups in `/root/ticketflow-backup-tax-delete-1792549429178/`. The organizer tax page loads successfully. No production tax profiles, bookings, payments or emails were modified.
+
+### Ticket descriptions on demand — 21 October 2026
+
+- Ticket selection cards now hide descriptions until “View details” is opened; “Hide details” collapses them. Native disclosures support keyboard access and remain independent of quantity controls. Empty descriptions have no toggle.
+- Shared component covers platform and organizer event pages and all event themes.
+- Verified ticket-selection and event-theme tests and production build. Live browser check confirmed initially collapsed descriptions, expand/collapse, and quantity/subtotal updates.
+- Frontend baseline matched the live index SHA-256 before the change, preserving current coupons/taxes and other updates. Deployed frontend assets with an atomic index swap; backup: `/root/ticketflow-backup-ticket-details-20261021-R245Pu/frontend-before.tgz`. No backend or data changes.
+
+### Compact ticket selection — 21 October 2026
+
+- Reduced ticket card padding, spacing and heading size; removed decorative pass icons. Prices and full-size quantity controls stay beside ticket information, including at 360px mobile width. Descriptions still expand on demand.
+- Verified all three currently available passes fit in the ticket-section viewport at 360×740 and desktop 1280×720, without horizontal overflow; VIP quantity controls still work. Ticket-selection/theme tests and production build passed.
+- Frontend deployed after matching the prior live build and preserving existing assets. Backup: `/root/ticketflow-backup-compact-tickets-20261021-tQawem/frontend-before.tgz`.
+
+### Narrow quantity controls — 21 October 2026
+
+- Quantity selector is now 88px wide (32px buttons plus a 22px count); card spacing is reduced further and the decorative section kicker removed. Ticket descriptions remain collapsed by default.
+- Ticket-selection and theme checks, production build, and live 360×740 browser check passed; verified 88×34px controls, no horizontal overflow, and add/remove updates.
+- Challengers and Pro Challengers remain inactive pending the user's choice to enable sales or display them as unavailable; no ticket inventory or sale status was changed. Five-pass live verification is pending that choice.
+- Frontend backup: `/root/ticketflow-backup-narrow-controls-20261021-1JkCXZ/frontend-before.tgz`.
+
+### All five passes enabled — 21 October 2026
+
+- With explicit user approval, enabled `is_active` for Challengers Pass (ID 3) and Pro Challengers Pass (ID 4) on Cinematica Expo 2026, organization database `tf_e999e8b75b62ab6fc3c8bce1`, event ID 1. Exactly two records changed; prices, capacity, forms and other passes are unchanged.
+- Private database backup: `/root/ticketflow-backup-enable-five-passes-20261021-f5oLI0/organization-before.sql`.
+- Verified all five passes available on the live public event and fully visible together at 360×740 (last card ends at 699px, no horizontal overflow). Selected one of each and confirmed checkout loads all five attendee forms and ₹19,495 total, including both challenge forms. No payment or booking was submitted.
+
+### Cinematica opening time and two-day dates — 21 October 2026
+
+Updated Cinematica Expo 2026 (organization cinematica-expo, event 1) to start 12 December 2026 at 09:00, retaining the existing 13 December 2026 18:00 end. Private original schedule: `/root/cinematica-schedule-before-1792563584981.json`. Public event headers across all themes and browse cards now show the start/end date range when dates differ; single-day events retain one date. Shared theme checks include the 12–13 December range and 9 AM start; ticket checks and production build passed. Published frontend with a prior-index guard, asset preservation and atomic index swap; backup `/root/ticketflow-backup-event-dates-20261021-9pO6vo/`. Existing ticket-card work was preserved.
+
+### Compact schedule display and event form preview — 21 October 2026
+
+Public headers/cards and organizer event lists/detail headers use compact date ranges (12–13 Dec 2026), including single-day, cross-month and cross-year cases. Create/Edit keep separate start/end datetime inputs, add an end-date minimum and a live schedule preview. Event details show start/end times separately from the compact date range. Saved wall-clock values are preserved without timezone conversion.
+
+Validated all theme and ticket rendering checks plus production build. Disposable two-tenant integration verified multipart Create/Edit, admin/public/platform reloads, invalid dates/ranges and clearing the optional end. Browser verification created and edited actual local fixture events, reopened both, and confirmed 12–13 December and 09:00/18:00 persisted with the correct live preview. Fixtures were removed; production event dates, tax/payment configuration and bookings were untouched. Published frontend with an index hash guard, retained hashed assets and atomic index swap. Backup: `/root/ticketflow-backup-compact-dates-20261021-LDmRvr/`.
+
+### Right-side event date box — 21 October 2026
+
+The event date box now derives both start and end dates from the saved event: December 12–13 displays DEC / 12–13. Single-day events keep one day; ranges crossing months or years show complete dates. Reduced range typography fits the existing box, and its accessible link label includes the full dates. Shared event-theme checks cover same-day, missing end, two-day and cross-year ranges; production build passed. Published frontend after matching the prior live index, retaining assets and backing up to `/root/ticketflow-backup-date-box-20261021-A3N0n1/`. No event records or booking data changed.
+
+### Clickable event venue — 21 October 2026
+
+Venue names in the event hero and Where details now open Google Maps using the saved venue/address/city, across all themes. The existing map link shares the same encoded destination. Duplicate venue/city text is omitted from the search query; events without venue/address show plain placeholder text. Links are visibly underlined, keyboard focusable and open a new tab with noopener/noreferrer. All-theme rendering checks verify both links, destination encoding and absent-location handling; production build passed. Deployed with backup `/root/ticketflow-backup-venue-link-20261021-lpg6V9/`, preserving existing assets and data.
+
+### Challenge passes turned off — 21 October 2026
+
+At the organizer's request, disabled sales for Challengers Pass (ID 3) and Pro Challengers Pass (ID 4) on Cinematica Expo 2026, event ID 1. Verified both are hidden from public ticket selection; Explorer, Creators and VIP remain active. Existing bookings and pass definitions are preserved. This is production database configuration, not seed data or a migration.

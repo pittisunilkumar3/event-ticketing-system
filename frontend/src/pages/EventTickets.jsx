@@ -8,15 +8,14 @@ export default function EventTickets({ticketTypes,selection,onQuantity,onCheckou
  const total=selected.reduce((sum,t)=>sum+Number(selection[t.id])*Number(t.price),0);
  const tickets=ticketTypes.filter(isVisibleTicket).sort((a,b)=>Number(canSelectTicket(b))-Number(canSelectTicket(a)));
  return <section className="event-ticket-section" id="tickets" aria-labelledby="event-tickets-title">
-  <header className="event-ticket-intro"><div><span className="booking-kicker">MAKE IT A DATE</span><h2 id="event-tickets-title">Choose your tickets.</h2></div><p>Choose your tickets, then review your booking.</p></header>
+  <header className="event-ticket-intro"><div><h2 id="event-tickets-title">Choose your tickets.</h2></div><p>Choose your tickets, then review your booking.</p></header>
   <div className="event-ticket-layout">
    <div className="event-ticket-list">
     {!tickets.length&&<div className="event-ticket-empty"><Icon name="ticket"/><h3>Tickets are on their way.</h3><p>The organizer hasn’t released tickets yet. Check back soon.</p></div>}
     {tickets.map(t=>{
      const n=validQuantity(t,selection[t.id]),available=canSelectTicket(t);
      return <article key={t.id} className={'event-pass'+(n?' is-selected':'')+(!available?' is-unavailable':'')} aria-labelledby={'pass-name-'+t.id}>
-      <div className="event-pass-icon"><Icon name={n?'check':'ticket'} size={22}/></div>
-      <div className="event-pass-info"><div className="event-pass-status">{n?<span className="event-pass-selected">Selected</span>:<span>{available?'Available':saleLabels[t.sale_status]||'Unavailable'}</span>}</div><h3 id={'pass-name-'+t.id}>{t.name}</h3>{t.description&&<p>{t.description}</p>}
+      <div className="event-pass-info"><div className="event-pass-status">{n?<span className="event-pass-selected">Selected</span>:<span>{available?'Available':saleLabels[t.sale_status]||'Unavailable'}</span>}</div><h3 id={'pass-name-'+t.id}>{t.name}</h3>{t.description?.trim()&&<details className="event-pass-details"><summary><span className="event-pass-details-show">View details</span><span className="event-pass-details-hide">Hide details</span></summary><p>{t.description}</p></details>}
        <small>{available?(Number(t.min_per_order)>1?`Minimum ${t.min_per_order} · `:'')+`Up to ${ticketLimit(t)} per booking`:t.sale_status==='scheduled'&&t.sales_start?'Sales open '+formatDate(t.sales_start):'Not available to book right now'}</small>
       </div>
       <div className="event-pass-action"><div className="event-pass-price">{Number(t.price)===0?'Free':formatCurrency(t.price)}<small>per ticket</small></div>

@@ -25,6 +25,9 @@ try {
  const empty=render();
  assert.match(empty,/No tickets selected/);assert.match(empty,/disabled=""[^>]*>Choose your tickets/);
  assert.match(empty,/General Admission/);
+ assert.match(empty,/<details class="event-pass-details"><summary>.*?View details.*?<\/summary><p>Standing area access<\/p><\/details>/);
+ assert.doesNotMatch(empty,/<details[^>]*\bopen(?:=|\s|>)/);
+ assert.doesNotMatch(render({},[{...standard,description:'   '}]),/event-pass-details/);
  assert.doesNotMatch(empty,/Early Bird|Sales paused/);
  assert.doesNotMatch(render({3:2},[{...standard,id:3,name:'Disabled pass',is_active:0}]),/Disabled pass/);
  assert.equal(canSelectTicket({...standard,is_active:0}),false);

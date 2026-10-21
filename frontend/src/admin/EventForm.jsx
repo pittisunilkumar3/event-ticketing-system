@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import api from '../api/client';
 import Icon from '../components/Icon';
+import {formatEventDates,formatEventTimes,eventDateInput} from '../utils/format';
 import './events.css';
 import EventThemePicker from './EventThemePicker';
 const initial = {
@@ -52,9 +53,7 @@ export default function EventForm() {
             Object.keys(initial).map((k) => [
               k,
               k.includes('datetime')
-                ? String(e[k] || '')
-                    .replace(' ', 'T')
-                    .slice(0, 16)
+                ? eventDateInput(e[k])
                 : (e[k] ?? initial[k]),
             ])
           )
@@ -219,15 +218,17 @@ export default function EventForm() {
               </header>
               <div className="ea-panel-body">
                 <div className="ea-two">
-                  {field('start_datetime', 'Starts at', {
+                  {field('start_datetime', 'Start date & time', {
                     type: 'datetime-local',
                     required: true,
                   })}
-                  {field('end_datetime', 'Ends at', {
+                  {field('end_datetime', 'End date & time (optional)', {
                     type: 'datetime-local',
-                    hint: 'Optional. Without an end time, booking closes when the event starts.',
+                    min: form.start_datetime || undefined,
+                    hint: 'For a multi-day event, choose the last day and closing time.',
                   })}
                 </div>
+                {form.start_datetime && <div className="ea-schedule-preview" aria-live="polite"><strong>{formatEventDates(form.start_datetime,form.end_datetime)}</strong><span>{formatEventTimes(form.start_datetime,form.end_datetime)}</span></div>}
                 <div className="ea-two">
                   {field('venue', 'Venue')}
                   {field('city', 'City', { maxLength: 100 })}

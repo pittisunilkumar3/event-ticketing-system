@@ -4,6 +4,30 @@ export function formatDate(datetime) {
   return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
 }
 
+export function formatEventDates(start, end) {
+  if (!start) return '';
+  const first = new Date(String(start).replace(' ', 'T'));
+  const last = end ? new Date(String(end).replace(' ', 'T')) : first;
+  if (Number.isNaN(first.getTime())) return '';
+  const day = d => d.getDate();
+  const month = d => d.toLocaleDateString('en-GB', {month:'short'});
+  const full = d => `${day(d)} ${month(d)} ${d.getFullYear()}`;
+  if (Number.isNaN(last.getTime()) || first.toDateString() === last.toDateString()) return full(first);
+  if (first.getFullYear() !== last.getFullYear()) return `${full(first)} – ${full(last)}`;
+  if (first.getMonth() !== last.getMonth()) return `${day(first)} ${month(first)} – ${full(last)}`;
+  return `${day(first)}–${full(last)}`;
+}
+
+export function formatEventTimes(start, end) {
+  if (!start) return '';
+  if (!end) return `Starts ${formatTime(start)}`;
+  return `Starts ${formatTime(start)} · Ends ${formatTime(end)}`;
+}
+
+export function eventDateInput(value) {
+  return String(value || '').replace(' ', 'T').slice(0, 16);
+}
+
 export function formatTime(datetime) {
   if (!datetime) return '';
   const d = new Date(String(datetime).replace(' ', 'T'));

@@ -1,6 +1,7 @@
 import {Link} from 'react-router-dom';
 import Icon from '../components/Icon';
-import {formatCurrency,formatDate,formatTime} from '../utils/format';
+import EventVenueLink from '../components/EventVenueLink';
+import {formatCurrency,formatEventDates,formatTime} from '../utils/format';
 import './premiereTheme.css';
 
 export default function PremiereHero({event,lowest}) {
@@ -18,8 +19,8 @@ export default function PremiereHero({event,lowest}) {
     {event.banner_image&&<figure className="premiere-artwork"><img src={event.banner_image} alt={event.title+' event banner'}/></figure>}
    </div>
    <dl className="premiere-facts">
-    <div><Icon name="calendar" size={20}/><div><dt>Date & time</dt><dd>{formatDate(event.start_datetime)}<span>{formatTime(event.start_datetime)}</span></dd></div></div>
-    <div><Icon name="pin" size={20}/><div><dt>Venue</dt><dd>{event.venue||'Venue to be announced'}{event.city&&event.city!==event.venue&&<span>{event.city}</span>}</dd></div></div>
+    <div><Icon name="calendar" size={20}/><div><dt>Date & time</dt><dd>{formatEventDates(event.start_datetime, event.end_datetime)}<span>{formatTime(event.start_datetime)}</span></dd></div></div>
+    <div><Icon name="pin" size={20}/><div><dt>Venue</dt><dd><EventVenueLink event={event}/>{event.city&&event.city!==event.venue&&<span>{event.city}</span>}</dd></div></div>
     <div><Icon name="users" size={20}/><div><dt>Presented by</dt><dd>{event.organizer_name||'Event organizer'}</dd></div></div>
    </dl>
   </div>
