@@ -1,11 +1,19 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import api from "../../api/client";
+import TicketVariablePicker,{unknownTicketVariable,TicketFormContext} from './TicketVariablePicker';
+import PdfPreview from "./PdfPreview";
+import TicketDirectEditor from "./TicketDirectEditor";
 import DesignedTicket from "../../components/DesignedTicket";
+import { ticketTextSource } from "../../components/TicketText";
+import textCatalog from "../../../../shared/ticketText.json";
+
+function withText(config, name, value) {
+  const field = textCatalog[name].field;
+  return field ? {...config, [field]: value} : {...config, text: {...config.text, [name]: value}};
+}
 import {
   Field,
-  Toggle,
-  ImageField,
   Notice,
   Icon,
   errorText,
@@ -46,7 +54,7 @@ function TicketThumbnail({ design, category }) {
         className="ticket-thumbnail-inner ticket-thumbnail-fitted"
         ref={content}
         style={{
-          width: category === "Horizontal" ? 660 : 390,
+          width: design.ticket_size?.width || 760,
           transform: `translate(-50%, -50%) scale(${scale})`,
         }}
       >
@@ -57,52 +65,85 @@ function TicketThumbnail({ design, category }) {
 }
 
 export default function TicketDesigner({ data, onUpdate }) {
+  const textInput=useRef(null);
+  const [previewType,setPreviewType]=useState(String(data.emailTicketTypes?.[0]?.id||'')),[formData,setFormData]=useState({fields:[],sample:null}),[formError,setFormError]=useState('');
+  useEffect(()=>{let active=true;setFormData({fields:[],sample:null});setFormError('');if(previewType)api.get('/admin/studio/ticket-fields/'+previewType).then(({data:r})=>{if(active)setFormData(r.data);}).catch(()=>{if(active)setFormError('Registration fields could not load. Reopen this page to try again.');});return()=>{active=false;};},[previewType]);
+  const [pdfUrl,setPdfUrl]=useState(''),[pdfBusy,setPdfBusy]=useState(false);
+  useEffect(()=>()=>{if(pdfUrl)URL.revokeObjectURL(pdfUrl);},[pdfUrl]);
+  async function previewPdf(){
+    setPdfBusy(true);setMessage(null);
+    try{const response=await api.post('/admin/studio/ticket-preview',{config:selected.config,ticket_type_id:previewType||undefined},{responseType:'blob'});setPdfUrl(URL.createObjectURL(response.data));}
+    catch(err){setMessage({text:errorText(err)});}
+    finally{setPdfBusy(false);}
+  }
   const layouts = data.ticketLayouts || [];
   const [selected, setSelected] = useState(
     data.ticketTemplates[0] || {
       name: "My ticket design",
       kind: "ticket",
       active: true,
-      config: { ...data.defaults.ticket },
+      config: { ...data.defaults.ticket, canvas:{height:1000}, layout_blocks:[] },
     },
   );
   const [saved, setSaved] = useState(JSON.stringify(selected));
   const [message, setMessage] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [uploading,setUploading]=useState(false);
+  const [editingText, setEditingText] = useState(null);
+  const [modalOpen,setModalOpen]=useState(false);
+  const modal=useRef(null);
+  const [past,setPast]=useState([]),[future,setFuture]=useState([]);
+  const editConfig=useCallback(next => {
+    setMessage(null);
+    setPast(p=>[...p,structuredClone(selected.config)].slice(-30));setFuture([]);
+    setSelected(s=>({...s,config:typeof next==='function'?next(s.config):next}));
+  },[selected.config]);
+  function travel(redo=false){
+    const source=redo?future:past;if(!source.length)return;
+    const next=source[source.length-1];
+    if(redo){setPast(p=>[...p,selected.config]);setFuture(source.slice(0,-1));}
+    else {setFuture(f=>[...f,selected.config]);setPast(source.slice(0,-1));}
+    setSelected(s=>({...s,config:next}));setMessage(null);
+  }
+  useEffect(()=>{
+    if(!modalOpen)return;
+    const original=document.body.style.overflow;document.body.style.overflow='hidden';
+    modal.current?.showModal();
+    return ()=>{document.body.style.overflow=original;};
+  },[modalOpen]);
   const [filter, setFilter] = useState("All");
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const pageSize = 24;
   const collection = useRef(null);
-  const editor = useRef(null);
-  const allowChange = useUnsaved(JSON.stringify(selected) !== saved);
+  const allowChange = useUnsaved(JSON.stringify(selected) !== saved || Boolean(editingText));
   const config = selected.config;
-  const update = (key, value) =>
-    setSelected((s) => ({ ...s, config: { ...s.config, [key]: value } }));
   function select(template) {
-    if (saving || !allowChange()) return;
+    if (saving || uploading || !allowChange()) return;
+    setPast([]);setFuture([]);
     setSelected(structuredClone(template));
     setSaved(JSON.stringify(template));
     setMessage(null);
-    editor.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    setEditingText(null);
+    setModalOpen(true);
+  }
+  function closeEditor() {
+    if(saving||uploading||!allowChange())return;
+    setSelected(JSON.parse(saved));setEditingText(null);setModalOpen(false);
   }
   function create() {
+    const name=window.prompt('Name your ticket design','My ticket design');
+    if(!name?.trim())return;
     select({
-      name: "Untitled ticket design",
+      name: name.trim().slice(0,120),
       kind: "ticket",
       active: true,
-      config: { ...data.defaults.ticket },
+      config: { ...data.defaults.ticket, canvas:{height:1000}, layout_blocks:[] },
     });
-  }
-  function changeLayout(id) {
-    const preset = layouts.find((layout) => layout.id === id);
-    setSelected((s) => ({
-      ...s,
-      config: { ...s.config, ...preset?.config, layout: id },
-    }));
   }
   async function save(e) {
     e.preventDefault();
+    if (editingText || uploading) return;
     setSaving(true);
     setMessage(null);
     try {
@@ -132,6 +173,22 @@ export default function TicketDesigner({ data, onUpdate }) {
         .includes(search.toLowerCase())
     );
   });
+  const textEntry = editingText ? textCatalog[editingText.name] : null;
+  const unknownToken = editingText && unknownTicketVariable(editingText.value);
+  const textError = unknownToken ? 'Choose a variable from the list.'
+
+    : textEntry?.field === 'brand' && !editingText.value.trim() ? 'Enter a brand name.' : '';
+  function closeTextEditor() {
+    const target = editingText?.target;
+    setEditingText(null);
+    requestAnimationFrame(() => target?.focus());
+  }
+  function applyText(event) {
+    event.preventDefault();
+    if (textError) return;
+    editConfig(current => withText(current, editingText.name, editingText.value));
+    closeTextEditor();
+  }
   const pageCount = Math.max(1, Math.ceil(visible.length / pageSize));
   const currentPage = Math.min(page, pageCount);
   const pageStart = (currentPage - 1) * pageSize;
@@ -140,7 +197,7 @@ export default function TicketDesigner({ data, onUpdate }) {
     collection.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
   return (
-    <>
+    <TicketFormContext.Provider value={formData}>
       <div className="studio-heading">
         <div>
           <span className="studio-eyebrow">DESIGN STUDIO / TICKETS</span>
@@ -152,7 +209,7 @@ export default function TicketDesigner({ data, onUpdate }) {
         </div>
         <button
           className="studio-button secondary"
-          disabled={saving}
+          disabled={saving||uploading}
           onClick={create}
         >
           <Icon name="plus" />
@@ -221,7 +278,7 @@ export default function TicketDesigner({ data, onUpdate }) {
                 }
                 aria-pressed={selected.id === t.id}
                 aria-label={"Customize " + t.name}
-                disabled={saving}
+                disabled={saving||uploading}
                 onClick={() => select(t)}
                 key={t.id}
               >
@@ -281,147 +338,42 @@ export default function TicketDesigner({ data, onUpdate }) {
           </p>
         )}
       </section>
-      <div className="ticket-editor-heading" ref={editor}>
-        <div>
-          <span className="studio-eyebrow">MAKE IT YOURS</span>
-          <h2>{selected.name}</h2>
-        </div>
-        <a href="#ticket-collection">Back to collection ↑</a>
-      </div>
-      <Notice message={message} />
-      <div className="ticket-editor-workspace">
-        <form onSubmit={save} className="studio-panel studio-design-controls">
-          <div className="studio-panel-title">
-            <h2>Design details</h2>
-            <span>{selected.id ? "Saved design" : "New design"}</span>
+      {modalOpen&&<dialog ref={modal} className="studio ticket-preview-modal" aria-label="Ticket design preview" onCancel={event=>{event.preventDefault();if(pdfUrl)setPdfUrl('');else if(!pdfBusy)closeEditor();}}>
+        <section className="studio-ticket-preview" inert={Boolean(pdfUrl)}>
+          <div className="ticket-component-toolbar">
+            <strong>{selected.name}</strong>
+            <button type="button" className="studio-button" disabled={!past.length||saving||uploading||!!editingText} onClick={()=>travel()}>Undo</button>
+            <button type="button" className="studio-button" disabled={!future.length||saving||uploading||!!editingText} onClick={()=>travel(true)}>Redo</button>
+            <button type="button" className="studio-button" disabled={saving||uploading||pdfBusy} onClick={closeEditor}>Close preview</button>
+            <button type="button" className="studio-button" disabled={pdfBusy||saving||uploading||!!editingText} onClick={previewPdf}>{pdfBusy?'Preparing PDF…':'Preview PDF'}</button>
+            <button type="button" className="studio-button primary" disabled={saving||uploading||!!editingText} onClick={save}>{saving?'Saving…':'Save ticket design'}</button>
           </div>
-          <fieldset
-            disabled={saving}
-            className="studio-form-body ticket-design-fields"
-          >
-            <Field
-              label="Design name"
-              value={selected.name}
-              maxLength={120}
-              required
-              onChange={(e) =>
-                setSelected({ ...selected, name: e.target.value })
-              }
-            />
-            <Field label="Layout">
-              <select
-                value={config.layout}
-                onChange={(e) => changeLayout(e.target.value)}
-              >
-                {["Horizontal", "Portrait", "Compact"].map((category) => (
-                  <optgroup label={category} key={category}>
-                    {layouts
-                      .filter((l) => l.category === category)
-                      .map((l) => (
-                        <option value={l.id} key={l.id}>
-                          {l.name}
-                        </option>
-                      ))}
-                  </optgroup>
-                ))}
-              </select>
+          <Notice message={message} />
+          {!!data.emailTicketTypes?.length&&<label className="ticket-preview-type">Preview form <select aria-label="Preview ticket type" value={previewType} onChange={e=>setPreviewType(e.target.value)}>{data.emailTicketTypes.map(t=><option key={t.id} value={t.id}>{t.event_title} · {t.name}</option>)}</select><small>Sample answers · issued tickets use each attendee’s details</small></label>}
+          {formError&&<p role="alert">{formError}</p>}
+          {editingText && <form className="ticket-text-editor" role="dialog" aria-label={`Edit ${textEntry.label.toLowerCase()}`}
+            onSubmit={applyText} onKeyDown={event => {if(event.key === 'Escape') {event.stopPropagation();closeTextEditor();}}}>
+            <Field label={textEntry.label}>
+              <textarea ref={textInput} autoFocus rows={3} maxLength={textEntry.max || 500} value={editingText.value}
+                onChange={event => setEditingText(current => ({...current,value:event.target.value}))} />
             </Field>
-            <div className="studio-two-col">
-              <Field label="Accent color">
-                <div className="studio-color">
-                  <input
-                    type="color"
-                    aria-label="Accent color"
-                    value={config.accent}
-                    onChange={(e) => update("accent", e.target.value)}
-                  />
-                  <code>{config.accent}</code>
-                </div>
-              </Field>
-              <Field label="Background">
-                <div className="studio-color">
-                  <input
-                    type="color"
-                    aria-label="Background color"
-                    value={config.background}
-                    disabled={config.layout === "minimal"}
-                    onChange={(e) => update("background", e.target.value)}
-                  />
-                  <code>
-                    {config.layout === "minimal"
-                      ? "#ffffff"
-                      : config.background}
-                  </code>
-                </div>
-              </Field>
+            <TicketVariablePicker inputRef={textInput} value={editingText.value} onChange={value=>setEditingText(current=>({...current,value}))}/>
+            {textEntry.token && <small>Insert variables for attendee details, or clear the text to leave it blank.</small>}
+            {textError && <small role="alert" className="studio-error">{textError}</small>}
+            <div className="studio-save-bar">
+              {!textEntry.field && <button type="button" className="studio-text-button" onClick={() => setEditingText(current => ({...current,value:textEntry.default ?? `{{${textEntry.token}}}`}))}>Use default</button>}
+              <button type="button" className="studio-button" onClick={closeTextEditor}>Cancel</button>
+              <button type="submit" className="studio-button primary" disabled={Boolean(textError)}>Apply text</button>
             </div>
-            <Field
-              label="Brand name"
-              value={config.brand}
-              required
-              maxLength={120}
-              onChange={(e) => update("brand", e.target.value)}
-            />
-            <Field
-              label="Eyebrow text"
-              value={config.heading}
-              maxLength={255}
-              onChange={(e) => update("heading", e.target.value)}
-            />
-            <div className="studio-two-col">
-              <ImageField
-                label="Logo"
-                value={config.logo}
-                onChange={(v) => update("logo", v)}
-              />
-              <ImageField
-                label="Banner"
-                value={config.banner_image}
-                onChange={(v) => update("banner_image", v)}
-              />
-            </div>
-            <Field label="Entry instructions">
-              <textarea
-                rows={3}
-                value={config.footer_text}
-                maxLength={1000}
-                onChange={(e) => update("footer_text", e.target.value)}
-              />
-            </Field>
-            <Toggle
-              label="Show attendee name"
-              checked={config.show_attendee}
-              onChange={(v) => update("show_attendee", v)}
-            />
-            <Toggle
-              label="Show ticket price"
-              checked={config.show_price}
-              onChange={(v) => update("show_price", v)}
-            />
-            <Toggle
-              label="Available for new tickets"
-              hint="Existing tickets keep their saved design."
-              checked={selected.active}
-              onChange={(v) => setSelected({ ...selected, active: v })}
-            />
-            <button className="studio-button primary" disabled={saving}>
-              {saving ? "Saving…" : "Save ticket design"}
-              <Icon name="check" />
-            </button>
-          </fieldset>
-        </form>
-        <section className="studio-ticket-preview">
-          <div className="studio-preview-label">
-            <span className="studio-live-dot" />
-            LIVE PREVIEW <span>Sample booking</span>
-          </div>
-          <DesignedTicket design={config} preview />
-          <p>
-            <Icon name="check" size={14} />
-            Unique QR codes are generated when tickets are issued.
-          </p>
+          </form>}
+          <div className="ticket-preview-surface"><TicketDirectEditor config={editingText ? withText(config,editingText.name,editingText.value):config} onChange={editConfig} onBusy={setUploading} disabled={saving||uploading||Boolean(editingText)}
+            onTextEdit={(name,target)=>setEditingText({name,value:ticketTextSource(config,name),target})}/></div>
         </section>
-      </div>
-    </>
+        {pdfUrl&&<div className="ticket-design-pdf studio-pdf-modal" role="dialog" aria-label="Ticket PDF preview" onKeyDown={e=>{if(e.key==='Escape'){e.preventDefault();e.stopPropagation();setPdfUrl('');}}}>
+          <header><strong>Ticket PDF preview</strong><a href={pdfUrl} download="ticket-design-preview.pdf">Download PDF</a><button type="button" autoFocus onClick={()=>setPdfUrl('')}>Back to design</button></header>
+          <PdfPreview url={pdfUrl}/>
+        </div>}
+      </dialog>}
+    </TicketFormContext.Provider>
   );
 }

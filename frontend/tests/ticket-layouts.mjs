@@ -19,6 +19,26 @@ const server = await createServer({
   appType: "custom",
 });
 try {
+  const {resizeTicketAxis,scaleTicket}=await server.ssrLoadModule('/src/components/ticketSize.js');
+  const original={width:760,height:600};
+  const wider=resizeTicketAxis(original,1000,'width');
+  assert.equal(wider.width,1000);assert.equal(wider.height,600);
+  assert.equal(wider.width/wider.contentWidth,1);assert.equal(wider.referenceWidth,760);
+  const taller=resizeTicketAxis(wider,850,'height');
+  assert.equal(taller.width,1000);assert.equal(taller.height,850);
+  const reduced=scaleTicket(taller,500,425);
+  assert.equal(reduced.width,500);assert.equal(reduced.height,425);
+  const resized=resizeTicketAxis(reduced,700,'width');
+  assert.equal(resized.width,700);assert.equal(resized.height,425);
+  assert.equal(resized.width/resized.contentWidth,.5);assert.equal(resized.height/resized.contentHeight,.5);
+  const savedSize=require('../../backend/services/studioValidation').template('ticket',{...defaults,ticket_size:resized}).ticket_size;
+  assert.deepEqual(savedSize,resized);
+  for(const axis of ['width','height'])for(const value of [-100,100000]){
+    const bounded=resizeTicketAxis(original,value,axis);
+    assert.equal(bounded[axis==='width'?'height':'width'],original[axis==='width'?'height':'width']);
+    assert.ok(bounded.width>=240&&bounded.width<=1600&&bounded.height>=240&&bounded.height<=4000);
+  }
+  console.log('PASS: independent card width/height, proportional corners, saved scale and size bounds.');
   const { default: DesignedTicket } = await server.ssrLoadModule(
     "/src/components/DesignedTicket.jsx",
   );

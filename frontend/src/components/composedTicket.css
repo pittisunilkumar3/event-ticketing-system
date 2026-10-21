@@ -1,4 +1,5 @@
 /* Content regions, not color variants: each recipe owns a unique grid arrangement. */
+.ct-art > span { white-space:pre-line; }
 .designed-ticket.ticket-composed {
   display: grid;
   grid-template-columns: var(--ct-columns);

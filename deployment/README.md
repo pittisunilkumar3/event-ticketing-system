@@ -475,3 +475,158 @@ Venue names in the event hero and Where details now open Google Maps using the s
 ### Challenge passes turned off — 21 October 2026
 
 At the organizer's request, disabled sales for Challengers Pass (ID 3) and Pro Challengers Pass (ID 4) on Cinematica Expo 2026, event ID 1. Verified both are hidden from public ticket selection; Explorer, Creators and VIP remain active. Existing bookings and pass definitions are preserved. This is production database configuration, not seed data or a migration.
+
+## Event ticket banner and partner logos — 21 October 2026
+
+Ticket designs support up to six additional logos and an optional full, uncropped banner above the ticket details. The shared browser/PDF renderer embeds uploaded logos in generated ticket PDFs. Existing designs retain their previous banner presentation unless full-banner mode is enabled.
+
+For Cinematica Expo organization 2, event 1 only, created template 5062 (`Cinematica Expo 2026 - branded ticket`) using the organization’s existing logo and event banner. Assigned the template to pass types 1–5; Challengers and Pro Challengers remain inactive. Additional logos can be uploaded in the organizer’s Ticket designs editor. Existing issued tickets keep their design snapshots; new bookings use the assigned design. Email template bodies and email logo settings were not changed.
+
+Backup: `/root/ticketflow-backup-ticket-branding-20261021-4lJt4e/` contains the previous application and event ticket assignments. Verified production PDFs for all five pass types without creating orders or sending emails. Local checks: build, 24 focused backend tests, 180 current/legacy layout render checks, and editor upload/preview/save interactions. Production frontend index SHA-256: `b8c05dc637faf39f8a20573ef7d3fb10057f83284d01851dfdaf70c51554525d`.
+
+## Direct ticket preview text editing — 21 October 2026
+
+Organizer Ticket designs now supports clicking rendered ticket text to edit headings, instructions, field labels and the surrounding wording of dynamic booking fields. The in-preview editor updates immediately, supports cancel/reset and keyboard access, and persists through Save ticket design. Per-booking placeholders remain required for attendee, event, ticket, price, date and reference values; QR payloads and status/preview markers stay system-controlled. Custom text is escaped and shared with issued-ticket/PDF rendering across all current and legacy layouts. Banner image contents remain image assets.
+
+Deployed with backup `/root/ticketflow-backup-ticket-text-20261021-fFqlwU/`. No event assignments or pass availability changed. Verified the live organizer template 5062 saves with its existing wording; separate local fixture checks covered changed text, validation and save/reload. All 26 focused backend checks and 180 layout checks passed. A production preview PDF confirmed edited labels and attendee placeholders render correctly without sending emails or creating bookings. Frontend index SHA-256: `612be857b114608394e4a9ec9e035885aca62bf27c02996d852a6043b75a5773`.
+
+## Ticket component preview editor — 21 October 2026
+
+Main and partner logos share one wrapping row in all ticket layouts. The preview's Logos & banner panel supports uploads, partner ordering, size and spacing. Edit all components opens an optional grid layout with add/delete/reorder, full/half/quarter widths, alignment, four margins, padding, text size, QR size and custom text. Clicking any section selects its controls; empty sections remain selectable from the component list. Dynamic ticket fields and QR payloads retain actual booking values. Original layouts remain available; changes are persisted only with Save ticket design. Uploaded image contents themselves are not editable text.
+
+The same component renderer and styles generate issued tickets and PDF attachments. Component types, IDs, geometry and text are validated server-side. Local browser checks covered upload, add/delete/reorder, spacing, save/reload and selection; 28 focused backend checks and 180 current/legacy layout checks passed. Rendered a real PDF to inspect the banner, side-by-side logos, actual attendee details and custom content. Production preview generation passed without creating bookings or sending email. Live browser verified the new editor on template 5062 without saving a different arrangement. All five pass assignments remain 5062; challenge passes remain inactive.
+
+Backup: `/root/ticketflow-backup-ticket-components-20261021-1BtZdR/application-before.tgz`. Frontend index SHA-256: `4d8c2ca7b515313240a6e18c116ea1b41cd2b9be49bd72a69cda6528b262e5fd`. No database migration required.
+
+## Paint-style ticket canvas — 21 October 2026
+
+Added click selection, pointer/touch dragging, eight resize handles, Delete/Backspace, arrow-key movement (Shift for larger steps), corner text scaling, per-component deletion, Undo/Redo, layer ordering, expandable preview and resizable ticket height. Main/partner logos can be separate components. Drag & resize converts the preview's measured arrangement into a bounded 760px-wide canvas; original layouts stay available. New designs and Blank ticket can contain zero components, with no compulsory printed booking fields. The entire Design details form, including layout dropdown and default-field toggles, was removed. Saving remains in the preview toolbar.
+
+Free canvas coordinates and dimensions are validated server-side and shared with actual ticket/PDF rendering. PDF previews use invalid QR data. No production ticket design or pass assignments were changed by this release. Local browser checks covered text and QR dragging/resizing, deletion/Undo, blank creation, image components, save and reload. Generated and visually checked a PDF from the persisted test layout, then generated a private preview on the live server. Thirty focused backend checks, movement/bounds tests, removed-panel checks and 180 legacy/current rendering checks passed; changed frontend files pass lint.
+
+Pre-feature backup: `/root/ticketflow-backup-ticket-drag-20261021-uNMR9X/application-before.tgz`. Final UI polish backup: `/root/ticketflow-backup-ticket-drag-20261021-flgkCO/application-before.tgz`. Published index SHA-256: `2906fee72573ccd754d5b53c7bc08932894e27d7cebd2e04b2749737c1594b74`. No database migration required.
+
+## Ticket preview modal — 21 October 2026
+
+Ticket designs now opens each selected design in a native modal instead of an inline editor. The Design details section remains removed. The modal provides the preview canvas with compact add/edit controls, Undo/Redo, Save and Close; layers and ticket size are collapsed by default. Close preserves the unsaved-change confirmation. Background scrolling is locked and native dialog focus containment is used. Refreshed the user's existing tab, which had retained the older editor bundle.
+
+Verified local selection/open/close, QR movement, save and reopening through validation, plus geometry checks, 24 focused backend checks, targeted lint and production build. Deployed with backup `/root/ticketflow-backup-ticket-modal-20261021-u4jAI2/application-before.tgz`; frontend index SHA-256 `a40309e3fb0e3ac8a7d78c2696624be37d97e7b43c79d28c0fd2ec4fcac19a26`. No production designs or booking data were modified.
+
+## Remove extra preview controls — 21 October 2026
+
+Removed the Logos & banner, Blank ticket, Add component, original-layout, layers, ticket-size and component-settings panel from the ticket preview modal, along with the help line, Undo/Redo toolbar and bottom ticket-height handle. The modal keeps the ticket and Save/Close controls; existing on-ticket text editing and saved freeform component dragging remain. Removed the unused toolbar state and conversion path from TicketDesigner. No replacement menu was added. The requested removal also removes adding components through that toolbar.
+
+Production build, targeted lint, geometry checks and absence assertions passed. Backup: `/root/ticketflow-backup-ticket-clean-preview-20261021-YeVbNj/application-before.tgz`. Index SHA-256: `ffcb92b7768495ed7dc8f3a289da9aa865557dabb8e089f6a4ce8a527a50e58f`. No saved ticket designs were changed. Kept the user's existing unsaved editor draft open in its original tab.
+
+## Direct editing on original ticket layouts — 21 October 2026
+
+Replaced conversion-based editing with direct selection on the original rendered layout. Text, logos, banners, status, barcode and QR elements receive stable identities; dragging and resizing save numeric adjustments without replacing the layout or its decorative styling. Corner handles preserve proportions, QR scaling stays uniform, and movement uses ticket-width units so longer guest names do not shift farther than preview names. Selected elements offer editing, deletion and reset. A compact Add menu inserts text, images, QR codes or live booking fields and restores hidden originals. No large details/layers/settings form was reintroduced.
+
+The same adjustments and additions render in issued tickets and PDFs; uploaded extra images use the existing safe PDF asset embedding. Backend validation restricts element identities, numeric ranges, field identities and image URLs. Existing designs and issued snapshots remain compatible. Local browser verification covered drag, resize, delete/restore, additions, dynamic fields, wording, saving and reopening through the real validation layer. All 180 layout checks, 27 focused backend checks, geometry/absence checks and production build passed. Inspected an actual PDF with a long attendee name to confirm fixed positioning.
+
+Backup: `/root/ticketflow-backup-ticket-direct-20261021-y4qNe9/application-before.tgz`. Published frontend index SHA-256: `58c4e50cb388bfcf6f509c9f4162c085ab223deafa61b92d5fa20b840c0c0b2f`. No production ticket template or booking was changed by verification. Original user draft tabs were preserved.
+
+## Canvas workspace and original design consistency — 21 October 2026
+
+The user's original tab still held the earlier conversion-based editor and an unsaved Golden gala layout. With explicit approval, closed that stale draft and opened the current release. Replaced the editing modal interior with a full canvas workspace: fixed 760px rendering basis, centred artboard, compact tool strip, Undo/Redo, zoom, Fit, and an undoable Restore original action. Restore clears converted component geometry and later additions/adjustments while retaining selected theme, text and branding. Library thumbnails now use the same rendering width as the canvas and PDF. The artboard scales visually instead of changing the ticket's layout when zoomed.
+
+Compared all 26 Golden gala element rectangles between the library thumbnail and canvas: normalized geometry matched within 0.000001. Browser checks covered zoom-aware drag and Undo without layout conversion. Build, lint, 27 backend checks and geometry/absence checks passed. Backup: `/root/ticketflow-backup-ticket-workspace-20261021-N6k5A3/application-before.tgz`. Published index SHA-256: `5bde2894db6dafa26e9c0722fe72baf4b88411ad841df856001fe91471cf3559`. No production ticket templates or booking records were changed.
+
+Final canvas polish also selects text when clicking the gap between wrapped title lines. Backup `/root/ticketflow-backup-ticket-workspace-20261021-Sm1TJr/application-before.tgz`; final index SHA-256 `9c2138c1b2c497c385a13d50ffb475886f3712782be0d42a4c1d643bb8156a19`.
+
+### Movable ticket sections and component picker (2026-10-21)
+
+- Original ticket details and QR stub are selectable groups. QR group resizing keeps the QR square; selecting an individual QR/text still permits independent edits. Selection includes a Move grip and Select section action.
+- The original horizontal dotted divider is a real selectable element, retaining its original appearance and supporting move, width adjustment, hide and restore. Custom dotted dividers can also be added.
+- Replaced the nested Fields & restore menu and separate add buttons with a compact visual Add component picker, search, booking fields and removed-element restoration.
+- Verified group dragging, square resizing, divider dragging, field search/addition, reset and original layout restoration in the local browser. Production UI verified without saving any template changes.
+- Build and targeted lint passed; 29 studio/PDF tests and 180 current/legacy layout rendering checks passed.
+- Backup: `/root/ticketflow-backup-ticket-picker-20261021-hgj8Ma/application-before.tgz`. Live index SHA-256: `6761b0d032fe1987dcc0670ea8a32eafbcb94d9419a35ac5c9089a5df5bd008f`.
+- Screenshot: `deployment/ticket-component-picker-live.png`.
+
+### Ticket card resizing and independent dividers (2026-10-21)
+
+- Exposed the original QR border as a separate draggable/resizable divider, preserving transparent border spacing in existing layouts. Original header, date, logo, footer and artwork sections are also selectable.
+- Added an exterior card resize handle and Ticket size controls (240–1600 px wide; 240–4000 px high). Move ticket pans the workspace only; size persists with the design. PDF page width now follows the saved ticket width.
+- Compact element style popover supports text size/color/weight/alignment, opacity, rotation and layering; divider controls support color, stroke style and thickness. Appearance and dimensions are validated server-side.
+- Local browser verified: QR-divider movement leaves the QR code in place; card corner drag; save/reload; text styling; dotted-line thickness. Editor and PDF-rendered markup matched exactly for 763×540 px, 20 px attendee text, 5° rotation and divider translation.
+- Production build/lint, 31 studio/PDF tests and 180 layout checks passed. No live template content was changed during validation.
+- Backup: `/root/ticketflow-backup-ticket-resize-20261021-ZckXUC/application-before.tgz`. Live index SHA-256: `22ecc34db1de1c7dc7804be010de142b821e32a1936e7646c188b5105d529850`.
+
+### 2026-10-21 — proportional ticket resizing, footer and text controls
+
+- Whole-card edge/corner resizing now scales the complete original artwork, including fixed-size text, QR codes, logos, banners, dividers, and footer. The saved artwork coordinate system is retained in `ticket_size` so resizing does not reflow the original layout. Width/height fields preserve proportions; print margins remain exact.
+- Added larger persistent card grips and a separate footer grip. Footer height/width edits change its box without stretching text, and grow an explicitly sized card when necessary.
+- Pass badges can be selected/deleted as a complete component; old hidden pass-name drafts no longer leave an empty colored pill. Card background and element/text colors update directly.
+- Added a text composer and variable picker. Known booking variables resolve per attendee in previews, issued tickets, and PDFs; unknown variables are rejected. Template text remains escaped.
+- Verified local save/reload, badge deletion, footer extension, card shrink/enlarge, background/text color updates, and custom attendee variables. 33 studio/PDF tests and all 180 current/legacy layout checks passed; geometry tests/build/diff checks passed. Generated and visually reviewed an isolated ticket PDF, without booking or emailing a customer.
+- Live smoke check used a separate tab and unsaved resize/undo only; card width and QR width both scaled by approximately 0.85. Existing user tabs/drafts and saved designs were not modified.
+- Initial rollback backup: `/root/ticketflow-backup-ticket-flexible-20261021-NpTAyv/application-before.tgz`; final print-margin backup: `/root/ticketflow-backup-ticket-flexible-20261021-dosKwo/application-before.tgz`.
+- Final index SHA-256: `f471be41423e112a13f5c4049daccb54a91be1e8b3f42b6308cc3ca2f10dc459`; `ticketflow` active after deployment.
+- Live screenshot: `deployment/ticket-flexible-editor-live.png`.
+
+### 2026-10-21 — add and customize ticket buttons / badges
+
+- Added Button / badge to the component picker, with editable text and booking variables, fill/text colors, corner radius, positioning, independent box resizing, deletion and Undo.
+- The original pass badge remains selectable as a whole for Edit / Style / Delete. Color changes remove the old orange glow. Added badges resize their box without distorting text; complete-ticket resizing still scales them with the artwork.
+- Backend validates the new element type, text variables and bounded radius. PDF rendering shares the same component and styles.
+- Verified add/edit/move/resize/delete/undo/save locally; 35 studio/PDF tests, 180 layout checks and build passed. Visually reviewed a generated badge PDF with actual guest values. No live designs, bookings or email were changed.
+- User's old draft tab was preserved; fresh live editor opened to expose the new component.
+- Backup: `/root/ticketflow-backup-ticket-badge-20261021-IJX6my/application-before.tgz`. Index SHA-256: `d17ba08260e65268fdc708eaae30bbdeb769bba7925991e89bad019b128e625e`; service active.
+
+### 2026-10-21 — independent card edge resizing
+
+- Side handles now change card width only; top/bottom handles change height only. The W/H fields follow the same behavior. Corners continue to scale all artwork proportionally.
+- Independent edge resizing preserves the artwork's current scale and coordinate reference. Extended validation bounds accommodate resizing a previously scaled ticket while keeping the displayed card within the existing limits.
+- Browser checks: horizontal drag changed card width from 660 to 780px with height effectively unchanged (430px, subpixel rounding only) and unchanged 96px QR size. Vertical drag changed height from 430 to 460px with width and QR unchanged. Save/reload retained 780×460.
+- Added regression assertions for independent axes, proportional corners after edge changes, persistence, and size limits. Build, 35 studio/PDF tests, 180 layout checks, geometry tests, lint and diff checks passed.
+- Backup: `/root/ticketflow-backup-ticket-axis-20261021-CeNrWa/application-before.tgz`. Index SHA-256: `c7202bad097a4886d0c6dbd36ea9ebb7c65b6d796635656bea8a40bf016a0de8`; service active.
+
+### 21 October 2026 — ticket color and PDF parity
+
+- The element color picker now starts with the selected element's actual color and supports direct hex entry; section text colors also reach their child labels.
+- Ticket typography is isolated from admin styles and viewport rules follow the ticket container. PDF generation embeds the exact browser font files and removes the extra page margin so saved card dimensions are preserved.
+- Added Preview PDF / Download PDF in the ticket editor. It renders the current draft through the real PDF service without saving a template, issuing a ticket, or sending mail.
+- Verified picker and hex changes, save/reload, and white custom text. Compared all 38 elements of the customized test ticket: positions/sizes match within 0.05 px and all text colors match. Rendered PDF is one page at the saved 780 × 460 px size (within Chromium print rounding). Studio/PDF regression suite, 180 layouts and resize geometry checks pass.
+- Live verification: service active; organizer homepage HTTP 200; new ticket PDF preview endpoint successfully returns a rendered page from an unsaved design. Backup: `/root/ticketflow-backup-ticket-colors-pdf-20261021-N19KG6`; published index SHA256: `80c5ff2bef68c1cb562cb6ce599df6d49d9be5dc0479967fd4d99ea0201d219a`.
+
+### 21 October 2026 — QR white frame movement
+
+- Moved the existing QR selection target from its SVG onto the enclosing white frame in classic/legacy and composed ticket layouts. Dragging, resizing and deletion now affect the code and its white background together; existing saved QR adjustments retain the same key.
+- Kept the frame's original display mode so selecting/moving it does not reflow nearby content. QR minimum resizing measures the actual code inside the frame.
+- Verified dragging from the white padding moves both frame and SVG by the same offset, proportional resizing, saved configuration and PDF preview. All 180 original layouts have the grouped target; 37 studio/PDF tests and layout/geometry checks passed.
+- Published index SHA256: `c9772b99f55ff0921f4e8c323b056f904ad63620b39dec86796f4d156527a30d`; backup `/root/ticketflow-backup-ticket-qr-frame-20261021-4g0Sri`; service active.
+
+### 21 October 2026 — distinguish QR images from text ticket codes
+
+- Named the scannable component “Ticket QR code” with “Scannable image for entry”; named the booking field “Ticket code (text)” throughout the picker, variable selector and existing component selection labels.
+- Text-code preview now displays `TCK-PREVIEW-000042`; the QR preview remains deliberately invalid for entry. Issued QR images continue to encode each attendee's actual unique ticket code.
+- Removed the nonfunctional Edit-text action from QR selections. Verified adding both items, saved configuration and PDF preview. Regression coverage includes blank designs, distinct real-ticket QR images and preview isolation; 38 studio/PDF tests plus 180 layouts and geometry checks passed.
+- Published index SHA256 `2cac81b5138dba154c2ac234543eb94ce3bd3889cf8f51d11544fc66849537e0`; backup `/root/ticketflow-backup-ticket-add-qr-20261021-qXvQVV`; service active.
+
+### 2026-10-21 — Ticket form variables, deletion persistence and alignment guides
+
+- Ticket text now accepts registration-form variables (`field_f_…`) and attendee email/phone. The editor selects a ticket type to load tenant-scoped form fields and sample answers; actual ticket views and PDFs use that ticket’s attendee answers, including multi-select, consent and uploaded-file names. Missing optional answers render blank.
+- Cleared event-title text is accepted without requiring its original token; deleted original text carries an explicit hidden marker. Verified delete → save → reload → add/edit text leaves the title removed.
+- Dragging shows center/edge guides and snaps within six screen pixels to the ticket or other visible components. Alt allows free dragging. Guides are editor-only and cleared on release/cancel.
+- Multiple old tabs contained stale Signature admission drafts. Ticket template saves now compare a content revision (with an updated-at fallback for already-open clients) and conditionally update the original database row, rejecting stale/concurrent overwrites with HTTP 409.
+- Verification: 44 backend studio/PDF/revision tests, 180 current/legacy ticket layouts, geometry/snapping tests and production build passed. Local browser verified deletion persistence, form variable insertion and center dragging; live browser verified Cinematica’s eight registration fields and generated a PDF with a Full Name variable. Temporary live verification edits were undone without saving. Existing user drafts preserved.
+- Live frontend index SHA256: `94dbbd510572c3b2924683d8858f2d2c52b3e12bc65ec1b9c23e5a0d623df326`. Initial release backup `/root/ticketflow-backup-ticket-fields-guides-20261021-jSyVXK`; subsequent backup for the stale-tab protection is recorded in `/root/ticket-fields-guides-backup-location`.
+- UI proof: `deployment/ticket-form-variables-live.png`.
+
+### 2026-10-21 — Style panel input interaction repair
+
+- Root cause reproduced on live: every Style input inherited `pointer-events:none` from the selection outline; only buttons opted back into clicks. Restored pointer events for the toolbar/popover and placed it above resize handles/footer controls.
+- Style pointer and keyboard events are isolated from canvas gestures/shortcuts, including select controls. Live browser verified clickable color hex, 26px size, 8° rotation, and keyboard opacity change to 99%; computed styles matched. All temporary changes undone without saving. Final panel hit testing confirms toolbar layer 6 is above resize handles layer 5.
+- Production build, 44 backend tests and geometry/UI regression checks passed. Live service active. SHA256 `7b8fffd6601d6e4f510d7c9c44b13897bfead2c1268e13bcedeff3ba85653ac2`.
+- Backups: `/root/ticketflow-backup-ticket-style-controls-20261021-vXmpZx` (before initial fix), `/root/ticketflow-backup-ticket-style-controls-20261021-OIKr7s` (before final layering adjustment).
+- Proof: `deployment/ticket-style-controls-live.png`. Existing user drafts preserved.
+
+### 2026-10-21 — ticket component copy and paste
+
+- Added canvas Copy / Paste buttons, Ctrl/Cmd+C/V shortcuts and Ctrl/Cmd+D duplication for text, logos/images, banners, badges, QR codes and dividers. Copies receive independent identities, preserve booking/form variables and custom styles, and use a small bounded position offset. Ordinary text inputs retain native editing shortcuts; clipboard data stays in the current editor.
+- Captured original typography is validated through a bounded style schema and rendered by the same ticket/PDF component. Added-field copies become independent editable text while retaining their variable tokens. Existing extra components preserve their full configuration and adjustments. The 36-component limit is enforced.
+- Verified local keyboard/button actions, independent text editing, QR copy/delete/Undo, save/reload, and generated PDF text at 26px / 8° / #22cc88. All 46 backend tests, 180 layout checks, clipboard/geometry checks, production build, focused lint and diff check passed.
+- Live verified copy/paste and moved-copy PDF preview. All temporary live edits undone without saving; existing user drafts preserved. Earlier PDF comparison also verified the customized preview's size/color/rotation/position using an unsaved test draft.
+- Backup: `/root/ticketflow-backup-ticket-copy-paste-20261021-0uPn6f`. Frontend index SHA256: `040504ce5516209057660320427ea599d2b71df130e773509ca5a525cff48c05`. Service active.
+- Proof: `deployment/ticket-copy-paste-live.png`, `deployment/ticket-copy-paste-pdf-live.png`.

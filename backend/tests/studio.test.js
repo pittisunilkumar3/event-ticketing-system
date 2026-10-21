@@ -5,6 +5,45 @@ const defaults = require('../services/studioDefaults');
 const { renderEmail, sampleData } = require('../services/emailRenderer');
 const secrets = require('../services/secrets');
 
+test('component layouts validate geometry, identity and custom text without accepting CSS', () => {
+  const blocks=require('../../shared/ticketBlocks.json').defaults;
+  const config=v.template('ticket',{...defaults.ticket,layout_blocks:blocks,logo_style:{align:'right',size:64,gap:12}});
+  assert.equal(config.layout_blocks.length,blocks.length);
+  assert.equal(config.logo_style.size,64);
+  assert.equal(config.layout_blocks.find(b=>b.type==='qr').qr_size,112);
+  for(const bad of [[],Array(37).fill(blocks[0]),[{id:'a',type:'script'}],[{id:'a',type:'text',padding:'position:fixed'}],[{id:'a',type:'text',width:33}],[{id:'a',type:'qr',qr_size:999}],[{id:'a',type:'text'},{id:'a',type:'text'}]]) {
+    assert.throws(()=>v.template('ticket',{...defaults.ticket,layout_blocks:bad}));
+  }
+  assert.throws(()=>v.template('ticket',{...defaults.ticket,logo_style:{size:-1}}));
+  assert.equal(v.template('ticket',defaults.ticket).layout_blocks,null);
+});
+
+test('ticket text overrides preserve booking fields and reject unsafe field substitutions', () => {
+  const config = v.template('ticket', {...defaults.ticket,text:{attendee_label:'ATTENDEE',attendee_name:'Welcome {{attendee_name}}',scan_label:'Show at entry',admit_label:''}});
+  assert.equal(config.text.attendee_label,'ATTENDEE');
+  assert.equal(config.text.attendee_name,'Welcome {{attendee_name}}');
+  assert.equal(config.text.admit_label,'');
+  assert.deepEqual(v.template('ticket',defaults.ticket).text,{});
+  assert.throws(()=>v.template('ticket',{...defaults.ticket,text:[]}),/Invalid ticket text/);
+  assert.equal(v.template('ticket',{...defaults.ticket,text:{event_title:''}}).text.event_title,'');
+  assert.equal(v.template('ticket',{...defaults.ticket,text:{attendee_name:'{{field_f_full_name}}'}}).text.attendee_name,'{{field_f_full_name}}');
+  assert.equal(v.template('ticket',{...defaults.ticket,text:{price:'{{price}} {{attendee_name}}'}}).text.price,'{{price}} {{attendee_name}}');
+  assert.throws(()=>v.template('ticket',{...defaults.ticket,text:{price:'{{price}} {{password}}'}}),/variable/);
+  assert.throws(()=>v.template('ticket',{...defaults.ticket,text:{unknown:'value'}}),/Unknown/);
+  assert.throws(()=>v.template('ticket',{...defaults.ticket,text:{venue_label:'x'.repeat(501)}}),/invalid/);
+});
+
+test('ticket branding validates, deduplicates and preserves multiple logos', () => {
+  const config = v.template('ticket', {...defaults.ticket, full_banner:true, logos:['/uploads/expo/logo.png', '', '/uploads/expo/partner.webp', '/uploads/expo/logo.png']});
+  assert.deepEqual(config.logos, ['/uploads/expo/logo.png', '/uploads/expo/partner.webp']);
+  assert.equal(config.full_banner, true);
+  assert.deepEqual(v.template('ticket', {layout:'classic'}).logos, []);
+  assert.throws(() => v.template('ticket', {...defaults.ticket, logos:'bad'}), /six/);
+  assert.throws(() => v.template('ticket', {...defaults.ticket, logos:Array(7).fill('/uploads/a.png')}), /six/);
+  assert.throws(() => v.template('ticket', {...defaults.ticket, logos:['javascript:alert(1)']}), /HTTP/);
+  assert.equal(v.template('ticket', {...defaults.ticket, full_banner:'false'}).full_banner, false);
+});
+
 test('built-in collection has 100 distinct structures without repetitive editions', () => {
   const layouts = require('../services/ticketLayouts');
   assert.equal(layouts.length, 100);
@@ -153,4 +192,58 @@ test('removing an email logo stays removed even when the website has a logo',()=
  assert.match(renderEmail(legacy,brand,sampleData).html,/website-logo/);
  const uploaded=v.template('email',{...removed,show_logo:true,logo:'https://example.com/new-logo.png'});
  assert.match(renderEmail(uploaded,brand,sampleData).html,/new-logo/);
+});
+test('free canvas validates geometry and allows a truly blank design',()=>{
+ const base={...require('../services/studioDefaults').ticket,canvas:{height:1000},layout_blocks:[{id:'qr',type:'qr',frame:{x:20,y:30,w:150,h:170}}]};
+ const validate=require('../services/studioValidation').template;
+ assert.equal(validate('ticket',base).layout_blocks[0].frame.y,30);
+ assert.equal(validate('ticket',{...base,layout_blocks:[]}).layout_blocks.length,0);
+ for(const frame of [{x:-1,y:0,w:100,h:150},{x:700,y:0,w:100,h:150},{x:0,y:950,w:100,h:150},{x:0,y:0,w:20,h:150},{x:0,y:0,w:100,h:10},{x:NaN,y:0,w:100,h:150}])assert.throws(()=>validate('ticket',{...base,layout_blocks:[{...base.layout_blocks[0],frame}]}));
+ assert.throws(()=>validate('ticket',{...base,canvas:{height:6001}}));
+ assert.throws(()=>validate('ticket',{...base,layout_blocks:[{id:'a',type:'text'}]}));
+});
+
+test('original-layout adjustments and additions validate without changing the layout',()=>{
+ const input={...defaults.ticket,element_adjustments:{text_attendee_name:{x:20,y:30,sx:1.5,sy:1.5},qr:{sx:1.2,sy:1.2},text_venue:{hidden:true}},extra_elements:[{id:'extra_test',type:'text',text:'Welcome',x:5,y:10,w:30,h:20}]};
+ const saved=v.template('ticket',input);assert.equal(saved.layout,'classic');assert.equal(saved.layout_blocks,null);assert.equal(saved.element_adjustments.text_attendee_name.sx,1.5);assert.equal(saved.extra_elements[0].text,'Welcome');
+ for(const patch of [{element_adjustments:{'bad]{}':{}}},{element_adjustments:{qr:{sx:2,sy:1}}},{element_adjustments:{text_brand:{x:Infinity}}},{extra_elements:[{id:'extra_x',type:'image',src:'javascript:alert(1)'}]},{extra_elements:[{id:'extra_x',type:'text',x:90,w:30}]},{extra_elements:Array(37).fill({id:'extra_x',type:'text'})}])assert.throws(()=>v.template('ticket',{...defaults.ticket,...patch}));
+});
+
+test('movable ticket sections and added dividers survive validation without distorting QR groups',()=>{
+ const input={...defaults.ticket,element_adjustments:{section_qr:{x:-10,y:2,sx:.8,sy:.8},divider:{x:0,y:4,sx:1.2,sy:1}},extra_elements:[{id:'extra_divider',type:'divider',x:10,y:50,w:50,h:2,color:'#c79d56'}]};
+ const saved=v.template('ticket',input);
+ assert.equal(saved.element_adjustments.section_qr.x,-10);
+ assert.equal(saved.extra_elements[0].type,'divider');
+ assert.throws(()=>v.template('ticket',{...input,element_adjustments:{section_qr:{sx:2,sy:1}}}),/square/);
+});
+
+test('ticket dimensions and element appearance validate and round trip',()=>{
+ const input={...defaults.ticket,ticket_size:{width:1000,height:700},element_adjustments:{divider_qr:{x:-5,y:3,sx:1,sy:.7},text_attendee_name:{font_size:24,color:'#c79d56',rotation:5,opacity:.8,weight:700,align:'center',layer:4}}};
+ const saved=v.template('ticket',input);assert.deepEqual(saved.ticket_size,{width:1000,height:700});assert.equal(saved.element_adjustments.text_attendee_name.font_size,24);assert.equal(saved.element_adjustments.divider_qr.x,-5);
+ for(const ticket_size of [{width:0,height:500},{width:1601,height:500},{width:700,height:4001},{width:NaN,height:500},'bad',{}])assert.throws(()=>v.template('ticket',{...defaults.ticket,ticket_size}));
+ for(const patch of [{rotation:181},{font_size:151},{opacity:2},{layer:99},{color:'red;display:none'},{align:'bad'}])assert.throws(()=>v.template('ticket',{...defaults.ticket,element_adjustments:{text_brand:patch}}));
+});
+
+test('whole-ticket scaling and footer geometry persist with bounded values',()=>{
+ const ticket_size={width:380,height:300,contentWidth:760,contentHeight:600};
+ const saved=v.template('ticket',{...defaults.ticket,ticket_size,card_background:'#112233',element_adjustments:{section_pass:{hidden:true},section_footer:{box_width:80,box_height:12,background:'#334455',color:'#ffffff'}}});
+ assert.deepEqual(saved.ticket_size,ticket_size);assert.equal(saved.card_background,'#112233');assert.equal(saved.element_adjustments.section_footer.box_height,12);assert.equal(saved.element_adjustments.section_pass.hidden,true);
+ for(const size of [{...ticket_size,contentWidth:0},{...ticket_size,contentHeight:NaN},{...ticket_size,height:700}])assert.throws(()=>v.template('ticket',{...defaults.ticket,ticket_size:size}));
+ assert.throws(()=>v.template('ticket',{...defaults.ticket,extra_elements:[{id:'extra_bad',type:'text',text:'{{password}}'}]}),/variable/);
+});
+
+test('added button badges validate editable text, color and rounded corners',()=>{
+ const extra={id:'extra_badge',type:'badge',text:'Admit {{attendee_name}}',x:10,y:10,w:25,h:8,color:'#ffffff'};
+ const c=v.template('ticket',{...defaults.ticket,extra_elements:[extra],element_adjustments:{extra_badge:{background:'#334455',border_radius:20}}});
+ assert.equal(c.extra_elements[0].type,'badge');assert.equal(c.extra_elements[0].text,extra.text);assert.equal(c.element_adjustments.extra_badge.border_radius,20);
+ assert.throws(()=>v.template('ticket',{...defaults.ticket,extra_elements:[{...extra,text:'{{secret}}'}]}),/variable/);
+ assert.throws(()=>v.template('ticket',{...defaults.ticket,extra_elements:[extra],element_adjustments:{extra_badge:{border_radius:101}}}));
+});
+
+test('copied component typography survives validation without accepting arbitrary CSS',()=>{
+  const item={id:'extra_copy',type:'text',text:'{{attendee_name}} {{field_f_profession}}',x:0,y:0,w:30,h:10,font_size:26,color:'#22cc88',appearance:{font:'display',weight:650,line_height:1.45,letter_spacing:2,font_style:'italic',text_transform:'uppercase',align:'center'}};
+  const config={...defaults.ticket,extra_elements:[item],element_adjustments:{extra_copy:{x:3,y:4,sx:1.2,sy:1.2,rotation:8,color:'#22cc88',font_size:26}}};
+  const saved=v.template('ticket',config);
+  assert.deepEqual(saved.extra_elements[0].appearance,item.appearance);assert.equal(saved.element_adjustments.extra_copy.rotation,8);
+  for(const appearance of [{font:'url(https://example.com)'},{weight:2000},{line_height:-1},{letter_spacing:Infinity},{text_transform:'unset;display:none'}])assert.throws(()=>v.template('ticket',{...config,extra_elements:[{...item,appearance}]}));
 });

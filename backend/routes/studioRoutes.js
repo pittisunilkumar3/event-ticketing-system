@@ -43,8 +43,15 @@ router.post('/templates',wrap(async(req,res)=> {
 router.put('/templates/:id',wrap(async(req,res)=> {
   const existing = await Studio.template(req.params.id);
   if (!existing) v.fail('Template not found.',404);
-  const saved = await Studio.saveTemplate({id:existing.id,kind:existing.kind,name:v.string(req.body.name,'Template name',120,true),active:req.body.active !== false,config:await checkedConfig(existing.kind,req.body.config)});
+  require('../services/ticketDesignRevision').check(existing,req.body);
+  const saved = await Studio.saveTemplate({id:existing.id,kind:existing.kind,expected:existing.kind==='ticket'?existing:undefined,name:v.string(req.body.name,'Template name',120,true),active:req.body.active !== false,config:await checkedConfig(existing.kind,req.body.config)});
   ok(res,{template:saved},'Template saved');
+}));
+router.get('/ticket-fields/:ticketTypeId',wrap(async(req,res)=>{
+ const {fields}=await require('../services/ticketEmails').context(req.params.ticketTypeId);
+ const sample=await require('../services/ticketEmails').preview(req.params.ticketTypeId);
+ res.set('Cache-Control','no-store');
+ ok(res,{fields:fields.map(f=>({key:'field_'+f.id,label:f.label,type:f.type})),sample:{attendee_name:sample.attendee_name,attendee_email:sample.attendee_email,attendee_phone:sample.attendee_phone,registration_answers:sample.registration_answers,type_name:sample.ticket_type,price:sample.ticket_price,currency:'INR',event_title:sample.event_title,event_start:sample.event_date,venue:sample.venue,city:sample.city}});
 }));
 router.get('/email-fields/:ticketTypeId',wrap(async(req,res)=>{
  const {type,fields}=await require('../services/ticketEmails').context(req.params.ticketTypeId);
@@ -59,6 +66,13 @@ router.post('/email-attachment',require('multer')({storage:require('multer').mem
 }));
 router.get('/email-attachments/:id',wrap(async(req,res)=>{
  const file=await attachments.read(req.params.id);res.set({'Content-Type':'application/pdf','Cache-Control':'no-store','X-Content-Type-Options':'nosniff','Content-Disposition':`inline; filename="attachment.pdf"`});res.send(file.content);
+}));
+// Render the current draft without saving it or sending an email.
+router.post('/ticket-preview',wrap(async(req,res)=>{
+ const config=await checkedConfig('ticket',req.body.config);
+ const personal=req.body.ticket_type_id?await require('../services/ticketEmails').preview(req.body.ticket_type_id):{};
+ const pdf=await require('../services/ticketPdf')({ticket_id:42,ticket_code:'PREVIEW-NOT-A-VALID-TICKET',attendee_name:'Alex Morgan',ticket_type:'VIP Experience',ticket_price:60,event_title:'Cinematica · An evening of possibilities',venue:'Main Exhibition Hall',booking_ref:'TKT-PREVIEW',currency:config.currency||'INR',...personal,event_start:personal.event_date||'2026-12-12 18:00:00',ticket_design:config});
+ res.set({'Content-Type':'application/pdf','Cache-Control':'no-store','X-Content-Type-Options':'nosniff','Content-Disposition':'inline; filename="ticket-design-preview.pdf"'});res.send(pdf);
 }));
 router.post('/email-ticket-preview',wrap(async(req,res)=>{
  const config=await checkedConfig('email',req.body.config),brand=await Studio.getSetting('brand');

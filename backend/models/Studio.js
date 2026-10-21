@@ -1,7 +1,7 @@
 const db = require('../config/db');
 const defaults = require('../services/studioDefaults');
 const ticketLayouts = require('../services/ticketLayouts');
-const parse = row => row && ({ ...row, active: Boolean(row.active), config: JSON.parse(row.config_json), config_json: undefined });
+const parse = row => row && ({ ...row,revision:require('../services/ticketDesignRevision').revision(row), active: Boolean(row.active), config: JSON.parse(row.config_json), config_json: undefined });
 const Studio = {
   async ensureEmailTemplate(key, conn=db) {
     const e=defaults.emailEvents.find(item=>item.key===key);
@@ -37,8 +37,12 @@ const Studio = {
   async template(id, conn = db) {
     const [rows] = await conn.query('SELECT * FROM design_templates WHERE id=?', [id]); return parse(rows[0]);
   },
-  async saveTemplate({ id, kind, name, active, config }) {
-    if (id) await db.query('UPDATE design_templates SET name=?,active=?,config_json=? WHERE id=? AND kind=?', [name,active,JSON.stringify(config),id,kind]);
+  async saveTemplate({ id, kind, name, active, config, expected }) {
+    if (id) {
+      const guard=expected?' AND config_json=? AND updated_at=? AND name=? AND active=?':'';
+      const [result]=await db.query('UPDATE design_templates SET name=?,active=?,config_json=? WHERE id=? AND kind=?'+guard,[name,active,JSON.stringify(config),id,kind,...(expected?[JSON.stringify(expected.config),expected.updated_at,expected.name,expected.active]:[])]);
+      if(expected&&!result.affectedRows)throw Object.assign(new Error('This design changed while saving. Reopen the latest design before making changes.'),{statusCode:409});
+    }
     else {
       const [r] = await db.query('INSERT INTO design_templates (kind,name,config_json,active) VALUES (?,?,?,?)', [kind,name,JSON.stringify(config),active]); id = r.insertId;
     }

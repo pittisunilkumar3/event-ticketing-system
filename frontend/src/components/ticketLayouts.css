@@ -1,4 +1,19 @@
 /* One renderer is shared by the design library, live preview and issued tickets. */
+.designed-ticket .ticket-full-banner {
+  display: block;
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+  object-fit: contain;
+  flex-shrink: 0;
+  order: -1;
+}
+/* Main and partner logos share one wrapping row in every layout. */
+.designed-ticket .ticket-logo-group { display:flex; align-items:center; flex-wrap:wrap; flex:1; min-width:0; position:relative; z-index:1; }
+.designed-ticket .ticket-logo-group img { display:block; width:auto; height:var(--logo-size,44px); max-height:none; max-width:min(140px,100%); object-fit:contain; flex-shrink:0; }
+.designed-ticket .ticket-logo-group .ticket-partner-logo { width:calc(var(--logo-size,44px) * 2); padding:5px; background:#fff; border-radius:4px; }
+.designed-ticket .ticket-logo-group strong { font-size:16px; }
 .ticket-artwork {
   display: none;
 }
@@ -53,6 +68,8 @@
   color: var(--ticket-accent-ink);
   border-color: #fff7;
 }
+.designed-ticket.ticket-layout-boarding .ticket-stub > .ticket-stub-divider {border-color: #fff7;}
+
 .designed-ticket.ticket-layout-boarding .ticket-meta-grid {
   font-family: ui-monospace, monospace;
 }
@@ -96,6 +113,8 @@
 .designed-ticket.ticket-layout-cinema .ticket-stub {
   border-left: 2px dotted var(--ticket-accent);
 }
+.designed-ticket.ticket-layout-cinema .ticket-stub > .ticket-stub-divider {border-left: 2px dotted var(--ticket-accent);width:0;height:100%;}
+
 .designed-ticket.ticket-layout-cinema .ticket-type-label {
   border-radius: 0;
   text-transform: uppercase;
@@ -145,6 +164,8 @@
   border-right: 1px solid var(--ticket-ink);
   background: none;
 }
+.designed-ticket.ticket-layout-editorial .ticket-stub > .ticket-stub-divider {border-left: 0;border-right: 1px solid var(--ticket-ink);}
+
 .designed-ticket.ticket-layout-editorial .ticket-design-header h2 {
   font:
     italic 34px/1.08 Georgia,
@@ -419,6 +440,8 @@
   color: var(--ticket-accent-ink);
   border: 0;
 }
+.designed-ticket.ticket-layout-voucher .ticket-stub > .ticket-stub-divider {border: 0;width:100%;height:100%;}
+
 .designed-ticket.ticket-layout-voucher .ticket-design-header h2 {
   font:
     32px/1.15 Georgia,
@@ -458,6 +481,8 @@
   border-left: 1px solid var(--ticket-accent);
   background: transparent;
 }
+.designed-ticket.ticket-layout-luxe .ticket-stub > .ticket-stub-divider {border-left: 1px solid var(--ticket-accent);width:0;height:100%;}
+
 .designed-ticket.ticket-layout-luxe .ticket-admit {
   border: 1px solid var(--ticket-accent);
   border-radius: 50%;
@@ -578,6 +603,8 @@
   background: var(--ticket-accent);
   color: var(--ticket-accent-ink);
 }
+.designed-ticket.ticket-layout-brutalist .ticket-stub > .ticket-stub-divider {border-left: 3px solid var(--ticket-ink);width:0;height:100%;}
+
 .designed-ticket.ticket-layout-brutalist .ticket-design-header::before,
 .designed-ticket.ticket-layout-brutalist .ticket-design-header::after,
 .designed-ticket.ticket-layout-brutalist .ticket-notch {
@@ -607,7 +634,7 @@
 .designed-ticket.ticket-layout-split .ticket-date-chip strong {
   color: inherit;
 }
-.designed-ticket.ticket-layout-split .ticket-design-content::before,
+.designed-ticket.ticket-layout-split .ticket-design-content > .ticket-content-divider,
 .designed-ticket.ticket-layout-split .ticket-design-header::after {
   display: none;
 }
@@ -616,6 +643,8 @@
   background: var(--ticket-bg);
   border-left: 1px solid color-mix(in srgb, var(--ticket-ink) 20%, transparent);
 }
+.designed-ticket.ticket-layout-split .ticket-stub > .ticket-stub-divider {border-left: 1px solid color-mix(in srgb, var(--ticket-ink) 20%, transparent);width:0;height:100%;}
+
 .designed-ticket.ticket-layout-split .ticket-notch {
   display: none;
 }
@@ -867,19 +896,11 @@
   color: #9b5839;
 }
 .ticket-editor-workspace {
-  display: grid;
-  grid-template-columns: 310px minmax(0, 1fr);
-  gap: 24px;
-  align-items: start;
+  display: block;
 }
 .ticket-editor-workspace .studio-ticket-preview {
   min-width: 0;
   padding: 25px 20px;
-}
-.ticket-design-fields {
-  border: 0;
-  margin: 0;
-  min-width: 0;
 }
 @media (max-width: 1450px) {
   .ticket-collection-grid {
@@ -920,6 +941,8 @@
   .ticket-editor-workspace .studio-ticket-preview {
     padding: 20px 12px;
   }
+}
+@container ticket-layout (max-width: 560px) {
   .designed-ticket:not(.ticket-layout-editorial):not(.ticket-layout-voucher) {
     flex-direction: column;
   }
@@ -932,6 +955,8 @@
     border-right: 0;
     border-top: 1px dashed;
   }
+.designed-ticket .ticket-stub > .ticket-stub-divider {border-left: 0;border-right: 0;border-top: 1px dashed;width:100%;height:0;}
+
   .designed-ticket .ticket-design-footer {
     gap: 8px;
   }
@@ -950,6 +975,8 @@
     border-top: 0;
     border-left: 1px dashed;
   }
+.ticket-thumbnail.format-horizontal .ticket-stub > .ticket-stub-divider {border-top: 0;border-left: 1px dashed;width:0;height:100%;}
+
 }
 @media print {
   .designed-ticket {
@@ -1011,6 +1038,8 @@
   border-color: var(--ticket-accent);
   color: var(--ticket-ink);
 }
+.designed-ticket.ticket-edition-engraved .ticket-stub > .ticket-stub-divider {border-color: var(--ticket-accent);}
+
 .designed-ticket.ticket-edition-blueprint {
   border: 1px solid var(--ticket-accent);
   border-radius: 0;
@@ -1048,6 +1077,8 @@
   color: var(--ticket-ink);
   border: 1px dashed var(--ticket-accent);
 }
+.designed-ticket.ticket-edition-blueprint .ticket-stub > .ticket-stub-divider {border: 1px dashed var(--ticket-accent);width:100%;height:100%;}
+
 .designed-ticket.ticket-edition-confetti {
   border: 2px solid var(--ticket-accent);
   border-radius: 22px;
@@ -1078,6 +1109,8 @@
   background: color-mix(in srgb, var(--ticket-accent) 12%, var(--ticket-bg));
   color: var(--ticket-ink);
 }
+.designed-ticket.ticket-edition-confetti .ticket-stub > .ticket-stub-divider {border-color: var(--ticket-accent);}
+
 .designed-ticket.ticket-edition-neon {
   border: 1px solid var(--ticket-accent);
   box-shadow:
@@ -1105,6 +1138,8 @@
   color: var(--ticket-ink);
   border-color: var(--ticket-accent);
 }
+.designed-ticket.ticket-edition-neon .ticket-stub > .ticket-stub-divider {border-color: var(--ticket-accent);}
+
 .designed-ticket.ticket-edition-neon .ticket-qr > div {
   box-shadow:
     0 0 0 3px var(--ticket-accent),
@@ -1179,6 +1214,8 @@
   background: var(--ticket-bg);
   color: var(--ticket-ink);
 }
+.designed-ticket.ticket-edition-deco .ticket-stub > .ticket-stub-divider {border: 4px double var(--ticket-accent);width:100%;height:100%;}
+
 .designed-ticket.ticket-edition-mono {
   border: 3px solid var(--ticket-ink);
   border-radius: 0;
@@ -1209,6 +1246,8 @@
   background: var(--ticket-bg);
   border-color: var(--ticket-ink);
 }
+.designed-ticket.ticket-edition-mono .ticket-stub > .ticket-stub-divider {border-color: var(--ticket-ink);}
+
 .designed-ticket.ticket-edition-sunset {
   border: 1px solid
     color-mix(in srgb, var(--ticket-accent) 40%, var(--ticket-bg));
@@ -1248,6 +1287,8 @@
     var(--ticket-bg);
   border-color: var(--ticket-accent);
 }
+.designed-ticket.ticket-edition-sunset .ticket-stub > .ticket-stub-divider {border-color: var(--ticket-accent);}
+
 .ticket-collection {
   scroll-margin-top: 84px;
 }
@@ -1267,7 +1308,7 @@
   gap: 14px;
   align-items: center;
 }
-@media (max-width: 560px) {
+@container ticket-layout (max-width: 560px) {
   .ticket-collection-pagination {
     padding: 16px 14px;
   }

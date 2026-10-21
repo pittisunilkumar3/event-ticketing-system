@@ -1,8 +1,13 @@
+import {TicketDataContext,ticketVariables} from './ticketVariables';
 import { QRCodeSVG } from "qrcode.react";
 import { formatDate, formatTime, formatCurrency } from "../utils/format";
 import "./ticketLayouts.css";
 import compositions from "../../../shared/ticketCompositions.json";
 import ComposedTicket from "./ComposedTicket";
+import TicketLogos from "./TicketLogos";
+import TicketText, { TicketTextContext } from "./TicketText";
+import TicketCanvas from "./TicketCanvas";
+import TicketPresentation, {TicketExtras} from "./TicketPresentation";
 const compositionById = new Map(
   compositions.map((recipe) => [recipe.id, recipe]),
 );
@@ -21,7 +26,13 @@ const serialOf = (ticket) => {
   return digits ? digits.slice(-6).padStart(6, "0") : "000000";
 };
 
-export default function DesignedTicket({
+export default function DesignedTicket(props) {
+  return <TicketDataContext.Provider value={ticketVariables(props)}><TicketPresentation {...props} design={props.design||{}}><TicketTextContext.Provider value={{design: props.design || {}, onEdit: props.onTextEdit}}>
+    {Array.isArray(props.design?.layout_blocks)?<TicketCanvas {...props}/>:<TicketLayout {...props} />}
+  </TicketTextContext.Provider></TicketPresentation></TicketDataContext.Provider>;
+}
+
+function TicketLayout({
   design = {},
   ticket = {},
   order = {},
@@ -70,124 +81,115 @@ export default function DesignedTicket({
         "--ticket-accent-ink": foreground(accent),
       }}
     >
-      <span className="ticket-notch top" aria-hidden />
-      <span className="ticket-notch bottom" aria-hidden />
+      <span data-ticket-part="notch_top" className="ticket-notch top" aria-hidden />
+      <span data-ticket-part="notch_bottom" className="ticket-notch bottom" aria-hidden />
       {cancelled && (
         <span className="ticket-void-stamp" aria-hidden>
           VOID
         </span>
       )}
       <div className="ticket-artwork" aria-hidden="true">
-        {design.banner_image && <img src={design.banner_image} alt="" />}
+        {design.banner_image && !design.full_banner && <img data-ticket-part="banner_art" src={design.banner_image} alt="" />}
         <span />
         <i />
       </div>
 
       <div className="ticket-main">
-        <header className="ticket-design-header">
-          {design.banner_image && (
+        {design.full_banner && design.banner_image && <img data-ticket-part="banner" className="ticket-full-banner" src={design.banner_image} alt={`${design.brand || 'Event'} banner`} />}
+        <header data-ticket-part="section_header" className="ticket-design-header">
+          {design.banner_image && !design.full_banner && (
             <img
-              className="ticket-design-banner"
+              data-ticket-part="banner_inline" className="ticket-design-banner"
               src={design.banner_image}
               alt=""
             />
           )}
           <div className="ticket-brand-row">
-            {design.logo ? (
-              <img
-                className="ticket-design-logo"
-                src={design.logo}
-                alt={design.brand || "TicketFlow"}
-              />
-            ) : (
-              <strong>
-                {design.brand || "TicketFlow"}
-                <span>®</span>
-              </strong>
-            )}
-            <span className={`ticket-status-chip status-${statusKey}`}>
+            <TicketLogos design={design} />
+            <span data-ticket-part="status" className={`ticket-status-chip status-${statusKey}`}>
               {preview
                 ? "DESIGN PREVIEW"
                 : String(statusKey).replace("_", " ").toUpperCase()}
             </span>
           </div>
           <p className="ticket-eyebrow">
-            {design.heading || "YOUR NEXT GREAT EXPERIENCE"}
+            <TicketText name="heading">{design.heading || "YOUR NEXT GREAT EXPERIENCE"}</TicketText>
           </p>
           <h2>
-            {order.event_title || "Cinematica · An evening of possibilities"}
+            <TicketText name="event_title">{order.event_title || "Cinematica · An evening of possibilities"}</TicketText>
           </h2>
-          <span className="ticket-type-label">
-            {design.type_name || ticket.type_name || "VIP Experience"}
+          <span data-ticket-part="section_pass" className="ticket-type-label">
+            <TicketText name="ticket_type">{design.type_name || ticket.type_name || "VIP Experience"}</TicketText>
           </span>
         </header>
 
-        <div className="ticket-design-content">
-          <div className="ticket-date-chip" aria-hidden={!when}>
-            <strong>{day}</strong>
+        <div data-ticket-part="section_details" className="ticket-design-content">
+          <span data-ticket-part="divider" className="ticket-content-divider" aria-label="Dotted divider" />
+          <div data-ticket-part="section_date" className="ticket-date-chip" aria-hidden={!when}>
+            <strong><TicketText name="day">{day}</TicketText></strong>
             <span>
-              {mon}
-              {when && <small>{when.getFullYear()}</small>}
+              <TicketText name="month">{mon}</TicketText>
+              {when && <small><TicketText name="year">{when.getFullYear()}</TicketText></small>}
             </span>
           </div>
           <div className="ticket-meta-grid">
             <div>
-              <small>DOORS OPEN</small>
+              <small><TicketText name="time_label" /></small>
               <strong>
-                {when ? formatTime(eventStart) : "Time to be confirmed"}
+                <TicketText name="time">{when ? formatTime(eventStart) : "Time to be confirmed"}</TicketText>
               </strong>
             </div>
             <div>
-              <small>DATE</small>
+              <small><TicketText name="date_label" /></small>
               <strong>
-                {when ? formatDate(eventStart) : "Date to be confirmed"}
+                <TicketText name="date">{when ? formatDate(eventStart) : "Date to be confirmed"}</TicketText>
               </strong>
             </div>
             <div>
-              <small>VENUE</small>
+              <small><TicketText name="venue_label" /></small>
               <strong>
-                {order.venue || "Main Exhibition Hall"}
-                {order.city ? `, ${order.city}` : ""}
+                <TicketText name="venue">{[order.venue || "Main Exhibition Hall", order.city].filter(Boolean).join(', ')}</TicketText>
               </strong>
             </div>
             {design.show_attendee !== false && (
               <div className="ticket-attendee">
-                <small>GUEST</small>
+                <small><TicketText name="attendee_label" /></small>
                 <strong>
-                  {ticket.attendee_name || order.customer_name || (preview ? "Alex Morgan" : "Guest")}
+                  <TicketText name="attendee_name">{ticket.attendee_name || order.customer_name || (preview ? "Alex Morgan" : "Guest")}</TicketText>
                 </strong>
               </div>
             )}
             {design.show_price !== false && (
               <div>
-                <small>TICKET PRICE</small>
+                <small><TicketText name="price_label" /></small>
                 <strong>
-                  {formatCurrency(design.price ?? ticket.price ?? 60,order.currency || design.currency || (preview?'INR':'USD'))}
+                  <TicketText name="price">{formatCurrency(design.price ?? ticket.price ?? 60,order.currency || design.currency || (preview?'INR':'USD'))}</TicketText>
                 </strong>
               </div>
             )}
             <div>
-              <small>BOOKING REF</small>
-              <strong>{order.booking_ref || "TKT-PREVIEW"}</strong>
+              <small><TicketText name="booking_label" /></small>
+              <strong><TicketText name="booking_ref">{order.booking_ref || "TKT-PREVIEW"}</TicketText></strong>
             </div>
           </div>
         </div>
 
-        <footer className="ticket-design-footer">
+        <footer data-ticket-part="section_footer" className="ticket-design-footer">
           <p>
-            {design.footer_text ||
-              "Present this ticket at the entrance. Each QR code admits one guest."}
+            <TicketText name="footer">{design.footer_text ||
+              "Present this ticket at the entrance. Each QR code admits one guest."}</TicketText>
           </p>
-          <span className="ticket-barcode" aria-hidden />
+          <span data-ticket-part="barcode" className="ticket-barcode" aria-hidden />
         </footer>
       </div>
 
-      <aside className="ticket-stub">
-        <span className="ticket-admit" aria-hidden>
-          ADMIT ONE
+      <aside data-ticket-part="section_qr" className="ticket-stub">
+        <span data-ticket-part="divider_qr" className="ticket-stub-divider" aria-label="QR divider"/>
+        <span className="ticket-admit">
+          <TicketText name="admit_label" />
         </span>
         <div className="ticket-qr">
-          <div>
+          <div data-ticket-part="qr">
             <QRCodeSVG
               value={
                 preview
@@ -201,10 +203,11 @@ export default function DesignedTicket({
               fgColor="#111111"
             />
           </div>
-          <code>{preview ? "PREVIEW ONLY" : ticket.ticket_code}</code>
+          <code><TicketText name="ticket_code">{preview ? "PREVIEW ONLY" : ticket.ticket_code}</TicketText></code>
         </div>
-        <span className="ticket-serial">Nº {serial}</span>
+        <span className="ticket-serial"><TicketText name="serial">{serial}</TicketText></span>
       </aside>
+      <TicketExtras design={design} ticket={ticket} order={order} preview={preview}/>
     </article>
   );
 }

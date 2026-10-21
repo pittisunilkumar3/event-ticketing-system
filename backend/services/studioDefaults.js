@@ -1,9 +1,9 @@
 const social_links = { facebook: '', instagram: '', linkedin: '', twitter: '', pinterest: '', youtube: '' };
 const ticket = {
   layout: 'classic', brand: 'TicketFlow', accent: '#f97316', background: '#111111',
-  logo: '', banner_image: '', heading: 'YOUR NEXT GREAT EXPERIENCE',
+  logo: '', logos: [], banner_image: '', full_banner: false, heading: 'YOUR NEXT GREAT EXPERIENCE',
   footer_text: 'Present this ticket at the entrance. Each QR code admits one guest.',
-  show_attendee: true, show_price: true,
+  show_attendee: true, show_price: true, text: {},
 };
 const email = {
   format: 2, subject: 'Your booking {{booking_ref}}', title: 'You’re on the guest list.',

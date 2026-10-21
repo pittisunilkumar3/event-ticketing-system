@@ -1,0 +1,38 @@
+.designed-ticket.ticket-canvas { display:grid; grid-template-columns:repeat(12,minmax(0,1fr)); max-width:760px; width:100%; padding:16px; background:var(--canvas-bg); color:var(--canvas-ink); border:1px solid color-mix(in srgb,var(--canvas-ink) 20%,transparent); border-radius:14px; gap:0; }
+.ticket-canvas-block { grid-column:span var(--block-span,12); position:relative; min-width:0; font-size:14px; line-height:1.5; overflow-wrap:anywhere; }
+.ticket-canvas-block small { display:block; font-size:.65em; opacity:.65; letter-spacing:1px; margin-bottom:4px; }
+.ticket-canvas .canvas-banner { display:block; width:100%; height:auto; object-fit:contain; }
+.ticket-canvas .canvas-heading,.ticket-canvas .canvas-status { font-size:10px; letter-spacing:1.5px; }
+.ticket-canvas .canvas-event_title { font-size:30px; font-weight:750; line-height:1.2; }
+.ticket-canvas .canvas-ticket_type { color:var(--canvas-accent); font-weight:750; }
+.ticket-canvas .canvas-footer { font-size:11px; }
+.canvas-custom-text { white-space:pre-wrap; }
+.canvas-date strong { font-size:2em; color:var(--canvas-accent); margin-right:10px; }
+.canvas-qr svg { display:inline-block; max-width:100%; height:auto; border-radius:6px; }
+.ticket-canvas .ticket-barcode { width:100%; }
+.canvas-select { position:absolute; inset:0; z-index:2; width:100%; height:100%; cursor:pointer; background:transparent; color:inherit; border:1px dashed transparent; border-radius:4px; }
+.canvas-select>span { position:absolute; right:2px; top:2px; background:#fff; color:#222; padding:2px 6px; font:11px Arial,sans-serif; opacity:0; }
+.canvas-select:hover,.canvas-select:focus-visible,.canvas-selected .canvas-select { border-color:var(--canvas-accent); outline:none; }
+.canvas-select:hover>span,.canvas-select:focus-visible>span { opacity:1; }
+@media(max-width:520px){.ticket-canvas-block{grid-column:span 12;}}
+.ticket-freeform-wrap { position:relative; width:100%; max-width:760px; }
+.designed-ticket.ticket-canvas.ticket-freeform { display:block; position:absolute; inset:0 auto auto 0; max-width:none; padding:0; border:0; border-radius:0; transform-origin:top left; }
+.ticket-freeform .ticket-canvas-block { position:absolute; margin:0; box-sizing:border-box; }
+.ticket-freeform .canvas-content { width:100%; height:100%; }
+.ticket-freeform .canvas-banner,.ticket-freeform .canvas-single-logo { display:block; width:100%; height:100%; max-width:none; object-fit:contain; }
+.ticket-freeform .canvas-qr { width:100%; height:100%; display:flex; flex-direction:column; align-items:center; }
+.ticket-freeform .canvas-qr svg { width:100%; height:calc(100% - 20px); min-height:0; max-width:none; flex:1; }
+.ticket-freeform .canvas-select { cursor:move; touch-action:none; }
+.ticket-freeform .canvas-selected { outline:1px solid #f59e0b; }
+.ticket-freeform .canvas-selected .canvas-select { border:0; }
+.canvas-handle { position:absolute; z-index:5; width:14px; height:14px; background:#fff; border:2px solid #d97706; padding:0; touch-action:none; border-radius:2px; }
+.handle-nw { top:-7px;left:-7px;cursor:nwse-resize; }.handle-ne { top:-7px;right:-7px;cursor:nesw-resize; }
+.handle-sw { bottom:-7px;left:-7px;cursor:nesw-resize; }.handle-se { bottom:-7px;right:-7px;cursor:nwse-resize; }
+.handle-n { top:-7px;left:calc(50% - 7px);cursor:ns-resize; }.handle-s { bottom:-7px;left:calc(50% - 7px);cursor:ns-resize; }
+.handle-w { left:-7px;top:calc(50% - 7px);cursor:ew-resize; }.handle-e { right:-7px;top:calc(50% - 7px);cursor:ew-resize; }
+.canvas-delete { position:absolute;right:0;top:-32px;z-index:5;border:1px solid #dedede;border-radius:4px;background:#fff;color:#b42318;width:26px;height:26px;cursor:pointer;font:20px Arial; }
+.canvas-extend { position:absolute;bottom:-12px;left:calc(50% - 24px);z-index:5;width:48px;height:24px;border:1px solid #d97706;border-radius:4px;background:#fff;color:#222;cursor:ns-resize;touch-action:none; }
+.ticket-freeform .ticket-void-stamp { z-index:10;pointer-events:none; }
+.canvas-single-logo { max-width:100%;max-height:96px;object-fit:contain; }
+.ticket-freeform .canvas-single-logo { max-height:none; }
+.ticket-freeform .canvas-select>span { top:auto;bottom:-24px;left:0;right:auto;white-space:nowrap;pointer-events:none; }

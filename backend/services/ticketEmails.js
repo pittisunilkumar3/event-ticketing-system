@@ -36,7 +36,7 @@ async function preview(typeId){
  const answers=fields.map(f=>({id:f.id,label:f.label,type:f.type,value:f.type==='name'?'Alex Morgan':f.type==='email'?'alex@example.test':f.type==='tel'?'+91 9876543210':f.type==='checkboxes'?f.options.slice(0,1):['select','radio'].includes(f.type)?f.options[0]:f.type==='consent'?true:f.type==='file'?{name:'sample.pdf'}:'Sample '+f.label}));
  const selectedDesign=type.template_id?await Studio.template(type.template_id):null;
  const design={...(selectedDesign?.active&&selectedDesign.kind==='ticket'?selectedDesign.config:require('./studioDefaults').ticket),type_name:type.name,price:type.price,currency:'INR'};
- const ticket={design,attendee_name:'Alex Morgan',attendee_email:'alex@example.test',attendee_phone:'+91 9876543210',type_name:type.name,ticket_code:'TCK-PREVIEW-NOT-VALID'};
+ const ticket={design,price:type.price,attendee_name:'Alex Morgan',attendee_email:'alex@example.test',attendee_phone:'+91 9876543210',type_name:type.name,ticket_code:'TCK-PREVIEW-NOT-VALID'};
  return {...values(ticket,answers,type),event_title:type.event_title,event_date:type.event_date,venue:type.venue,city:type.city,...await qr(ticket.ticket_code,true)};
 }
 module.exports={snapshot,values,answerText,qr,context,preview,personalPattern,needsPersonal};

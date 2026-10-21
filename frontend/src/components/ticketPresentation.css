@@ -1,0 +1,121 @@
+.ticket-presentation {position:relative;width:100%;container-type:inline-size;}
+.ticket-extra {position:absolute;z-index:3;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.3;}
+.ticket-extra-image img,.ticket-extra-qr svg {width:100%;height:100%;object-fit:contain;}
+.ticket-preserve-editor {position:relative;}
+.ticket-preserve-editor [data-ticket-part] {cursor:move;touch-action:none;}
+.ticket-preserve-selection {position:absolute;border:1px solid #f97316;pointer-events:none;z-index:30;}
+.ticket-preserve-selection button {pointer-events:auto;}
+.ticket-preserve-selection .part-actions {pointer-events:auto;position:absolute;z-index:6;left:0;bottom:calc(100% + 10px);display:flex;gap:4px;background:#fff;padding:4px;border-radius:6px;white-space:nowrap;box-shadow:0 2px 8px #0002;}
+.ticket-preserve-selection .part-actions button {font:12px Arial;color:#222;background:#fff;border:1px solid #ddd;padding:5px 9px;border-radius:4px;cursor:pointer;}
+
+.ticket-canvas-workspace {display:flex;flex-direction:column;height:100%;min-height:0;background:#f0f1f4;}
+.ticket-canvas-tools {display:flex;align-items:center;gap:8px;padding:10px 20px;background:#fff;border-bottom:1px solid #e2e4e8;z-index:40;flex-wrap:wrap;}
+.ticket-canvas-tools button,.ticket-canvas-tools summary,.ticket-canvas-footer button {font:500 12px/1.4 Inter,Arial,sans-serif;color:#424650;background:#fff;border:1px solid #e0e2e6;border-radius:6px;padding:8px 12px;cursor:pointer;}
+.ticket-canvas-tools button:hover,.ticket-canvas-footer button:hover {background:#f2f3f5;}
+.ticket-canvas-tools button:disabled {opacity:.4;cursor:default;}
+.ticket-canvas-tool-title {font-size:12px;font-weight:700;color:#20252e;margin-right:12px;}
+.ticket-canvas-tools .ticket-original-action {margin-left:auto;}
+.ticket-canvas-viewport {flex:1;min-height:0;overflow:auto;padding:64px 48px;background-color:#f0f1f4;background-image:radial-gradient(#ccd0d6 1px,transparent 1px);background-size:16px 16px;}
+.ticket-canvas-stage {position:relative;margin:0 auto;}
+.ticket-canvas-stage .ticket-preserve-editor {position:absolute;left:0;top:0;outline:none;}
+.ticket-canvas-footer {display:flex;justify-content:space-between;align-items:center;gap:12px;padding:8px 18px;background:#fff;border-top:1px solid #e2e4e8;font:12px Inter,Arial,sans-serif;color:#6b7280;}
+.ticket-canvas-footer>div {display:flex;align-items:center;gap:6px;}
+.ticket-canvas-footer output {min-width:42px;text-align:center;}
+.ticket-preserve-selection {border-color:#6366f1;z-index:35;}
+.ticket-preserve-selection .canvas-handle {border-color:#6366f1;width:10px;height:10px;border-radius:50%;}
+.ticket-preserve-selection .handle-nw,.ticket-preserve-selection .handle-ne,.ticket-preserve-selection .handle-n {top:-5px;}
+.ticket-preserve-selection .handle-sw,.ticket-preserve-selection .handle-se,.ticket-preserve-selection .handle-s {bottom:-5px;}
+.ticket-preserve-selection .handle-nw,.ticket-preserve-selection .handle-sw,.ticket-preserve-selection .handle-w {left:-5px;}
+.ticket-preserve-selection .handle-ne,.ticket-preserve-selection .handle-se,.ticket-preserve-selection .handle-e {right:-5px;}
+@media(max-width:650px){.ticket-canvas-tools{padding:8px;gap:4px;}.ticket-canvas-tool-title{display:none;}.ticket-canvas-viewport{padding:40px 24px;}.ticket-canvas-footer>span{display:none;}.ticket-canvas-footer{justify-content:center;}}
+.ticket-canvas-viewport {display:flex;flex-direction:column;}
+.ticket-canvas-stage {flex-shrink:0;margin:auto;}
+
+/* Component picker sits above the artboard, leaving the selected design intact. */
+.ticket-component-picker {position:relative;}
+.ticket-canvas-tools .ticket-add-trigger {display:flex;align-items:center;gap:7px;background:#6255dc;border-color:#6255dc;color:white;font-weight:600;padding:9px 14px;border-radius:8px;}
+.ticket-canvas-tools .ticket-add-trigger:hover {background:#5144cb;}
+.ticket-add-trigger>span {font-size:19px;line-height:16px;}
+.ticket-component-popover {position:absolute;left:0;top:calc(100% + 12px);width:min(390px,calc(100vw - 56px));background:#fff;border:1px solid #e1e3eb;border-radius:14px;box-shadow:0 16px 50px #20203726;z-index:60;padding:18px;color:#252838;}
+.ticket-component-popover>header {display:flex;align-items:flex-start;gap:16px;justify-content:space-between;margin-bottom:16px;}
+.ticket-component-popover header strong {font:650 15px/1.4 Inter,Arial,sans-serif;}
+.ticket-component-popover p {font:12px/1.5 Inter,Arial,sans-serif;color:#777b8b;margin:5px 0 0;}
+.ticket-component-popover header button {border:0;background:#f3f4f8;padding:3px 9px;font-size:20px;}
+.ticket-component-popover>input {box-sizing:border-box;width:100%;padding:11px 12px;background:#f6f7fa;border:1px solid #e7e8ee;border-radius:8px;color:#282c3b;font:12px/1.4 Inter,Arial,sans-serif;margin:0 0 16px;}
+.ticket-component-popover :focus-visible {outline:2px solid #7565e7;outline-offset:2px;}
+.ticket-picker-scroll {max-height:min(470px,calc(100dvh - 325px));overflow:auto;overscroll-behavior:contain;padding:2px;}
+.ticket-component-tiles {display:grid;grid-template-columns:1fr 1fr;gap:9px;}
+.ticket-component-tiles button {display:flex;flex-direction:column;align-items:flex-start;text-align:left;gap:8px;padding:15px;border-radius:10px;border:1px solid #e7e8ee;background:#fafafd;}
+.ticket-component-tiles button:hover {background:#f2efff;border-color:#a99ce9;}
+.ticket-component-tiles svg {color:#7360d1;margin-bottom:3px;}
+.ticket-component-tiles strong {font-size:12px;color:#343346;}
+.ticket-component-tiles small {font-size:10px;font-weight:400;color:#7b7e8c;line-height:1.4;}
+.ticket-component-popover h3 {display:flex;justify-content:space-between;gap:8px;font:650 11px/1.4 Inter,Arial,sans-serif;margin:20px 0 10px;}
+.ticket-component-popover h3 span {font-weight:400;color:#8a8d9b;font-size:10px;}
+.ticket-field-tiles {display:grid;gap:4px;}
+.ticket-field-tiles button {display:flex;align-items:center;gap:9px;text-align:left;border:0;padding:10px 8px;background:#fff;font-size:12px;}
+.ticket-field-tiles svg {width:16px;height:16px;color:#9395a4;}
+.ticket-field-tiles button>span {margin-left:auto;color:#aaa3ce;}
+.ticket-picker-empty {text-align:center;padding:20px;}
+.ticket-extra-line {display:block;width:100%;height:0;border-top:2px dashed currentColor;position:absolute;top:50%;}
+.ticket-preserve-editor .ticket-content-divider::after {content:'';position:absolute;inset:-7px 0;}
+.ticket-preserve-editor [data-ticket-part^="section_"]:hover {outline:1px dashed #a59be688;outline-offset:-2px;}
+/* Keep the original border spacing while exposing the QR divider as a movable element. */
+.designed-ticket .ticket-stub {position:relative;border-color:transparent!important;}
+.ticket-stub-divider {position:absolute;left:0;top:0;pointer-events:none;background:transparent;}
+.ticket-preserve-editor .ticket-stub-divider {pointer-events:auto;}
+.ticket-preserve-editor .ticket-stub-divider::after {content:'';position:absolute;inset:-6px;}
+.ticket-preserve-editor .ticket-design-banner {pointer-events:auto;}
+.ticket-card-resize {position:absolute;inset:0;pointer-events:none;}
+.ticket-card-size-button {position:absolute;left:0;top:-32px;pointer-events:auto;background:#fff;color:#555b70;border:1px solid #d9dce8;border-radius:5px;padding:4px 8px;font:11px Arial;cursor:pointer;}
+.ticket-card-corner {position:absolute;right:-7px;bottom:-7px;pointer-events:auto;width:15px;height:15px;border:2px solid #7565df;background:#fff;border-radius:3px;cursor:nwse-resize;touch-action:none;}
+.ticket-size-inputs {display:flex;align-items:center;gap:6px;}
+.ticket-size-inputs input {width:65px;padding:4px 5px;border:1px solid #d9dce8;border-radius:4px;}
+.ticket-element-style {position:relative;}
+.ticket-style-popover {pointer-events:auto;position:absolute;z-index:1;top:36px;left:0;background:white;color:#303442;box-shadow:0 12px 32px #171c3233;border:1px solid #dcdfea;border-radius:10px;padding:14px;width:260px;white-space:normal;font:12px Inter,Arial,sans-serif;}
+.ticket-style-popover header {display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+.ticket-style-popover label {display:flex;align-items:center;justify-content:space-between;gap:10px;margin:12px 0;}
+.ticket-style-popover input[type=number] {width:82px;padding:5px;border:1px solid #ddd;border-radius:5px;}
+.ticket-style-popover input[type=range] {width:120px;}
+.ticket-style-row {display:flex;gap:4px;flex-wrap:wrap;}
+.ticket-style-row button[aria-pressed=true] {background:#ede8ff!important;border-color:#8a78da!important;}
+.ticket-size-inputs input[type=color] {width:30px;height:26px;padding:2px;vertical-align:middle;}
+.ticket-card-resize {inset:auto;}
+.ticket-scale-surface {position:relative;container-type:inline-size;}
+.ticket-card-resize {z-index:31;}
+.ticket-card-corner {width:28px;height:28px;right:-14px;bottom:-14px;font:20px Arial;color:#6255dc;}
+.ticket-card-edge {position:absolute;pointer-events:auto;touch-action:none;border:1px solid #7565df;background:#fff;color:#6255dc;border-radius:6px;font:12px Arial;white-space:nowrap;}
+.ticket-card-edge-e {right:-14px;top:50%;width:28px;height:48px;transform:translateY(-50%);cursor:ew-resize;}
+.ticket-card-edge-s {bottom:-30px;left:50%;transform:translateX(-50%);height:26px;padding:3px 12px;cursor:ns-resize;}
+.ticket-footer-resize {position:absolute;pointer-events:none;z-index:32;}
+.ticket-footer-resize>button {position:absolute;right:6px;bottom:4px;pointer-events:auto;touch-action:none;background:white;color:#6255dc;border:1px solid #b6aee6;border-radius:5px;padding:5px 8px;font:11px Arial;cursor:ns-resize;}
+.ticket-canvas-workspace {position:relative;}
+.ticket-custom-text-editor {position:absolute;right:24px;top:70px;z-index:100;width:min(350px,calc(100% - 48px));padding:18px;border:1px solid #e1e3eb;border-radius:12px;background:#fff;box-shadow:0 16px 50px #20203726;color:#252838;font:13px Inter,Arial,sans-serif;}
+.ticket-custom-text-editor header,.ticket-custom-text-editor footer {display:flex;justify-content:space-between;align-items:center;gap:8px;}
+.ticket-custom-text-editor textarea {width:100%;box-sizing:border-box;margin:16px 0 12px;padding:12px;border:1px solid #d7dae3;border-radius:6px;resize:vertical;font:14px/1.5 Inter,Arial,sans-serif;color:#252838;}
+.ticket-custom-text-editor button {padding:8px 12px;border:1px solid #d7dae3;border-radius:6px;background:#fff;color:#363746;cursor:pointer;}
+.ticket-custom-text-editor button[type=submit] {background:#6255dc;color:white;border-color:#6255dc;}
+.ticket-custom-text-editor p {font-size:11px;line-height:1.5;color:#7b7e8c;margin:12px 0 18px;}
+.ticket-variable-picker {display:flex;flex-direction:column;gap:6px;font:12px Inter,Arial,sans-serif;color:#555b70;margin:12px 0;}
+.ticket-variable-picker select {width:100%;padding:10px;border:1px solid #d7dae3;border-radius:6px;background:#fff;color:#252838;}
+
+.ticket-extra-badge {overflow:hidden;display:grid;align-items:center;box-sizing:border-box;padding:.5em .8em;border-radius:6px;font-weight:700;text-align:center;line-height:1.15;overflow-wrap:anywhere;}
+
+.ticket-color-control{display:flex;align-items:center;gap:6px;max-width:150px}.ticket-color-control input[type=color]{flex-shrink:0;width:32px;height:32px}.studio .ticket-color-control input:not([type=color]){width:90px;padding:5px 7px;font:12px monospace}
+
+.ticket-presentation,.ticket-scale-surface{container-name:ticket-layout;}
+
+/* Keep ticket typography independent of the admin page or PDF document. */
+.ticket-presentation{font-family:Inter,Arial,sans-serif;font-size:14px;line-height:1.5;--font-display:"Plus Jakarta Sans",Arial,sans-serif;}
+/* Avoid an anonymous baseline gap differing between client and server markup. */
+.ticket-presentation .ticket-type-label{vertical-align:top;}
+
+/* The QR quiet zone and frame move with the code as a single element. */
+.ticket-presentation div[data-ticket-part="qr"]{position:relative;}
+
+.ticket-alignment-guide{position:absolute;z-index:29;pointer-events:none;color:#c026d3;}
+.ticket-alignment-guide.guide-x{border-left:1px solid #d946ef;}
+.ticket-alignment-guide.guide-y{border-top:1px solid #d946ef;}
+.ticket-alignment-guide span{position:absolute;left:5px;top:5px;font:10px/1.3 Inter,Arial,sans-serif;padding:2px 5px;border-radius:3px;background:#fff;color:#a21caf;white-space:nowrap;}
+.ticket-preview-type{display:flex;align-items:center;gap:10px;padding:8px 20px;background:#fff;color:#555b70;font:12px Inter,Arial,sans-serif;flex-wrap:wrap;}
+.ticket-preview-type select{max-width:min(440px,90vw);padding:6px;border:1px solid #d7dae3;border-radius:5px;background:white;color:#252838;}

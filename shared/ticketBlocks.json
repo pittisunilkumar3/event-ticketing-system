@@ -1,0 +1,99 @@
+{
+  "types": {
+    "logos": "Logos",
+    "banner": "Banner",
+    "heading": "Heading",
+    "event_title": "Event name",
+    "ticket_type": "Pass name",
+    "date_chip": "Date badge",
+    "date": "Event date",
+    "time": "Event time",
+    "venue": "Venue",
+    "attendee_name": "Attendee name",
+    "price": "Ticket price",
+    "booking_ref": "Booking reference",
+    "qr": "Ticket QR code",
+    "ticket_code": "Ticket code (text)",
+    "serial": "Serial number",
+    "footer": "Entry instructions",
+    "status": "Ticket status",
+    "barcode": "Decorative barcode",
+    "text": "Custom text",
+    "main_logo": "Main logo",
+    "partner_logo": "Partner logo"
+  },
+  "defaults": [
+    {
+      "id": "banner",
+      "type": "banner",
+      "width": 100
+    },
+    {
+      "id": "logos",
+      "type": "logos",
+      "width": 100
+    },
+    {
+      "id": "heading",
+      "type": "heading",
+      "width": 100
+    },
+    {
+      "id": "title",
+      "type": "event_title",
+      "width": 100
+    },
+    {
+      "id": "pass",
+      "type": "ticket_type",
+      "width": 100
+    },
+    {
+      "id": "guest",
+      "type": "attendee_name",
+      "width": 100
+    },
+    {
+      "id": "date",
+      "type": "date",
+      "width": 50
+    },
+    {
+      "id": "time",
+      "type": "time",
+      "width": 50
+    },
+    {
+      "id": "venue",
+      "type": "venue",
+      "width": 50
+    },
+    {
+      "id": "price",
+      "type": "price",
+      "width": 50
+    },
+    {
+      "id": "booking",
+      "type": "booking_ref",
+      "width": 50
+    },
+    {
+      "id": "qr",
+      "type": "qr",
+      "width": 50,
+      "align": "center"
+    },
+    {
+      "id": "code",
+      "type": "ticket_code",
+      "width": 100,
+      "align": "center"
+    },
+    {
+      "id": "instructions",
+      "type": "footer",
+      "width": 100
+    }
+  ]
+}

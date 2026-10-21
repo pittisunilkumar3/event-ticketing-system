@@ -1,6 +1,9 @@
+import {TicketExtras} from './TicketPresentation';
 import { QRCodeSVG } from "qrcode.react";
 import { formatDate, formatTime, formatCurrency } from "../utils/format";
 import "./composedTicket.css";
+import TicketLogos from "./TicketLogos";
+import TicketText from "./TicketText";
 
 const inkFor = (hex) => {
   const rgb = (hex || "#111111")
@@ -26,10 +29,12 @@ export default function ComposedTicket({
   const status = preview ? "preview" : ticket.status || "valid";
   const serial = preview ? "000042" : String(ticket.id || "").padStart(6, "0");
   const cells = new Set(recipe.areas.split(/[ /]+/));
+  const fullBanner = design.full_banner && design.banner_image;
+  const areas = fullBanner ? `${recipe.areas.split('/')[0].trim().split(/\s+/).map(() => 'hero').join(' ')}/${recipe.areas}` : recipe.areas;
   const field = (label, value) => (
-    <div className={`ct-detail${label === 'GUEST' ? ' ticket-attendee' : ''}`}>
-      <small>{label}</small>
-      <strong>{value}</strong>
+    <div className={`ct-detail${label === 'attendee_name' ? ' ticket-attendee' : ''}`}>
+      <small><TicketText name={{venue:'venue_label',attendee_name:'attendee_label',price:'price_label',booking_ref:'booking_label'}[label]} /></small>
+      <strong><TicketText name={label}>{value}</TicketText></strong>
     </div>
   );
   return (
@@ -41,67 +46,61 @@ export default function ComposedTicket({
         "--ct-accent": accent,
         "--ct-accent-ink": inkFor(accent),
         "--ct-columns": recipe.columns,
-        "--ct-areas": recipe.areas
+        "--ct-areas": areas
           .split("/")
           .map((row) => `"${row}"`)
           .join(" "),
       }}
     >
+      {fullBanner && <img data-ticket-part="banner" className="ticket-full-banner" style={{ gridArea: 'hero' }} src={design.banner_image} alt={`${design.brand || 'Event'} banner`} />}
       {status === "cancelled" && (
         <span className="ticket-void-stamp" aria-hidden="true">
           VOID
         </span>
       )}
       <div className="ct-brand" style={{ gridArea: "b" }}>
-        {design.logo ? (
-          <img src={design.logo} alt={design.brand || "TicketFlow"} />
-        ) : (
-          <strong>
-            {design.brand || "TicketFlow"}
-            <sup>®</sup>
-          </strong>
-        )}
-        <span className={`ct-status ct-status-${status}`}>
+        <TicketLogos design={design} />
+        <span data-ticket-part="status" className={`ct-status ct-status-${status}`}>
           {preview ? "DESIGN PREVIEW" : status.replace("_", " ").toUpperCase()}
         </span>
       </div>
-      <header className="ct-title" style={{ gridArea: "h" }}>
-        <p>{design.heading || "YOUR NEXT GREAT EXPERIENCE"}</p>
+      <header data-ticket-part="section_header" className="ct-title" style={{ gridArea: "h" }}>
+        <p><TicketText name="heading">{design.heading || "YOUR NEXT GREAT EXPERIENCE"}</TicketText></p>
         <h2>
-          {order.event_title || "Cinematica · An evening of possibilities"}
+          <TicketText name="event_title">{order.event_title || "Cinematica · An evening of possibilities"}</TicketText>
         </h2>
-        {design.banner_image && !cells.has("a") && (
-          <img className="ct-inline-banner" src={design.banner_image} alt="" />
+        {design.banner_image && !fullBanner && !cells.has("a") && (
+          <img data-ticket-part="banner_inline" className="ct-inline-banner" src={design.banner_image} alt="" />
         )}
       </header>
       <section
-        className="ct-details"
+        data-ticket-part="section_details" className="ct-details"
         style={{ gridArea: "m" }}
         aria-label="Booking details"
       >
         {field(
-          "VENUE",
+          "venue",
           [order.venue || "Main Exhibition Hall", order.city]
             .filter(Boolean)
             .join(", "),
         )}
         {design.show_attendee !== false &&
           field(
-            "GUEST",
+            "attendee_name",
             ticket.attendee_name ||
               order.customer_name ||
               (preview ? "Alex Morgan" : "Guest"),
           )}
         {design.show_price !== false &&
           field(
-            "TICKET PRICE",
+            "price",
             formatCurrency(design.price ?? ticket.price ?? 60,order.currency || design.currency || (preview?'INR':'USD')),
           )}
-        {field("BOOKING REF", order.booking_ref || "TKT-PREVIEW")}
+        {field("booking_ref", order.booking_ref || "TKT-PREVIEW")}
       </section>
-      <aside className="ct-scan" style={{ gridArea: "q" }}>
-        <small>SCAN AT ENTRY</small>
-        <div className="ct-qr">
+      <aside data-ticket-part="section_qr" className="ct-scan" style={{ gridArea: "q" }}>
+        <small><TicketText name="scan_label" /></small>
+        <div data-ticket-part="qr" className="ct-qr">
           <QRCodeSVG
             value={
               preview
@@ -115,32 +114,31 @@ export default function ComposedTicket({
             fgColor="#111111"
           />
         </div>
-        <code>{preview ? "PREVIEW ONLY" : ticket.ticket_code}</code>
+        <code><TicketText name="ticket_code">{preview ? "PREVIEW ONLY" : ticket.ticket_code}</TicketText></code>
       </aside>
-      <div className="ct-date" style={{ gridArea: "d" }}>
-        <strong>{date ? String(date.getDate()).padStart(2, "0") : "—"}</strong>
+      <div data-ticket-part="section_date" className="ct-date" style={{ gridArea: "d" }}>
+        <strong><TicketText name="day">{date ? String(date.getDate()).padStart(2, "0") : "—"}</TicketText></strong>
         <div>
-          <span>{date ? formatDate(start) : "Date to be confirmed"}</span>
-          <b>{date ? formatTime(start) : "Time to be confirmed"}</b>
+          <span><TicketText name="date">{date ? formatDate(start) : "Date to be confirmed"}</TicketText></span>
+          <b><TicketText name="time">{date ? formatTime(start) : "Time to be confirmed"}</TicketText></b>
         </div>
       </div>
-      <div className="ct-type" style={{ gridArea: "t" }}>
+      <div data-ticket-part="section_pass" className="ct-type" style={{ gridArea: "t" }}>
         <strong>
-          {design.type_name || ticket.type_name || "VIP Experience"}
+          <TicketText name="ticket_type">{design.type_name || ticket.type_name || "VIP Experience"}</TicketText>
         </strong>
-        <small>Nº {serial}</small>
+        <small><TicketText name="serial">{serial}</TicketText></small>
       </div>
-      <footer className="ct-note" style={{ gridArea: "f" }}>
-        {design.footer_text ||
-          "Present this ticket at the entrance. Each QR code admits one guest."}
+      <footer data-ticket-part="section_footer" className="ct-note" style={{ gridArea: "f" }}>
+        <TicketText name="footer">{design.footer_text ||
+          "Present this ticket at the entrance. Each QR code admits one guest."}</TicketText>
       </footer>
       {cells.has("a") && (
         <div
-          className={`ct-art ct-art-${recipe.motif}`}
+          data-ticket-part="section_art" className={`ct-art ct-art-${recipe.motif}`}
           style={{ gridArea: "a" }}
-          aria-hidden="true"
         >
-          {design.banner_image ? (
+          {design.banner_image && !fullBanner ? (
             <img src={design.banner_image} alt="" />
           ) : (
             <>
@@ -148,9 +146,7 @@ export default function ComposedTicket({
               <i />
               <i />
               <span>
-                LIVE
-                <br />
-                EXPERIENCE
+                <TicketText name="art_text" />
               </span>
             </>
           )}
@@ -158,7 +154,7 @@ export default function ComposedTicket({
       )}
       {cells.has("a2") && (
         <div
-          className="ct-art ct-art-small"
+          data-ticket-part="section_art_secondary" className="ct-art ct-art-small"
           style={{ gridArea: "a2" }}
           aria-hidden="true"
         >
@@ -166,6 +162,7 @@ export default function ComposedTicket({
           <i />
         </div>
       )}
+      <TicketExtras design={design} ticket={ticket} order={order} preview={preview}/>
     </article>
   );
 }

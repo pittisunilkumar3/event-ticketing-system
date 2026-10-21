@@ -34,12 +34,13 @@ const Ticket = {
 
   async findByOrderId(orderId, connection = db) {
     const [rows] = await connection.query(
-      `SELECT t.*, tt.name AS type_name, tt.price
+      `SELECT t.*, tt.name AS type_name, tt.price, a.email AS attendee_email,a.phone AS attendee_phone,a.answers_json AS attendee_answers_json
        FROM tickets t JOIN ticket_types tt ON tt.id = t.ticket_type_id
+       LEFT JOIN order_attendees a ON a.id=t.attendee_id AND a.order_id=t.order_id
        WHERE t.order_id = ? ORDER BY t.id`,
       [orderId]
     );
-    return rows.map(row => ({ ...row, design: row.design_snapshot ? JSON.parse(row.design_snapshot) : require('../services/studioDefaults').ticket, design_snapshot: undefined,email_snapshot:undefined }));
+    return rows.map(row => ({ ...row, attendee_answers:row.attendee_answers_json?JSON.parse(row.attendee_answers_json):[],attendee_answers_json:undefined, design: row.design_snapshot ? JSON.parse(row.design_snapshot) : require('../services/studioDefaults').ticket, design_snapshot: undefined,email_snapshot:undefined }));
   },
 
   async findByCode(code, connection = db) {
