@@ -31,5 +31,5 @@ const pages = [
 ];
 const brand = require('../../shared/siteSettings.json');
 const smtp = { enabled: false, host: '', port: 587, encryption: 'starttls', username: '', from_name: 'TicketFlow', from_email: '', reply_to: '', password_encrypted: '' };
-const placeholders = ['attendee_name','attendee_email','attendee_phone','ticket_type','ticket_code','registration_id','ticket','ticket_qr','ticket_pdf','attachments','registration_fields','submission_url','guidelines_url','customer_name', 'email', 'event_title', 'event_date', 'venue', 'city', 'booking_ref', 'booking_url', 'amount', 'ticket_count', 'status', 'company_name', 'support_email', 'year'];
+const placeholders = ['attendee_name','attendee_email','attendee_phone','ticket_type','ticket_code','registration_id','ticket','ticket_qr','ticket_pdf','attachments','registration_fields','submission_url','guidelines_url','customer_name', 'email', 'event_title', 'event_date', 'venue', 'city', 'booking_ref', 'booking_url', 'amount', 'subtotal', 'discount_amount', 'coupon_code', 'tax_amount', 'amount_excluding_tax', 'tax_details', 'ticket_count', 'status', 'company_name', 'support_email', 'year'];
 module.exports = { ticket, email, emailEvents, pages, brand, smtp, placeholders, social_links };

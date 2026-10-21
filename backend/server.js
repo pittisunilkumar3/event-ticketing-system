@@ -27,6 +27,8 @@ tenant.use('/admin/registration-forms', require('./routes/registrationFormRoutes
 tenant.use('/admin/events', require('./routes/eventRoutes'));
 tenant.use('/admin/ticket-types', require('./routes/ticketTypeRoutes'));
 tenant.use('/admin/wallet', require('./routes/walletRoutes'));
+tenant.use('/admin/coupons', require('./routes/couponRoutes'));
+tenant.use('/admin/taxes', require('./routes/taxRoutes'));
 tenant.use('/admin/orders', require('./routes/orderRoutes'));
 tenant.use('/admin/tickets', require('./routes/ticketRoutes'));
 tenant.use('/admin/studio', require('./routes/studioRoutes'));

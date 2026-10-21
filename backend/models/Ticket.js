@@ -52,7 +52,7 @@ const Ticket = {
        LEFT JOIN order_attendees a ON a.id=t.attendee_id AND a.order_id=t.order_id
        JOIN orders o ON o.id = t.order_id
        JOIN events e ON e.id = o.event_id
-       WHERE t.ticket_code = ? LIMIT 1`,
+       WHERE o.archived_at IS NULL AND t.ticket_code = ? LIMIT 1`,
       [code]
     );
     if (!rows[0]) return null;
@@ -64,7 +64,7 @@ const Ticket = {
     const [result] = await connection.query(
       `UPDATE tickets t JOIN orders o ON o.id=t.order_id
        SET t.status = 'checked_in', t.checked_in_at = NOW()
-       WHERE t.ticket_code = ? AND t.status = 'valid' AND o.status = 'paid'`,
+       WHERE o.archived_at IS NULL AND t.ticket_code = ? AND t.status = 'valid' AND o.status = 'paid'`,
       [code]
     );
     return result.affectedRows > 0;
@@ -72,12 +72,12 @@ const Ticket = {
 
   async countByStatus(eventId = null) {
     const params = [];
-    let sql = `SELECT status, COUNT(*) AS count FROM tickets`;
+    let sql = `SELECT t.status, COUNT(*) AS count FROM tickets t JOIN orders o ON o.id=t.order_id WHERE o.archived_at IS NULL`;
     if (eventId) {
-      sql += ` WHERE ticket_type_id IN (SELECT id FROM ticket_types WHERE event_id = ?)`;
+      sql += ` AND t.ticket_type_id IN (SELECT id FROM ticket_types WHERE event_id = ?)`;
       params.push(eventId);
     }
-    sql += ' GROUP BY status';
+    sql += ' GROUP BY t.status';
     const [rows] = await db.query(sql, params);
     return rows;
   },

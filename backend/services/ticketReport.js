@@ -37,7 +37,7 @@ function filters(query={}) {
  return result;
 }
 function where(filters) {
- const clauses=[filters.booking_group==='test'?"o.payment_method IN ('mock','razorpay_test')":"o.payment_method NOT IN ('mock','razorpay_test')"];
+ const clauses=['o.archived_at IS NULL',filters.booking_group==='test'?"o.payment_method IN ('mock','razorpay_test')":"o.payment_method NOT IN ('mock','razorpay_test')"];
  const values=[];
  for(const [key,column] of [['status','o.status'],['event_id','o.event_id'],['ticket_type_id','t.ticket_type_id'],['ticket_status',ticketStatus]])if(filters[key]){clauses.push(`${column}=?`);values.push(filters[key]);}
  if(filters.from){clauses.push('o.created_at>=?');values.push(filters.from);}

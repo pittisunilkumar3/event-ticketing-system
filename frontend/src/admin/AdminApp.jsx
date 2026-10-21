@@ -20,6 +20,8 @@ import { lazy, Suspense } from 'react';
 const StudioPage = lazy(() => import('./studio/Studio'));
 function Studio(props) { return <Suspense fallback={<p className="p-8 text-slate-500">Opening design studio…</p>}><StudioPage {...props}/></Suspense>; }
 
+const Taxes=lazy(()=>import('./Taxes'));
+const Coupons=lazy(()=>import('./Coupons'));
 const BookerEmails=lazy(()=>import('./studio/BookerEmails'));
 
 export default function AdminApp() {
@@ -40,6 +42,8 @@ export default function AdminApp() {
           <Route path="account" element={<Settings />} />
           <Route path="event-packages" element={<EventPackages/>}/>
           <Route element={<OwnerAccess />}>
+            <Route path="taxes" element={<Suspense fallback={<p>Loading taxes…</p>}><Taxes/></Suspense>}/>
+            <Route path="coupons" element={<Suspense fallback={<p>Loading coupons…</p>}><Coupons/></Suspense>}/>
             <Route path="wallet" element={<Wallet/>}/>
             <Route path="team" element={<Team/>}/>
             <Route path="website" element={<OrganizerWebsite><SiteSettings/></OrganizerWebsite>}/>

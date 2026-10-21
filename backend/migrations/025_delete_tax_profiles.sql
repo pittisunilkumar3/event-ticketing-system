@@ -1,0 +1,1 @@
+ALTER TABLE event_tax_profiles ADD COLUMN IF NOT EXISTS deleted_at DATETIME NULL;

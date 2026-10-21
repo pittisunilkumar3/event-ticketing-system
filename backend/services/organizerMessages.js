@@ -25,7 +25,7 @@ async function ticketFilter(eventId,ticketTypeId){
 function ticketClause(id){return id?" AND EXISTS (SELECT 1 FROM tickets t WHERE t.order_id=o.id AND t.ticket_type_id=? AND t.status IN ('valid','checked_in'))":'';}
 async function matching(eventId,ticketTypeId,search=''){
  const q=v.string(search,'Search',120);
- const [rows]=await db.query("SELECT LOWER(TRIM(o.email)) email,MIN(o.customer_name) name,COUNT(*) bookings FROM orders o WHERE o.event_id=? AND o.status='paid' AND o.email<>''"+ticketClause(ticketTypeId)+" AND (o.email LIKE ? OR o.customer_name LIKE ?) GROUP BY LOWER(TRIM(o.email)) ORDER BY email",[eventId,...(ticketTypeId?[ticketTypeId]:[]),'%'+q+'%','%'+q+'%']);
+ const [rows]=await db.query("SELECT LOWER(TRIM(o.email)) email,MIN(o.customer_name) name,COUNT(*) bookings FROM orders o WHERE o.event_id=? AND o.status='paid' AND o.archived_at IS NULL AND o.email<>''"+ticketClause(ticketTypeId)+" AND (o.email LIKE ? OR o.customer_name LIKE ?) GROUP BY LOWER(TRIM(o.email)) ORDER BY email",[eventId,...(ticketTypeId?[ticketTypeId]:[]),'%'+q+'%','%'+q+'%']);
  return rows.filter(r=>{try{v.emailAddress(r.email,true);return true;}catch{return false;}});
 }
 async function audience(eventId,search='',ticketTypeId){
@@ -44,7 +44,7 @@ async function selection(input){
  }else{
   if(!Array.isArray(input.recipients)||!input.recipients.length||input.recipients.length>maxRecipients)v.fail('Select booking contacts or choose Select all.');
   const emails=[...new Set(input.recipients.map(value=>v.emailAddress(value,true).toLowerCase()))].sort();
-  [rows]=await db.query("SELECT LOWER(TRIM(o.email)) email,MIN(o.customer_name) name FROM orders o WHERE o.event_id=? AND o.status='paid'"+ticketClause(id)+" AND LOWER(TRIM(o.email)) IN (?) GROUP BY LOWER(TRIM(o.email)) ORDER BY email",[e.id,...(id?[id]:[]),emails]);
+  [rows]=await db.query("SELECT LOWER(TRIM(o.email)) email,MIN(o.customer_name) name FROM orders o WHERE o.event_id=? AND o.status='paid' AND o.archived_at IS NULL"+ticketClause(id)+" AND LOWER(TRIM(o.email)) IN (?) GROUP BY LOWER(TRIM(o.email)) ORDER BY email",[e.id,...(id?[id]:[]),emails]);
   if(rows.length!==emails.length)v.fail('Some contacts no longer have a confirmed booking for these filters. Refresh the recipients.',409);
  }
  return {event:e,recipients:rows};
@@ -116,7 +116,7 @@ async function processOutbox(){
   await conn.beginTransaction();
   const [[job]]=await conn.query("SELECT r.*,m.event_id,m.ticket_type_id FROM organizer_message_recipients r JOIN organizer_messages m ON m.id=r.message_id WHERE r.status='pending' AND m.paused=0 ORDER BY r.id LIMIT 1 FOR UPDATE");
   if(!job){await conn.commit();return;}
-  const [[eligible]]=await conn.query("SELECT o.id FROM orders o WHERE o.event_id=? AND o.status='paid' AND LOWER(TRIM(o.email))=?"+ticketClause(job.ticket_type_id)+" LIMIT 1",[job.event_id,job.email,...(job.ticket_type_id?[job.ticket_type_id]:[])]);
+  const [[eligible]]=await conn.query("SELECT o.id FROM orders o WHERE o.event_id=? AND o.status='paid' AND o.archived_at IS NULL AND LOWER(TRIM(o.email))=?"+ticketClause(job.ticket_type_id)+" LIMIT 1",[job.event_id,job.email,...(job.ticket_type_id?[job.ticket_type_id]:[])]);
   if(!eligible){await conn.query("UPDATE organizer_message_recipients SET status='skipped',error_message='No confirmed booking remains for this contact.' WHERE id=?",[job.id]);await conn.commit();return;}
   await conn.query("UPDATE organizer_message_recipients SET status='sending',attempts=attempts+1 WHERE id=?",[job.id]);await conn.commit();
   try{

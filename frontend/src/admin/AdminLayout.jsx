@@ -11,7 +11,7 @@ import {useAdminSession} from './adminSessionContext';
 
 const navigation = [
   {label:'WORKSPACE',items:[['/admin','Overview','grid'],['/admin/events','Events','calendar'],['/admin/orders','Orders','ticket'],['/admin/check-in','Guest check-in','check']]},
-  {label:'FINANCES',superadmin:true,items:[['/admin/wallet','Event wallet','credit-card']]},
+  {label:'FINANCES',superadmin:true,items:[['/admin/wallet','Event wallet','credit-card'],['/admin/coupons','Discount coupons','ticket'],['/admin/taxes','Taxes & GST','credit-card']]},
   {label:'DESIGN STUDIO',superadmin:true,items:[['/admin/ticket-designs','Ticket designs','ticket'],['/admin/email-templates','Email templates','mail'],['/admin/email-bookers','Email bookers','mail']]},
   {label:'CONFIGURATION',superadmin:true,items:[['/admin/website','Your website & branding','settings'],['/admin/mail-settings','Organization SMTP','mail'],['/admin/team','Team','grid'],['/admin/policies','Your policies & pages','page'],['/admin/email-delivery','Email delivery','mail']]},
   {label:'ACCOUNT',items:[['/admin/event-packages','Event packages','ticket'],['/admin/account','My account','settings']]},

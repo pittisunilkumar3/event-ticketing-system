@@ -18,7 +18,7 @@ const Order = {
    * Create order + issue tickets inside a DB transaction.
    * items: [{ ticket_type_id, qty }]
    */
-  async createWithTickets({ event_id, customer_name, email, phone, contact_source, items, registration_answers, form_revision, registration_files=[], payment=null }) {
+  async createWithTickets({ event_id, customer_name, email, phone, contact_source, items, registration_answers, form_revision, registration_files=[], payment=null, coupon_code, coupon_revision, pricing_token }) {
     const conn = await db.getConnection();
 
     try {
@@ -79,18 +79,27 @@ const Order = {
         resolvedItems.push({ ticketType: tt, qty });
       }
 
+      const coupons=require('../services/coupons');
+      const quote=await coupons.calculate(conn,{event_id,coupon_code,coupon_revision},resolvedItems,{lock:true,email});
+      const taxes=require('../services/taxes'),tax=await taxes.calculate(conn,event_id,resolvedItems,quote);
+      if((pricing_token||tax.profiles.length)&&pricing_token!==taxes.token(event_id,quote,tax))fail('Prices or taxes changed. Review the updated total before paying.',409);
+      total=tax.total_minor;
+      if(payment&&total>0&&total<100)fail('The final booking amount must be at least ₹1.');
+
       // Paid checkout holds stock; tickets and credit wait for verified capture.
       const pending = Boolean(payment && total > 0);
+      if(pending)require('../saas/paymentSettings').assertLiveCheckout(gateway);
       if (pending && (!gateway.key_id || !gateway.key_secret || !gateway.webhook_secret)) fail('Online booking payments are not configured yet. Please contact the organizer.',503);
       const method = payment ? (pending ? 'razorpay_'+(gateway.key_id.startsWith('rzp_live_')?'live':'test') : 'free') : 'mock';
       // 3. Create order
       const bookingRef = generateBookingRef();
       const [orderResult] = await conn.query(
-        `INSERT INTO orders (event_id, booking_ref, customer_name, email, phone, total_amount, status, payment_method, checkout_request_hash, currency)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [event_id, bookingRef, customer_name, email, phone || null, wallet.decimal(total), pending ? 'pending' : 'paid', method, payment?.request_hash || null, payment ? 'INR' : 'USD']
+        `INSERT INTO orders (event_id, booking_ref, customer_name, email, phone, total_amount, status, payment_method, checkout_request_hash, currency,subtotal_amount,discount_amount,coupon_id,coupon_code,coupon_breakdown,taxable_amount,tax_amount,tax_snapshot)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [event_id, bookingRef, customer_name, email, phone || null, wallet.decimal(total), pending ? 'pending' : 'paid', method, payment?.request_hash || null, payment ? 'INR' : 'USD',wallet.decimal(quote.subtotal_minor),wallet.decimal(quote.discount_minor),quote.coupon?.id||null,quote.coupon?.code||null,quote.breakdown?JSON.stringify(quote.breakdown):null,wallet.decimal(tax.taxable_minor),wallet.decimal(tax.tax_minor),tax.profiles.length?JSON.stringify(tax):null]
       );
       const orderId = orderResult.insertId;
+      await coupons.reserve(conn,quote,orderId,email,pending);
       if (pending) await require('../services/bookingPayments').register(conn, { ...payment, event_id, order_id:orderId, amount_minor:total, currency:'INR', gateway });
       else await wallet.credit(conn, orderId);
 
@@ -136,7 +145,7 @@ const Order = {
   },
 
   async findAll({ status, event_id, search, booking_group, limit = 50, offset = 0 } = {}) {
-    const where = [];
+    const where = ['o.archived_at IS NULL'];
     const params = [];
     if (booking_group === 'real') where.push("payment_method NOT IN ('mock','razorpay_test')");
     if (booking_group === 'test') where.push("payment_method IN ('mock','razorpay_test')");
@@ -169,7 +178,7 @@ const Order = {
   },
 
   async countAll({ status, event_id, search, booking_group } = {}) {
-    const where = [];
+    const where = ['archived_at IS NULL'];
     const params = [];
     if (booking_group === 'real') where.push("payment_method NOT IN ('mock','razorpay_test')");
     if (booking_group === 'test') where.push("payment_method IN ('mock','razorpay_test')");
@@ -204,7 +213,7 @@ const Order = {
     const [rows] = await connection.query(
       `SELECT o.*, e.title AS event_title, e.venue, e.city, e.start_datetime AS event_start, e.end_datetime AS event_end
        FROM orders o JOIN events e ON e.id = o.event_id
-       WHERE o.booking_ref = ? LIMIT 1`,
+       WHERE o.booking_ref = ? AND o.archived_at IS NULL LIMIT 1`,
       [ref]
     );
     return rows[0] || null;

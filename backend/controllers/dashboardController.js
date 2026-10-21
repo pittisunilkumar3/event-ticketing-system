@@ -10,7 +10,7 @@ const stats = asyncHandler(async (req, res) => {
   try {
     await conn.beginTransaction();
     const separated=true;
-    const scope=" AND o.payment_method NOT IN ('mock','razorpay_test')";
+    const scope=" AND o.archived_at IS NULL AND o.payment_method NOT IN ('mock','razorpay_test')";
     const [[kpi]]=await conn.query(`SELECT
       (SELECT COUNT(*) FROM events WHERE status='published' AND archived_at IS NULL) active_events,
       (SELECT COUNT(*) FROM events WHERE status='draft' AND archived_at IS NULL) draft_events,

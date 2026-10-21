@@ -1,3 +1,4 @@
+import TaxBreakdown from '../components/TaxBreakdown';
 import {useState} from 'react';
 import {Link} from 'react-router-dom';
 import Icon from '../components/Icon';
@@ -24,7 +25,8 @@ export default function OrderBookingDetails({data,notice,actionLoading,onAction,
   {data.payment&&<p className="booking-notice">Razorpay · {data.payment.mode} · {data.payment.status.replaceAll('_',' ')}{order.status==='pending'&&' · Unpaid reservations expire after 15 minutes.'}</p>}
   <section className="booking-overview" aria-label="Booking summary">
    <div className="booking-event"><span className="booking-eyebrow">EVENT</span><h2>{order.event_title}</h2><p><Icon name="calendar" size={16}/>{formatDateTime(order.event_start)}</p><p><Icon name="pin" size={16}/>{[order.venue,order.city].filter(Boolean).join(', ')||'Venue to be confirmed'}</p></div>
-   <div className="booking-totals"><div><span>Booking total</span><strong>{formatCurrency(order.total_amount,order.currency)}</strong></div><div><span>Tickets issued</span><strong>{tickets.length.toString().padStart(2,'0')}</strong></div></div>
+   <TaxBreakdown value={order.tax_snapshot} currency={order.currency}/>
+   <div className="booking-totals">{order.coupon_code&&<><div><span>Subtotal</span><strong>{formatCurrency(order.subtotal_amount,order.currency)}</strong></div><div><span>Discount · {order.coupon_code}</span><strong>−{formatCurrency(order.discount_amount,order.currency)}</strong></div></>}<div><span>Booking total</span><strong>{formatCurrency(order.total_amount,order.currency)}</strong></div><div><span>Tickets issued</span><strong>{tickets.length.toString().padStart(2,'0')}</strong></div></div>
    <div className="booking-contact"><span className="booking-eyebrow">CONTACT DETAILS</span><strong>{order.customer_name}</strong>{order.email&&<span>{order.email}</span>}{order.phone&&<span>{order.phone}</span>}</div>
   </section>
   {data.registration&&<section className="booking-registration"><h2>{data.registration.form.config.title}</h2><AttendeeAnswers answers={data.registration.answers} onDownload={answer=>onDownload(answer)}/></section>}

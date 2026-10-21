@@ -1,0 +1,10 @@
+const router=require('express').Router();
+const {verifyToken,requireSuperAdmin}=require('../middleware/auth');
+const {asyncHandler}=require('../middleware/errorHandler');
+const coupons=require('../services/coupons');
+router.use(verifyToken,requireSuperAdmin,(_req,res,next)=>{res.set('Cache-Control','no-store');next();});
+router.get('/',asyncHandler(async(req,res)=>res.json({success:true,data:await coupons.list(req.query)})));
+router.get('/events',asyncHandler(async(req,res)=>{const [events]=await require('../config/db').query('SELECT id,title FROM events WHERE archived_at IS NULL ORDER BY id DESC');res.json({success:true,data:{events}});}));
+router.post('/',asyncHandler(async(req,res)=>res.status(201).json({success:true,data:{id:await coupons.save(req.body)}})));
+router.put('/:id',asyncHandler(async(req,res)=>res.json({success:true,data:{id:await coupons.save(req.body,req.params.id)}})));
+module.exports=router;

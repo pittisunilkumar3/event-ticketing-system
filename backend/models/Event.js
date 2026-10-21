@@ -47,7 +47,7 @@ const Event = {
               (SELECT COALESCE(SUM(tt.quantity),0) FROM ticket_types tt WHERE tt.event_id=e.id AND tt.archived_at IS NULL) AS capacity,
               (SELECT COALESCE(SUM(tt.sold),0) FROM ticket_types tt WHERE tt.event_id=e.id) AS tickets_sold,
               (SELECT MIN(tt.price) FROM ticket_types tt WHERE tt.event_id = e.id AND tt.is_active=1 AND tt.archived_at IS NULL) AS min_price,
-              (SELECT COALESCE(SUM(o.total_amount), 0) FROM orders o WHERE o.event_id = e.id AND o.status = 'paid' AND o.currency='INR') AS revenue
+              (SELECT COALESCE(SUM(o.total_amount), 0) FROM orders o WHERE o.event_id = e.id AND o.status = 'paid' AND o.archived_at IS NULL AND o.currency='INR') AS revenue
        FROM events e ${whereSql}
        ORDER BY e.start_datetime DESC
        ${limitSql}`,
@@ -129,8 +129,8 @@ const Event = {
     return this.findById(id);
   },
   async summary(id) {
-    const [rows] = await db.query("SELECT COUNT(*) AS orders, COALESCE(SUM(CASE WHEN status='paid' AND currency='INR' THEN total_amount ELSE 0 END),0) AS revenue FROM orders WHERE event_id=?",[id]);
-    const [recentOrders] = await db.query('SELECT id,booking_ref,customer_name,total_amount,status,created_at FROM orders WHERE event_id=? ORDER BY id DESC LIMIT 8',[id]);
+    const [rows] = await db.query("SELECT COUNT(*) AS orders, COALESCE(SUM(CASE WHEN status='paid' AND currency='INR' THEN total_amount ELSE 0 END),0) AS revenue FROM orders WHERE archived_at IS NULL AND event_id=?",[id]);
+    const [recentOrders] = await db.query('SELECT id,booking_ref,customer_name,total_amount,status,created_at FROM orders WHERE archived_at IS NULL AND event_id=? ORDER BY id DESC LIMIT 8',[id]);
     return {...rows[0],recentOrders};
   },
   async setSoldCounts(id) {

@@ -89,6 +89,10 @@ router.get(
   })
 );
 
+router.post('/checkout/quote',require('../saas/tenancy').rateLimit(60,60000),asyncHandler(async(req,res)=>{res.set('Cache-Control','no-store');res.json({success:true,data:await require('../services/pricing').preview(req.body)});}));
+
+router.post('/coupons/validate',require('../saas/tenancy').rateLimit(30,60000),asyncHandler(async(req,res)=>{res.set('Cache-Control','no-store');res.json({success:true,data:await require('../services/coupons').preview(req.body)});}));
+
 // POST /api/orders — checkout (create order + issue tickets)
 router.post('/orders', require('../saas/tenancy').rateLimit(20,60000), require('../middleware/registrationUpload'), orderController.createPublicOrder);
 

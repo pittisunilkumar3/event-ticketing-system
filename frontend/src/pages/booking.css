@@ -733,3 +733,7 @@
 @media (max-width: 480px) {
   .booking-page .booking-primary { min-height: 48px; }
 }
+
+.checkout-coupon{margin:20px 0;padding:18px 0;border-top:1px solid var(--line,#ddd);border-bottom:1px solid var(--line,#ddd)}.checkout-coupon label{display:block;font-weight:650;font-size:14px;margin-bottom:9px}.checkout-coupon>div{display:flex;gap:8px}.checkout-coupon input{min-width:0;width:100%;border:1px solid currentColor;border-radius:8px;padding:10px 12px;background:transparent;color:inherit;font:inherit;font-size:14px}.checkout-coupon input::placeholder{color:inherit;opacity:.6}.checkout-coupon button{padding:10px 14px;border:1px solid currentColor;border-radius:8px;color:inherit;white-space:nowrap;font-weight:650}.checkout-coupon button:disabled{opacity:.5}.checkout-coupon p{font-size:13px;line-height:1.5;margin:10px 0 0;display:block}.checkout-coupon .coupon-applied{font-weight:650}.checkout-discount{display:grid;gap:10px;font-size:14px;margin:20px 0}.checkout-discount>div{display:flex;justify-content:space-between;gap:12px}.checkout-discount span{overflow-wrap:anywhere}.checkout-discount strong{white-space:nowrap}
+
+.checkout-line-price{display:grid;text-align:right;gap:5px;max-width:55%}.checkout-line-price s{opacity:.65;font-size:13px}.checkout-line-price small{font-size:12px;line-height:1.5}.checkout-coupon-scope{display:block!important;font-size:13px;line-height:1.6}.checkout-coupon-scope span{display:block;margin-top:4px}

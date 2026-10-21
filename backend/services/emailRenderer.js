@@ -61,6 +61,7 @@ function renderEmail(config, brand, data = {}, publishedPages = [], socialLinks 
 const sampleData = {
   customer_name: 'Alex Morgan', email: 'alex@example.com', event_title: 'Cinematica · An evening of possibilities',
   event_date: '12 December 2026, 6:00 PM', venue: 'Main Exhibition Hall', city: 'Hyderabad',
+  tax_amount:'₹18.31',amount_excluding_tax:'₹101.69',tax_details:'CGST (9%): ₹9.16; SGST (9%): ₹9.15',coupon_code:'EXPO20',subtotal:'₹150.00',discount_amount:'₹30.00',
   booking_ref: 'TKT-PREVIEW', amount: '₹120.00', currency: 'INR', ticket_count: 2, status: 'paid',
 };
 module.exports = { renderEmail, sampleData, escape, replace };

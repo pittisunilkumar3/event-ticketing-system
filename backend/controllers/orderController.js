@@ -30,6 +30,9 @@ const createPublicOrder = asyncHandler(async (req, res) => {
   }
   const result = await require('../services/bookingPayments').create({
     event_id,
+    coupon_code:req.body.coupon_code,
+    coupon_revision:req.body.coupon_revision,
+    pricing_token:req.body.pricing_token,
     contact_source:fromAttendee?'attendee':undefined,
     customer_name:fromAttendee?undefined:customer_name,
     email:fromAttendee?undefined:email.toLowerCase().trim(),
@@ -66,7 +69,7 @@ const list = asyncHandler(async (req, res) => {
 const detail = asyncHandler(async (req, res) => {
   const Ticket = require('../models/Ticket');
   const order = await Order.findById(req.params.id);
-  if (!order) {
+  if (!order || order.archived_at) {
     return res.status(404).json({ success: false, message: 'Order not found' });
   }
   const tickets = await Ticket.findByOrderId(order.id);

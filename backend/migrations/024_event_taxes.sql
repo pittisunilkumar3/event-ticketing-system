@@ -1,0 +1,21 @@
+CREATE TABLE IF NOT EXISTS event_tax_profiles (
+ id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+ event_id INT UNSIGNED NOT NULL,
+ name VARCHAR(100) NOT NULL,
+ price_mode ENUM('exclusive','inclusive') NOT NULL,
+ ticket_type_ids TEXT NOT NULL,
+ components_json TEXT NOT NULL,
+ legal_name VARCHAR(150) NOT NULL DEFAULT '',
+ gstin VARCHAR(15) NOT NULL DEFAULT '',
+ enabled BOOLEAN NOT NULL DEFAULT FALSE,
+ revision INT UNSIGNED NOT NULL DEFAULT 1,
+ created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+ updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+ FOREIGN KEY(event_id) REFERENCES events(id),
+ INDEX idx_event_taxes(event_id,enabled)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+ALTER TABLE orders
+ ADD COLUMN taxable_amount DECIMAL(12,2) NOT NULL DEFAULT 0,
+ ADD COLUMN tax_amount DECIMAL(12,2) NOT NULL DEFAULT 0,
+ ADD COLUMN tax_snapshot TEXT NULL;
+UPDATE orders SET taxable_amount=total_amount;

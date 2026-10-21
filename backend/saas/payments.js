@@ -10,6 +10,7 @@ function signatureValid(payload, signature, secret) {
 }
 async function razorpay(path,body,config,extraHeaders={}) {
   config ||= await paymentSettings.get();
+  if(path==='orders'&&body)paymentSettings.assertLiveCheckout(config);
   if(!config.key_id || !config.key_secret) fail('Razorpay is not configured. Contact the platform administrator.',503);
   const response=await fetch('https://api.razorpay.com/v1/'+path,{
     method:body?'POST':'GET',signal:AbortSignal.timeout(15000),
@@ -27,6 +28,7 @@ async function createPurchase(orgId,packageId,requestKey) {
     await conn.beginTransaction();
     await paymentSettings.lock(conn);
     config=await paymentSettings.get(conn);
+    paymentSettings.assertLiveCheckout(config);
     if(!config.key_id || !config.key_secret) fail('Online payments are not available yet. Contact the platform administrator.',503);
     const [[org]]=await conn.query('SELECT status FROM organizations WHERE id=? FOR UPDATE',[orgId]);
     if(org?.status!=='active') fail('This organizer cannot buy packages.',403);

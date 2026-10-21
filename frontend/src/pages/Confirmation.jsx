@@ -1,3 +1,4 @@
+import TaxBreakdown from '../components/TaxBreakdown';
 import { useEffect, useState } from 'react';
 import { useLocation, useParams, Link } from 'react-router-dom';
 import DesignedTicket from '../components/DesignedTicket';
@@ -55,7 +56,8 @@ export function BookingReceipt({ booking, justBooked = false }) {
         <section className="confirmation-summary no-print" aria-label="Booking details">
           <div className="confirmation-reference"><div><span>BOOKING REFERENCE</span><code>{order.booking_ref}</code></div><span className={`confirmation-status status-${order.status}`}>{status.label}</span></div>
           <div className="confirmation-event"><h2>{order.event_title}</h2>{order.event_start && <p><Icon name="calendar" size={16}/>{formatDateTime(order.event_start)}</p>}{(order.venue || order.city) && <p><Icon name="pin" size={16}/>{[order.venue, order.city].filter(Boolean).join(', ')}</p>}</div>
-          <div className="confirmation-totals"><div><span>Tickets</span><strong>{tickets.length}</strong></div><div><span>Booking total</span><strong>{formatCurrency(order.total_amount,order.currency)}</strong></div></div>
+          <TaxBreakdown value={order.tax_snapshot} currency={order.currency}/>
+          <div className="confirmation-totals">{order.coupon_code&&<><div><span>Subtotal</span><strong>{formatCurrency(order.subtotal_amount,order.currency)}</strong></div><div><span>Discount · {order.coupon_code}</span><strong>−{formatCurrency(order.discount_amount,order.currency)}</strong></div></>}<div><span>Tickets</span><strong>{tickets.length}</strong></div><div><span>Booking total</span><strong>{formatCurrency(order.total_amount,order.currency)}</strong></div></div>
         </section>
         <div className="confirmation-ticket-heading no-print"><div><h2>{voided ? 'Cancelled tickets' : 'Your tickets'}</h2><p>{ready ? 'Save a copy or print your tickets before you go.' : 'Ticket validity follows the status of your booking.'}</p></div>{tickets.length > 0 && <button className="customer-button customer-button-secondary" onClick={() => window.print()}><Icon name="printer" size={17}/>Print / Save PDF</button>}</div>
         <div className="print-tickets confirmation-tickets" style={{ '--page-bg': '#f9faf5' }}>

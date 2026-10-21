@@ -18,10 +18,11 @@ async function register(conn,p){
  [p.id,db.current().id,p.event_id,p.order_id,p.request_hash,p.gateway.key_id,p.gateway.key_id.startsWith('rzp_live_')?'live':'test',p.amount_minor,p.currency]);
 }
 async function findToken(token){const [[p]]=await db.platform.query('SELECT *,expires_at>NOW() can_pay FROM booking_payments WHERE organization_id=? AND request_hash=?',[db.current().id,tokenHash(token)]);if(!p)fail('Checkout not found.',404);return p;}
-async function configFor(p){const config=await settings.get();if(config.key_id!==p.key_id)fail('This payment needs platform support: the gateway account has changed.',409);return config;}
+async function configFor(p){return settings.forPayment(p.key_id);}
 async function create(payload,token){
  const request_hash=tokenHash(token);
- const [[prior]]=await db.query('SELECT id,event_id,status FROM orders WHERE checkout_request_hash=?',[request_hash]);
+ const [[prior]]=await db.query('SELECT id,event_id,status,archived_at FROM orders WHERE checkout_request_hash=?',[request_hash]);
+ if(prior?.archived_at)fail('This booking has been removed.',410);
  if(prior && prior.event_id!==Number(payload.event_id))fail('This checkout belongs to another event.',409);
  if(prior?.status==='paid'){const order=await require('../models/Order').findById(prior.id);return {paid:true,order,tickets:await require('../models/Ticket').findByOrderId(prior.id)};}
  let [[p]]=await db.platform.query('SELECT *,expires_at>NOW() can_pay FROM booking_payments WHERE organization_id=? AND request_hash=?',[db.current().id,request_hash]);
@@ -47,9 +48,10 @@ async function create(payload,token){
 }
 async function checkout(p){
  const order=await require('../models/Order').findById(p.order_id);
+ if(order?.archived_at)fail('This booking has been removed.',410);
  const [reserved]=await db.query('SELECT ticket_type_id,qty,design_json FROM booking_reserved_items WHERE order_id=?',[p.order_id]);
  const items=reserved.map(r=>{const design=JSON.parse(r.design_json);return {ticket_type_id:r.ticket_type_id,qty:r.qty,name:design.type_name,price:design.price};});
- return {attendees:await require('./attendees').forOrder(p.order_id),items,paid:p.status==='paid',order,tickets:p.status==='paid'?await require('../models/Ticket').findByOrderId(p.order_id):[],payment:{id:p.id,status:p.status,can_pay:Boolean(p.can_pay&&!p.provider_payment_id&&['pending','review'].includes(p.status)),order_id:p.provider_order_id,key:p.key_id,amount:Number(p.amount_minor),currency:p.currency,mode:p.mode,expires_at:p.expires_at}};
+ return {attendees:await require('./attendees').forOrder(p.order_id),items,paid:p.status==='paid',order,tickets:p.status==='paid'?await require('../models/Ticket').findByOrderId(p.order_id):[],payment:{id:p.id,status:p.status,can_pay:Boolean((!settings.liveOnly()||p.mode==='live')&&p.can_pay&&!p.provider_payment_id&&['pending','review'].includes(p.status)),order_id:p.provider_order_id,key:p.key_id,amount:Number(p.amount_minor),currency:p.currency,mode:p.mode,expires_at:p.expires_at}};
 }
 async function tenant(p,fn){const [[org]]=await db.platform.query('SELECT * FROM organizations WHERE id=?',[p.organization_id]);if(!org)fail('Organizer not found.',404);return db.run(org,fn);}
 async function transaction(p,fn){return tenant(p,async()=>{const conn=await db.getConnection();try{await conn.beginTransaction();await conn.query('SELECT id FROM events WHERE id=? FOR UPDATE',[p.event_id]);const [[fresh]]=await conn.query(`SELECT *,expires_at<=NOW() expired FROM ${table} WHERE id=? FOR UPDATE`,[p.id]);const result=await fn(conn,fresh);await conn.commit();return result;}catch(e){await conn.rollback();throw e;}finally{conn.release();}});}
@@ -58,6 +60,7 @@ async function expire(p){return transaction(p,async(conn,fresh)=>{
  const [items]=await conn.query('SELECT * FROM booking_reserved_items WHERE order_id=?',[fresh.order_id]);
  for(const item of items)await require('../models/TicketType').release(item.ticket_type_id,item.qty,conn);
  await conn.query("UPDATE orders SET status='cancelled' WHERE id=? AND status='pending'",[fresh.order_id]);
+ await require('./coupons').transition(conn,fresh.order_id,'released');
  await conn.query(`UPDATE ${table} SET status='expired' WHERE id=?`,[fresh.id]);
 });}
 async function fulfill(payment,config){
@@ -84,6 +87,7 @@ async function fulfill(payment,config){
   }
   await conn.query("UPDATE orders SET status='paid' WHERE id=?",[p.order_id]);
   await wallet.credit(conn,p.order_id);
+  await require('./coupons').transition(conn,p.order_id,'redeemed');
   await conn.query(`UPDATE ${table} SET status='paid',provider_order_id=?,provider_payment_id=? WHERE id=?`,[order.id,payment.id,p.id]);
   await require('./mailer').enqueue(conn,p.order_id,'payment_successful');
   await require('./mailer').enqueue(conn,p.order_id,'booking_confirmed');
@@ -143,7 +147,7 @@ async function processedRefund(refund){
   if(order.status==='paid'){
    await conn.query("UPDATE tickets SET status='cancelled',checked_in_at=NULL WHERE order_id=?",[p.order_id]);
    const [items]=await conn.query('SELECT * FROM booking_reserved_items WHERE order_id=?',[p.order_id]);
-   for(const item of items)await require('../models/TicketType').release(item.ticket_type_id,item.qty,conn);
+   if(!order.archived_at)for(const item of items)await require('../models/TicketType').release(item.ticket_type_id,item.qty,conn);
    await wallet.reverse(conn,p.order_id,'refunded');
    await conn.query("UPDATE orders SET status='refunded' WHERE id=?",[p.order_id]);
    await require('./mailer').enqueue(conn,p.order_id,'booking_refunded');

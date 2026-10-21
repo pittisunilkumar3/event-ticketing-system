@@ -1,0 +1,10 @@
+const router=require('express').Router();
+const {verifyToken,requireSuperAdmin}=require('../middleware/auth');
+const {asyncHandler}=require('../middleware/errorHandler');
+const taxes=require('../services/taxes');
+router.use(verifyToken,requireSuperAdmin,(_req,res,next)=>{res.set('Cache-Control','no-store');next();});
+router.get('/',asyncHandler(async(_req,res)=>res.json({success:true,data:{profiles:await taxes.list()}})));
+router.post('/',asyncHandler(async(req,res)=>res.status(201).json({success:true,data:{id:await taxes.save(req.body)}})));
+router.put('/:id',asyncHandler(async(req,res)=>res.json({success:true,data:{id:await taxes.save(req.body,req.params.id)}})));
+router.delete('/:id',asyncHandler(async(req,res)=>{await taxes.remove(req.params.id,req.body?.revision);res.json({success:true,data:{id:Number(req.params.id)}});}));
+module.exports=router;

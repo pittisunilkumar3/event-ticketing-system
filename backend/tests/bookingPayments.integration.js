@@ -54,6 +54,7 @@ const db=require('../config/db'),{migrateTenant,migratePlatform,sqlName}=require
  const verify=(p,pay,status=200)=>req(a.path+'/booking-payments/verify','POST',{razorpay_order_id:pay.order_id,razorpay_payment_id:pay.id,razorpay_signature:signature(pay)},null,status,p.token);
  async function webhook(event,status=200){const raw=JSON.stringify(event);const response=await nativeFetch(base+'/api/saas/razorpay/webhook',{method:'POST',headers:{'Content-Type':'application/json','x-razorpay-signature':crypto.createHmac('sha256',wh).update(raw).digest('hex')},body:raw});assert.equal(response.status,status,await response.text());}
  const test=await booking();assert.equal(test.order.status,'pending');assert.equal(test.tickets.length,0);assert.equal((await credit()).balance,'0.00');
+ await assert.rejects(()=>config.save({key_id:'rzp_live_fixture',key_secret:secret,webhook_secret:wh,mode:'live'},pa.insertId),/Resolve existing booking/);
  const retry=await req(a.path+'/orders','POST',body(a,test.token),null,201);assert.equal(retry.order.id,test.order.id);assert.equal(orders.size,1);
  const payTest=capture(test);await req(a.path+'/booking-payments/verify','POST',{razorpay_order_id:payTest.order_id,razorpay_payment_id:payTest.id,razorpay_signature:'bad'},null,400,test.token);
  await req(b.path+'/booking-payments/status','POST',{},null,404,test.token);
@@ -61,7 +62,15 @@ const db=require('../config/db'),{migrateTenant,migratePlatform,sqlName}=require
  await webhook({event:'payment.captured',payload:{payment:{entity:payTest}}});assert.equal((await credit(a,'test')).bookings,1);
  const bank={event_id:a.event.id,amount:'10.00',holder:'Test Owner',bank_name:'Test Bank',account:'1234567890',routing:'HDFC0001234',country:'India',request_key:crypto.randomUUID()};
  await req(a.path+'/admin/wallet/withdrawals','POST',bank,a.token,409);
+ await assert.rejects(()=>config.save({key_id:'rzp_live_fixture',key_secret:secret,mode:'live'},pa.insertId),/Live-mode Razorpay webhook/);
+ await config.save({key_id:'rzp_live_fixture',key_secret:secret,webhook_secret:wh,mode:'live'},pa.insertId);
+ assert.equal((await config.get()).key_id,'rzp_live_fixture');
+ assert.equal((await config.forPayment('rzp_test_fixture')).key_secret,secret);
+ await assert.rejects(()=>config.forPayment('rzp_live_unknown'),/gateway account has changed/);
+ const [[archived]]=await db.platform.query("SELECT value_json FROM platform_settings WHERE name='razorpay_test_archive:rzp_test_fixture'");assert.ok(!archived.value_json.includes(secret));
+ const testRefundFetch=global.fetch;global.fetch=async(url,options)=>{if(String(url).includes('/payments/'+payTest.id+'/refund'))assert.equal(options.headers.Authorization,'Basic '+Buffer.from('rzp_test_fixture:'+secret).toString('base64'));return testRefundFetch(url,options);};
  await req('/api/platform/booking-payments/'+test.payment.id+'/refund','POST',{},pt);
+ pass('paid sandbox history permits live activation, archives secrets encrypted and uses test credentials for historical refunds; pending bookings and missing live webhook still block');
  assert.equal((await credit(a,'test')).balance,'0.00');
  pass('no configured gateway fails closed; reserved stock, token isolation, verified capture, duplicate callbacks and test balances work');
  await config.save({key_id:'rzp_live_fixture',key_secret:secret,webhook_secret:wh,mode:'live'},pa.insertId);
@@ -69,7 +78,7 @@ const db=require('../config/db'),{migrateTenant,migratePlatform,sqlName}=require
  const badCurrency=capture(live,5000,'USD');await verify(live,badCurrency,409);payments.delete(badCurrency.id);
  const good=capture(live);
  await db.run(a.org,async()=>{await db.query("CREATE TRIGGER capture_failure BEFORE INSERT ON event_wallet_entries FOR EACH ROW SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Simulated capture accounting failure'");try{await verify(live,good,500);}finally{await db.query('DROP TRIGGER capture_failure');}const [[state]]=await db.query('SELECT status FROM orders WHERE id=?',[live.order.id]);assert.equal(state.status,'pending');const [[tickets]]=await db.query('SELECT COUNT(*) n FROM tickets WHERE order_id=?',[live.order.id]);assert.equal(tickets.n,0);});
- await verify(live,good);assert.equal((await credit()).balance,'50.00');assert.equal((await credit(b)).balance,'0.00');
+ await verify(live,good);await assert.rejects(()=>config.save({key_id:'rzp_live_other',key_secret:secret,webhook_secret:wh,mode:'live'},pa.insertId),/Resolve existing booking/);assert.equal((await credit()).balance,'50.00');assert.equal((await credit(b)).balance,'0.00');
  const w1=await req(a.path+'/admin/wallet/withdrawals','POST',{...bank,amount:'30.00'},a.token,201);
  const same=await req(a.path+'/admin/wallet/withdrawals','POST',{...bank,amount:'30.00'},a.token,201);assert.equal(w1.id,same.id);
  assert.equal((await credit()).held,'30.00');assert.equal((await credit()).available,'20.00');
@@ -177,6 +186,35 @@ const db=require('../config/db'),{migrateTenant,migratePlatform,sqlName}=require
  await req('/api/platform/withdrawals/'+disabled.id+'/review','POST',{action:'approve'},pt,409);
  await req('/api/platform/withdrawals/'+disabled.id+'/review','POST',{action:'reject',note:'Historical currency fixture'},pt);
  pass('failed payouts release holds; wrong amounts, disabled settings, tenant access and USD/INR mixing are blocked');
+ const archive=require('../services/archiveBookings');
+ const removal=await booking();
+ await db.run(a.org,()=>assert.rejects(()=>archive([removal.order.id]),/Resolve pending/));
+ const removalPay=capture(removal);const removalPaid=await verify(removal,removalPay);
+ const beforeRemoval=await credit();
+ const countBefore=await db.run(a.org,()=>require('../models/Order').countAll({booking_group:'real'}));
+ let soldAfterRemoval;
+ await db.run(a.org,async()=>{
+  const [[before]]=await db.query('SELECT sold FROM ticket_types WHERE id=?',[a.type.id]);
+  assert.equal((await archive([removal.order.id,test.order.id])).archived,2);
+  assert.equal((await archive([removal.order.id,test.order.id])).archived,0);
+  const [[after]]=await db.query('SELECT sold FROM ticket_types WHERE id=?',[a.type.id]);soldAfterRemoval=after.sold;
+  assert.equal(before.sold-after.sold,1);
+  assert.equal(await require('../models/Order').countAll({booking_group:'real'}),countBefore-1);
+  assert.equal(await require('../models/Order').findByRef(removal.order.booking_ref),null);
+  const report=require('../services/ticketReport');assert.equal((await report.list(report.filters({search:removal.order.booking_ref}))).pagination.total,0);
+ });
+ assert.equal((await credit()).balance,beforeRemoval.balance);
+ assert.equal((await req(a.path+'/admin/orders?search='+removal.order.booking_ref,'GET',null,a.token)).pagination.total,0);
+ assert.equal((await req(a.path+'/admin/orders?booking_group=test&search='+test.order.booking_ref,'GET',null,a.token)).pagination.total,0);
+ await req(a.path+'/admin/orders/'+removal.order.id,'GET',null,a.token,404);
+ await req(a.path+'/admin/tickets/checkin','POST',{ticket_code:removalPaid.tickets[0].ticket_code},a.token,404);
+ await req(a.path+'/booking-payments/status','POST',{},null,410,removal.token);
+ await req(a.path+'/orders','POST',body(a,removal.token),null,410);
+ await webhook({event:'payment.captured',payload:{payment:{entity:removalPay}}});
+ await req('/api/platform/booking-payments/'+removal.payment.id+'/refund','POST',{},pt);
+ await db.run(a.org,async()=>{const [[after]]=await db.query('SELECT sold FROM ticket_types WHERE id=?',[a.type.id]);assert.equal(after.sold,soldAfterRemoval);});
+ assert.equal(Number((await credit()).balance),Number(beforeRemoval.balance)-50);
+ pass('booking removal hides live/test bookings and reports, invalidates tickets, releases seats once, preserves finances and allows later verified refunds without releasing inventory twice');
  if(process.env.GATEWAY_UI_QA==='1'){qaReady=true;const extra=await booking();await verify(extra,capture(extra));await req(a.path+'/admin/wallet/withdrawals','POST',{...bank,amount:'10.00',request_key:crypto.randomUUID()},a.token,201);console.log('QA_API='+base);console.log('QA_EVENT='+a.event.slug);await new Promise(r=>process.once('SIGTERM',r));}
  global.fetch=nativeFetch;
  console.log(`Gateway and withdrawal integration passed: ${total} scenarios.`);
