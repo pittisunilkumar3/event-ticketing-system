@@ -36,8 +36,8 @@ organizer.get('/team',requireSuperAdmin,wrap(async(req,res)=>{const [members]=aw
 organizer.post('/team',requireSuperAdmin,wrap(async(req,res)=>{
  const name=string(req.body.name,'Name',100,true),email=emailAddress(string(req.body.email,'Email',150,true),true).toLowerCase();
  if(typeof req.body.password!=='string' || req.body.password.length<12 || Buffer.byteLength(req.body.password)>72) fail('Use a password of 12 or more characters, up to 72 bytes.');
- // Owner and manager only for this release. Check-in-only event assignment is a separate role, never simulated by hiding navigation.
- if(!['staff','super_admin'].includes(req.body.role)) fail('Choose an owner or manager role.');
+ // Scanner access is enforced separately by scanner route authentication.
+ if(!['staff','super_admin','scanner'].includes(req.body.role)) fail('Choose an owner, manager or scanner role.');
  const member=await require('../models/Admin').create({name,email,passwordHash:await bcrypt.hash(req.body.password,12),role:req.body.role});
  ok(res,{member});
 }));

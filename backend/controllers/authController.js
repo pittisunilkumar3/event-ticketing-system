@@ -30,7 +30,7 @@ const login = asyncHandler(async (req, res) => {
   for(const org of candidates) {
     const admin=await db.run(org,()=>Admin.findByEmail(address));
     // The directory only locates accounts. Always verify the current tenant record.
-    if(admin && ['super_admin','staff'].includes(admin.role) && await bcrypt.compare(password,admin.password_hash)) matches.push({org,admin});
+    if(admin && ['super_admin','staff','scanner'].includes(admin.role) && await bcrypt.compare(password,admin.password_hash)) matches.push({org,admin});
   }
   if(!matches.length) return res.status(401).json({success:false,message:'Invalid email or password.'});
   const workspace=org=>({id:org.id,name:org.name,slug:org.slug,is_legacy:Boolean(org.is_legacy),path:org.is_legacy?'/admin':`/o/${org.slug}/admin`});

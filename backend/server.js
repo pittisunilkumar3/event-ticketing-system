@@ -31,6 +31,7 @@ tenant.use('/admin/coupons', require('./routes/couponRoutes'));
 tenant.use('/admin/taxes', require('./routes/taxRoutes'));
 tenant.use('/admin/orders', require('./routes/orderRoutes'));
 tenant.use('/admin/tickets', require('./routes/ticketRoutes'));
+tenant.use('/admin/scanner', require('./routes/scannerRoutes'));
 tenant.use('/admin/studio', require('./routes/studioRoutes'));
 tenant.use('/admin/messages', require('./routes/organizerMessageRoutes'));
 tenant.use('/admin/email-templates', require('./routes/emailTemplateRoutes'));

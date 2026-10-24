@@ -1,0 +1,11 @@
+const router=require('express').Router();
+const {verifyScannerToken}=require('../middleware/auth');
+const {asyncHandler}=require('../middleware/errorHandler');
+const scanner=require('../services/scanner');
+router.use(verifyScannerToken);
+router.use((_req,res,next)=>{res.set('Cache-Control','private, no-store');next();});
+router.get('/events',asyncHandler(async(req,res)=>res.json({success:true,data:await scanner.events(req.query)})));
+router.get('/guests',asyncHandler(async(req,res)=>res.json({success:true,data:await scanner.guests(req.query)})));
+router.post('/verify',asyncHandler(async(req,res)=>res.json({success:true,data:await scanner.verify(req.body)})));
+router.post('/checkin',asyncHandler(async(req,res)=>{const data=await scanner.checkIn(req.body);res.status(data.valid?200:409).json({success:data.valid,data});}));
+module.exports=router;

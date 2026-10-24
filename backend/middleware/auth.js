@@ -1,7 +1,7 @@
 const jwt = require('jsonwebtoken');
 
 /** Verify JWT and attach admin to req — protects admin routes. */
-async function verifyToken(req, res, next) {
+async function authenticate(req, res, next, allowScanner = false) {
   const header = req.headers.authorization;
   if (!header || !header.startsWith('Bearer ')) {
     return res.status(401).json({ success: false, message: 'Access denied. No token provided.' });
@@ -15,7 +15,7 @@ async function verifyToken(req, res, next) {
     }
     const admin=await require('../models/Admin').findById(decoded.id);
     if(!admin) return res.status(401).json({success:false,message:'Account no longer available.'});
-    if(!['super_admin','staff'].includes(admin.role)) return res.status(403).json({success:false,message:'This account does not have access to the organization dashboard.'});
+    if(!['super_admin','staff',...(allowScanner ? ['scanner'] : [])].includes(admin.role)) return res.status(403).json({success:false,message:'This account does not have access to the organization dashboard.'});
     req.admin = admin;
     next();
   } catch (err) {
@@ -33,4 +33,6 @@ async function requireSuperAdmin(req, res, next) {
   } catch (err) { next(err); }
 }
 
-module.exports = { verifyToken, requireSuperAdmin };
+const verifyToken = (req,res,next) => authenticate(req,res,next);
+const verifyScannerToken = (req,res,next) => authenticate(req,res,next,true);
+module.exports = { verifyToken, verifyScannerToken, requireSuperAdmin };

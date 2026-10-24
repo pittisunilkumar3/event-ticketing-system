@@ -11,7 +11,7 @@ const resolveTenant = asyncHandler(async (req,res,next) => {
   const org = rows[0];
   if (!org || !['active','suspended'].includes(org.status)) return res.status(404).json({success:false,message:'Website not found.'});
   // Suspended accounts retain read access and check-in. New bookings and other writes stop.
-  if (org.status==='suspended' && !['GET','HEAD'].includes(req.method) && !['/auth/login','/admin/tickets/checkin','/booking-payments/verify','/booking-payments/status'].includes(req.path)) return res.status(403).json({success:false,message:'This organizer is suspended. New sales and changes are paused. Contact support.'});
+  if (org.status==='suspended' && !['GET','HEAD'].includes(req.method) && !['/auth/login','/admin/tickets/checkin','/admin/scanner/verify','/admin/scanner/checkin','/booking-payments/verify','/booking-payments/status'].includes(req.path)) return res.status(403).json({success:false,message:'This organizer is suspended. New sales and changes are paused. Contact support.'});
   req.organization=org;
   req.siteUrl=siteUrl(org);
   db.run(org, next);

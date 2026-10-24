@@ -73,4 +73,12 @@ test('removal checks current owner under lock, protects self and atomically remo
  await Admin.remove(2,1);
  assert.deepEqual(operations,['begin','SELECT id,role FROM admins ORDER BY id FOR UPDATE','DELETE FROM admins WHERE id=?','directory','commit','release']);
 });
+test('scanner role cannot regain management access with a stale owner token',async t=>{
+ t.mock.method(Admin,'findById',async()=>({id:5,role:'scanner'}));
+ const stale=token(5,7,{role:'super_admin'});
+ assert.equal((await request(auth.verifyToken,{token:stale})).status,403);
+ assert.equal((await request(auth.verifyScannerToken,{token:stale})).status,200);
+ assert.equal((await request(auth.verifyScannerToken,{token:stale,organization:{id:8}})).status,403);
+ for(const router of [routes,studio,wallet]) assert.equal((await request(router,{token:stale})).status,403);
+});
 test.after(()=>db.end());
