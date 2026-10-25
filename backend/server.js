@@ -44,9 +44,11 @@ app.use(notFound);
 app.use(errorHandler);
 const PORT=process.env.PORT || 5001;
 if (require.main === module) {
-  require('./services/mailer').startWorker();
-  require('./services/bookingPayments').startWorker();
-  require('./services/bankPayouts').startWorker();
+  if (process.env.DISABLE_BACKGROUND_WORKERS !== 'true') {
+    require('./services/mailer').startWorker();
+    require('./services/bookingPayments').startWorker();
+    require('./services/bankPayouts').startWorker();
+  }
   app.listen(PORT,process.env.HOST || '127.0.0.1',()=>console.log(`TicketFlow API running on port ${PORT}`));
 }
 module.exports=app;
