@@ -19,7 +19,7 @@ export default function PremiereHero({event,lowest}) {
     {event.banner_image&&<figure className="premiere-artwork"><img src={event.banner_image} alt={event.title+' event banner'}/></figure>}
    </div>
    <dl className="premiere-facts">
-    <div><Icon name="calendar" size={20}/><div><dt>Date & time</dt><dd>{formatEventDates(event.start_datetime, event.end_datetime)}<span>{formatTime(event.start_datetime)}</span></dd></div></div>
+    <div><Icon name="calendar" size={20}/><div><dt>Date & time</dt><dd>{formatEventDates(event.start_datetime, event.end_datetime)}<span><span style={{whiteSpace:'pre-line'}}>{event.schedule_text || formatTime(event.start_datetime)}</span></span></dd></div></div>
     <div><Icon name="pin" size={20}/><div><dt>Venue</dt><dd><EventVenueLink event={event}/>{event.city&&event.city!==event.venue&&<span>{event.city}</span>}</dd></div></div>
     <div><Icon name="users" size={20}/><div><dt>Presented by</dt><dd>{event.organizer_name||'Event organizer'}</dd></div></div>
    </dl>

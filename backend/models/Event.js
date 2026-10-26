@@ -2,7 +2,7 @@ const db = require('../config/db');
 
 const Event = {
   async create(fields) {
-    const keys = ['title','slug','description','category','venue','city','banner_image','start_datetime','end_datetime','status','summary','address','organizer_name','organizer_email','age_policy','highlights','entry_instructions','page_theme'];
+    const keys = ['title','slug','description','category','venue','city','banner_image','start_datetime','end_datetime','status','summary','address','organizer_name','organizer_email','age_policy','highlights','entry_instructions','schedule_text','page_theme'];
     const conn=await db.getConnection();
     try {
       await conn.beginTransaction();
@@ -91,7 +91,7 @@ const Event = {
   },
 
   async update(id, fields) {
-    const allowed = ['title', 'slug', 'description', 'category', 'venue', 'city', 'banner_image', 'start_datetime', 'end_datetime', 'status','summary','address','organizer_name','organizer_email','age_policy','highlights','entry_instructions','page_theme'];
+    const allowed = ['title', 'slug', 'description', 'category', 'venue', 'city', 'banner_image', 'start_datetime', 'end_datetime', 'status','summary','address','organizer_name','organizer_email','age_policy','highlights','entry_instructions','schedule_text','page_theme'];
     const sets = [];
     const params = [];
     for (const key of allowed) {

@@ -26,7 +26,7 @@ async function qr(ticketCode,preview=false){
  return {ticket_qr_src:preview?'data:image/png;base64,'+content.toString('base64'):'cid:ticket-qr@ticketflow',attachments:preview?[]:[{filename:'ticket-'+ticketCode+'.png',content,contentType:'image/png',cid:'ticket-qr@ticketflow',contentDisposition:'inline'}]};
 }
 async function context(typeId){
- const [[type]]=await db.query('SELECT t.*,e.title event_title,e.start_datetime event_date,e.venue,e.city FROM ticket_types t JOIN events e ON e.id=t.event_id WHERE t.id=?',[typeId]);
+ const [[type]]=await db.query('SELECT t.*,e.title event_title,e.start_datetime event_date,e.schedule_text event_schedule,e.venue,e.city FROM ticket_types t JOIN events e ON e.id=t.event_id WHERE t.id=?',[typeId]);
  if(!type)fail('Ticket type not found.',404);
  const {config}=await forms.ticket(type.event_id,type.id);
  return {type,fields:config.enabled?config.fields.filter(f=>f.type!=='section'):[]};
@@ -37,6 +37,6 @@ async function preview(typeId){
  const selectedDesign=type.template_id?await Studio.template(type.template_id):null;
  const design={...(selectedDesign?.active&&selectedDesign.kind==='ticket'?selectedDesign.config:require('./studioDefaults').ticket),type_name:type.name,price:type.price,currency:'INR'};
  const ticket={design,price:type.price,attendee_name:'Alex Morgan',attendee_email:'alex@example.test',attendee_phone:'+91 9876543210',type_name:type.name,ticket_code:'TCK-PREVIEW-NOT-VALID'};
- return {...values(ticket,answers,type),event_title:type.event_title,event_date:type.event_date,venue:type.venue,city:type.city,...await qr(ticket.ticket_code,true)};
+ return {...values(ticket,answers,type),event_title:type.event_title,event_date:type.event_date,event_schedule:type.event_schedule,venue:type.venue,city:type.city,...await qr(ticket.ticket_code,true)};
 }
 module.exports={snapshot,values,answerText,qr,context,preview,personalPattern,needsPersonal};

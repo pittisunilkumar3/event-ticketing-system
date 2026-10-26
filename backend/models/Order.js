@@ -165,7 +165,7 @@ const Order = {
     params.push(Number(limit), Number(offset));
 
     const [rows] = await db.query(
-      `SELECT o.*, e.title AS event_title, e.start_datetime AS event_start,
+      `SELECT o.*, e.title AS event_title, e.start_datetime AS event_start, e.schedule_text AS event_schedule,
               (SELECT COUNT(*) FROM tickets t WHERE t.order_id = o.id) AS ticket_count
        FROM orders o
        JOIN events e ON e.id = o.event_id
@@ -201,7 +201,7 @@ const Order = {
 
   async findById(id, connection = db) {
     const [rows] = await connection.query(
-      `SELECT o.*, e.title AS event_title, e.venue, e.city, e.start_datetime AS event_start, e.end_datetime AS event_end
+      `SELECT o.*, e.title AS event_title, e.venue, e.city, e.start_datetime AS event_start, e.schedule_text AS event_schedule, e.end_datetime AS event_end
        FROM orders o JOIN events e ON e.id = o.event_id
        WHERE o.id = ? LIMIT 1`,
       [id]
@@ -211,7 +211,7 @@ const Order = {
 
   async findByRef(ref, connection = db) {
     const [rows] = await connection.query(
-      `SELECT o.*, e.title AS event_title, e.venue, e.city, e.start_datetime AS event_start, e.end_datetime AS event_end
+      `SELECT o.*, e.title AS event_title, e.venue, e.city, e.start_datetime AS event_start, e.schedule_text AS event_schedule, e.end_datetime AS event_end
        FROM orders o JOIN events e ON e.id = o.event_id
        WHERE o.booking_ref = ? AND o.archived_at IS NULL LIMIT 1`,
       [ref]

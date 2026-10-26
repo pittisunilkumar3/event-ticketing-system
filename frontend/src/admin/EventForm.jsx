@@ -16,6 +16,7 @@ const initial = {
   address: '',
   start_datetime: '',
   end_datetime: '',
+  schedule_text: '',
   status: 'draft',
   organizer_name: '',
   organizer_email: '',
@@ -228,7 +229,8 @@ export default function EventForm() {
                     hint: 'For a multi-day event, choose the last day and closing time.',
                   })}
                 </div>
-                {form.start_datetime && <div className="ea-schedule-preview" aria-live="polite"><strong>{formatEventDates(form.start_datetime,form.end_datetime)}</strong><span>{formatEventTimes(form.start_datetime,form.end_datetime)}</span></div>}
+                {area('schedule_text', 'Daily opening hours', 2, 500)}
+                {form.start_datetime && <div className="ea-schedule-preview" aria-live="polite"><strong>{formatEventDates(form.start_datetime,form.end_datetime)}</strong><span>{formatEventTimes(form.start_datetime,form.end_datetime,form.schedule_text)}</span></div>}
                 <div className="ea-two">
                   {field('venue', 'Venue')}
                   {field('city', 'City', { maxLength: 100 })}

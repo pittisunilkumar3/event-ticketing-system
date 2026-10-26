@@ -128,7 +128,7 @@ export default function AdminEventDetail() {
           </span>
           <h1>{event.title}</h1>
           <p>
-            {formatEventDates(event.start_datetime,event.end_datetime)} · {formatTime(event.start_datetime)} ·{' '}
+            {formatEventDates(event.start_datetime,event.end_datetime)} · <span style={{whiteSpace:'pre-line'}}>{event.schedule_text || formatTime(event.start_datetime)}</span> ·{' '}
             {[event.venue, event.city].filter(Boolean).join(', ')}
           </p>
         </div>

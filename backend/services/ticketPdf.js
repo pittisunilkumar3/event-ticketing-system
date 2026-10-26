@@ -29,7 +29,7 @@ async function ticketPdf(data) {
     const preview = String(data.ticket_code || '').includes('PREVIEW') || !data.ticket_code;
     const html = renderTicketDocument({design,
       ticket:{id:data.ticket_id,attendee_name:data.attendee_name,attendee_email:data.attendee_email,attendee_phone:data.attendee_phone,registration_answers:data.registration_answers||data.attendee_answers||[], ticket_code:data.ticket_code, type_name:data.ticket_type,price:data.ticket_price,status:data.ticket_status || 'valid'},
-      order:{event_title:data.event_title,event_start:data.event_start || data.event_date,venue:data.venue,city:data.city,booking_ref:data.booking_ref,currency:data.currency || design.currency || 'INR',customer_name:data.attendee_name},
+      order:{event_schedule:data.event_schedule,event_title:data.event_title,event_start:data.event_start || data.event_date,venue:data.venue,city:data.city,booking_ref:data.booking_ref,currency:data.currency || design.currency || 'INR',customer_name:data.attendee_name},
       preview});
     const {default:puppeteer} = await import('puppeteer-core');
     const {default:chromium} = await import('@sparticuz/chromium');

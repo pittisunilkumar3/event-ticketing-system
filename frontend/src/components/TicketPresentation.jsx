@@ -7,7 +7,7 @@ import {formatDate,formatTime,formatCurrency} from '../utils/format';
 import TicketText,{TicketTextContext} from './TicketText';
 
 // Adjust original elements without rebuilding the selected layout or moving its neighbours.
-export default function TicketPresentation({design,children}) {
+export default function TicketPresentation({design,children,order={}}) {
   const id='ticket_'+useId().replace(/[^a-zA-Z0-9_-]/g,'');
   const size=ticketSize(design.ticket_size),outer=useRef(null);
   const [measuredWidth,setMeasuredWidth]=useState(null);
@@ -29,9 +29,9 @@ export default function TicketPresentation({design,children}) {
     const groupColor=key.startsWith('section_')&&/^#[0-9a-f]{6}$/i.test(value.color)?`#${id} [data-ticket-part="${key}"] ticket-text{color:${value.color}!important;}`:'';
     return lineRules+groupColor+`#${id} [data-ticket-part="${key}"]:not(.ticket-extra *){${value.hidden?'visibility:hidden!important;':''}${moved?`${key.startsWith('section_')||badge||key==='qr'?'':'display:inline-block;'}transform-origin:top left;transform:translate(${n(value.x,0)}cqw,${n(value.y,0)}cqw) scale(${n(value.sx,1)},${n(value.sy,1)}) rotate(${n(value.rotation,0)}deg);z-index:2;`:''}${/^#[0-9a-f]{6}$/i.test(value.color)?`color:${value.color}!important;`:''}${/^#[0-9a-f]{6}$/i.test(value.background)?`background:${value.background}!important;${badge?'box-shadow:none;':''}`:''}${Number.isFinite(value.border_radius)?`border-radius:${value.border_radius}px!important;`:''}${Number.isFinite(value.box_width)?`width:${value.box_width}cqw!important;max-width:none;box-sizing:border-box;`:''}${Number.isFinite(value.box_height)?`height:${value.box_height}cqw!important;min-height:${value.box_height}cqw!important;flex-shrink:0;box-sizing:border-box;`:''}${Number.isFinite(value.font_size)?`font-size:${value.font_size}px!important;`:''}${[400,700].includes(value.weight)?`font-weight:${value.weight}!important;`:''}${['left','center','right'].includes(value.align)?`text-align:${value.align};${badge?'':'display:block;'}`:''}${Number.isFinite(value.opacity)?`opacity:${value.opacity};`:''}${Number.isFinite(value.layer)?`${key.startsWith('text_')?'position:relative;':''}z-index:${value.layer};`:''}}`;
   }).join('\n');
-  return <div ref={outer} id={id} className="ticket-presentation" style={scaled?{height:baseHeight*scale,overflow:'clip'}:undefined}>
+  return <><div ref={outer} id={id} className="ticket-presentation" style={scaled?{height:baseHeight*scale,overflow:'clip'}:undefined}>
     {(rules||sizeRule||appearanceRule||badgeRule)&&<style>{sizeRule+appearanceRule+badgeRule+rules+(rules?`#${id} .ticket-design-header{overflow:visible;}`:'')}</style>}{scaled?<div className="ticket-scale-surface" style={{width:size.referenceWidth||baseWidth,height:baseHeight,zoom:scale}}>{children}</div>:children}
-  </div>;
+  </div>{order.event_schedule && <div className="ticket-daily-schedule" style={{padding:"12px 16px",background:"#ffffff",color:"#172033",fontSize:14,lineHeight:1.6,border:"1px solid #e2e8f0",whiteSpace:"pre-line"}}><strong>Event opening hours</strong><div>{order.event_schedule}</div></div>}</>;
 }
 
 export function TicketExtras({design,ticket={},order={},preview}) {

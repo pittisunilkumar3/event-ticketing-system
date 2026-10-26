@@ -15,7 +15,7 @@ export default function TicketDesignPreview({design,category='Horizontal',event=
  },[]);
  return <div className={`ticket-thumbnail ticket-option-preview format-${category.toLowerCase()}`} ref={frame} aria-hidden="true">
   <div className="ticket-option-art" ref={content} style={{width:category==='Horizontal'?660:390,transform:`translate(-50%, -50%) scale(${scale})`}}>
-   <DesignedTicket design={{...design,type_name:name||'Ticket name',price:Number(price)||0,currency:'INR'}} order={{event_title:event.title||'Event name',event_start:event.start_datetime,venue:event.venue,city:event.city,customer_name:'Guest name',currency:'INR'}} preview/>
+   <DesignedTicket design={{...design,type_name:name||'Ticket name',price:Number(price)||0,currency:'INR'}} order={{event_title:event.title||'Event name',event_start:event.start_datetime,event_schedule:event.schedule_text,venue:event.venue,city:event.city,customer_name:'Guest name',currency:'INR'}} preview/>
   </div>
  </div>;
 }

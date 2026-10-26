@@ -55,7 +55,7 @@ export function BookingReceipt({ booking, justBooked = false }) {
         </header>
         <section className="confirmation-summary no-print" aria-label="Booking details">
           <div className="confirmation-reference"><div><span>BOOKING REFERENCE</span><code>{order.booking_ref}</code></div><span className={`confirmation-status status-${order.status}`}>{status.label}</span></div>
-          <div className="confirmation-event"><h2>{order.event_title}</h2>{order.event_start && <p><Icon name="calendar" size={16}/>{formatDateTime(order.event_start)}</p>}{(order.venue || order.city) && <p><Icon name="pin" size={16}/>{[order.venue, order.city].filter(Boolean).join(', ')}</p>}</div>
+          <div className="confirmation-event"><h2>{order.event_title}</h2>{order.event_start && <p><Icon name="calendar" size={16}/>{formatDateTime(order.event_start)}</p>}{order.event_schedule && <p style={{whiteSpace:'pre-line'}}>{order.event_schedule}</p>}{(order.venue || order.city) && <p><Icon name="pin" size={16}/>{[order.venue, order.city].filter(Boolean).join(', ')}</p>}</div>
           <TaxBreakdown value={order.tax_snapshot} currency={order.currency}/>
           <div className="confirmation-totals">{order.coupon_code&&<><div><span>Subtotal</span><strong>{formatCurrency(order.subtotal_amount,order.currency)}</strong></div><div><span>Discount · {order.coupon_code}</span><strong>−{formatCurrency(order.discount_amount,order.currency)}</strong></div></>}<div><span>Tickets</span><strong>{tickets.length}</strong></div><div><span>Booking total</span><strong>{formatCurrency(order.total_amount,order.currency)}</strong></div></div>
         </section>

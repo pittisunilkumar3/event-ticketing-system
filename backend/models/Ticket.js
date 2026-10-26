@@ -46,7 +46,7 @@ const Ticket = {
   async findByCode(code, connection = db) {
     const [rows] = await connection.query(
       `SELECT t.*, tt.name AS type_name, tt.price, o.booking_ref, o.customer_name, o.email, o.status AS order_status,
-              e.title AS event_title, e.venue, e.city, e.start_datetime AS event_start,
+              e.title AS event_title, e.venue, e.city, e.start_datetime AS event_start, e.schedule_text AS event_schedule,
               a.email AS attendee_email,a.phone AS attendee_phone,a.answers_json AS attendee_answers_json
        FROM tickets t
        JOIN ticket_types tt ON tt.id = t.ticket_type_id

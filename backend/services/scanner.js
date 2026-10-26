@@ -12,7 +12,7 @@ const joins = `FROM tickets t JOIN orders o ON o.id=t.order_id JOIN events e ON 
  JOIN ticket_types tt ON tt.id=t.ticket_type_id`;
 const fields = `t.ticket_code,t.attendee_name,t.status,t.checked_in_at,o.booking_ref,o.customer_name,
  o.status AS order_status,o.payment_method,o.event_id,e.title AS event_title,e.status AS event_status,
- e.archived_at AS event_archived_at,e.venue,e.city,e.start_datetime,e.entry_instructions,tt.name AS type_name`;
+ e.archived_at AS event_archived_at,e.venue,e.city,e.start_datetime,e.schedule_text,e.entry_instructions,tt.name AS type_name`;
 async function find(code) {
  const [rows] = await db.query(`SELECT ${fields} ${joins} WHERE t.ticket_code=? AND o.archived_at IS NULL LIMIT 1`,[code]);
  return rows[0] || null;
@@ -51,7 +51,7 @@ async function events(query) {
  const page=eventId(query.page||1),limit=30;
  const where="e.archived_at IS NULL AND e.status='published' AND e.title LIKE ?";
  const pattern='%'+search.replace(/[=%_]/g,'=$&')+'%';
- const [rows]=await db.query(`SELECT e.id,e.title,e.venue,e.city,e.start_datetime,e.end_datetime,e.entry_instructions,
+ const [rows]=await db.query(`SELECT e.id,e.title,e.venue,e.city,e.start_datetime,e.end_datetime,e.schedule_text,e.entry_instructions,
  (SELECT COUNT(*) FROM tickets t JOIN orders o ON o.id=t.order_id WHERE o.event_id=e.id AND o.archived_at IS NULL AND o.status='paid' AND o.payment_method NOT IN ('mock','razorpay_test') AND t.status IN ('valid','checked_in')) AS total,
  (SELECT COUNT(*) FROM tickets t JOIN orders o ON o.id=t.order_id WHERE o.event_id=e.id AND o.archived_at IS NULL AND o.status='paid' AND o.payment_method NOT IN ('mock','razorpay_test') AND t.status='checked_in') AS checked_in
  FROM events e WHERE ${where.replace('LIKE ?',"LIKE ? ESCAPE '='")} ORDER BY e.start_datetime DESC,e.id DESC LIMIT ? OFFSET ?`,[pattern,limit,(page-1)*limit]);

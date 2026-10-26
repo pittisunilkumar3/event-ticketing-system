@@ -109,7 +109,7 @@ export function EventPageView({data,selection={},onQuantity=()=>{},onCheckout=()
                   {formatEventDates(event.start_datetime, event.end_datetime)}
                 </span>
                 <span>
-                  {formatTime(event.start_datetime)} ·{' '}
+                  <span style={{whiteSpace:'pre-line'}}>{event.schedule_text || formatTime(event.start_datetime)}</span> ·{' '}
                   {<EventVenueLink event={event}/>}
                 </span>
               </div>
@@ -161,7 +161,7 @@ export function EventPageView({data,selection={},onQuantity=()=>{},onCheckout=()
                 icon="calendar"
                 label="When"
                 value={formatEventDates(event.start_datetime, event.end_datetime)}
-                extra={formatEventTimes(event.start_datetime,event.end_datetime)}
+                extra={formatEventTimes(event.start_datetime,event.end_datetime,event.schedule_text)}
               />
               <Fact
                 icon="pin"
@@ -228,7 +228,7 @@ function Fact({ icon, label, value, extra }) {
       <div>
         <small>{label}</small>
         <h3>{value}</h3>
-        <p>{extra}</p>
+        <p style={{whiteSpace:'pre-line'}}>{extra}</p>
       </div>
     </div>
   );

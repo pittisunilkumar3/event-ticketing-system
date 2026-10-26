@@ -36,6 +36,7 @@ function eventFields(input, previous = {}) {
     venue: 200,
     city: 100,
     summary: 300,
+    schedule_text: 500,
     address: 500,
     organizer_name: 150,
     age_policy: 150,

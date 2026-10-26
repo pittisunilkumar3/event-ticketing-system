@@ -28,7 +28,7 @@ function renderEmail(config, brand, data = {}, publishedPages = [], socialLinks 
     for(const [key,marker] of Object.entries(markers))output=output.replaceAll(marker,blocks[key]);
     return output;
   };
-  const body = `<div style="color:#536173;font-size:15px;line-height:1.8">${richBody(c.body)}</div>`;
+  const body = `<div style="color:#536173;font-size:15px;line-height:1.8">${richBody(c.body)}${values.event_schedule?`<p style="white-space:pre-line"><strong>Event opening hours</strong><br>${escape(values.event_schedule)}</p>`:''}</div>`;
   const secondary = `<div style="margin-top:22px;padding:20px;background:#f5f7fa;border-left:3px solid ${accent};color:#536173;line-height:1.7">${richBody(c.body_2)}</div>`;
   let href = replace(c.button_url, values, false);
   try { href = safeUrl(href); } catch { href = ''; }

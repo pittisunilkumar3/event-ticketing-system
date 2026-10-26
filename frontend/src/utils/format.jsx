@@ -18,7 +18,8 @@ export function formatEventDates(start, end) {
   return `${day(first)}–${full(last)}`;
 }
 
-export function formatEventTimes(start, end) {
+export function formatEventTimes(start, end, schedule = '') {
+  if (schedule?.trim()) return schedule.trim();
   if (!start) return '';
   if (!end) return `Starts ${formatTime(start)}`;
   return `Starts ${formatTime(start)} · Ends ${formatTime(end)}`;

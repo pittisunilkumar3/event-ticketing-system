@@ -32,7 +32,7 @@ const stats = asyncHandler(async (req, res) => {
     const [recentOrders]=await conn.query(`SELECT o.id,o.booking_ref,o.customer_name,o.total_amount,o.currency,o.status,o.created_at,o.payment_method,e.title event_title
       FROM orders o JOIN events e ON e.id=o.event_id WHERE 1=1${scope}
       ORDER BY o.created_at DESC,o.id DESC LIMIT 5`);
-    const [upcoming]=await conn.query(`SELECT e.id,e.title,e.start_datetime,e.venue,e.city,
+    const [upcoming]=await conn.query(`SELECT e.id,e.title,e.start_datetime,e.schedule_text,e.venue,e.city,
       (SELECT COUNT(*) FROM tickets t JOIN orders o ON o.id=t.order_id WHERE o.event_id=e.id AND o.status='paid' AND t.status IN ('valid','checked_in')${scope}) tickets_sold
       FROM events e WHERE e.status='published' AND e.archived_at IS NULL AND e.start_datetime>=NOW()
       ORDER BY e.start_datetime,e.id LIMIT 4`);

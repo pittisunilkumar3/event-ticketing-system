@@ -100,7 +100,7 @@ async function processOutbox() {
         const brand = await Studio.getSetting('brand');
         const emailData={
           customer_name: job.recipient_name || order.customer_name, email: job.recipient_email || order.email, event_title: order.event_title,
-          event_date: order.event_start, event_start:order.event_start,currency:order.currency, venue: order.venue, city: order.city, booking_ref: order.booking_ref,
+          event_schedule:order.event_schedule, event_date: order.event_start, event_start:order.event_start,currency:order.currency, venue: order.venue, city: order.city, booking_ref: order.booking_ref,
           booking_url: brand.site_url.replace(/\/$/,'') + '/confirmation/' + order.booking_ref,
           amount: new Intl.NumberFormat('en-US',{style:'currency',currency:order.currency||'USD'}).format(order.total_amount),
           tax_amount:new Intl.NumberFormat('en-IN',{style:'currency',currency:order.currency||'INR'}).format(order.tax_amount||0),amount_excluding_tax:new Intl.NumberFormat('en-IN',{style:'currency',currency:order.currency||'INR'}).format(order.taxable_amount??order.total_amount),tax_details:order.tax_snapshot?JSON.parse(order.tax_snapshot).components.map(c=>c.name+' ('+(c.rate_bps/100)+'%): '+new Intl.NumberFormat('en-IN',{style:'currency',currency:order.currency||'INR'}).format(c.amount_minor/100)).join('; '):'',coupon_code:order.coupon_code||'',subtotal: new Intl.NumberFormat('en-IN',{style:'currency',currency:order.currency||'INR'}).format(order.subtotal_amount),discount_amount:new Intl.NumberFormat('en-IN',{style:'currency',currency:order.currency||'INR'}).format(order.discount_amount||0),

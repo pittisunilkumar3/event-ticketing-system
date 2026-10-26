@@ -259,7 +259,7 @@ export function CheckoutPageView({data,items,people={},pending=null,busy=false,e
               <h2>{event.title}</h2>
               <p>
                 <Icon name="calendar" />
-                {formatDateTime(event.start_datetime)}
+                {formatDateTime(event.start_datetime)}{event.schedule_text && <span style={{display:'block'}}>{event.schedule_text}</span>}
               </p>
               <p>
                 {event.venue} · {event.city}

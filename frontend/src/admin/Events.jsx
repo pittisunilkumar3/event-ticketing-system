@@ -156,7 +156,7 @@ export default function Events() {
                 </b>
               </Link>
               <div className="ea-event-card-body">
-                <small>{formatEventDates(event.start_datetime,event.end_datetime)} · {formatTime(event.start_datetime)}</small>
+                <small>{formatEventDates(event.start_datetime,event.end_datetime)} · <span style={{whiteSpace:'pre-line'}}>{event.schedule_text || formatTime(event.start_datetime)}</span></small>
                 <Link to={'/admin/events/' + event.id}>
                   <h2>{event.title}</h2>
                 </Link>

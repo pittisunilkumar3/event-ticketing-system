@@ -23,7 +23,7 @@ export default function ShowcaseHero({event, lowest, theme}) {
           {hasTickets && <span className="showcase-price">{lowest === 0 ? 'Free tickets available' : `From ${formatCurrency(lowest)}`}</span>}
         </div>
         <dl className="showcase-facts">
-          <div><dt><Icon name="calendar" size={16}/>Date & time</dt><dd>{formatEventDates(event.start_datetime, event.end_datetime)}<span>{formatTime(event.start_datetime)}</span></dd></div>
+          <div><dt><Icon name="calendar" size={16}/>Date & time</dt><dd>{formatEventDates(event.start_datetime, event.end_datetime)}<span><span style={{whiteSpace:'pre-line'}}>{event.schedule_text || formatTime(event.start_datetime)}</span></span></dd></div>
           <div><dt><Icon name="pin" size={16}/>Location</dt><dd><EventVenueLink event={event}/>{event.city && event.city !== event.venue && <span>{event.city}</span>}</dd></div>
         </dl>
       </div>
