@@ -9,13 +9,29 @@ function ticketCode(value) {
   return value.trim().toUpperCase();
 }
 const joins = `FROM tickets t JOIN orders o ON o.id=t.order_id JOIN events e ON e.id=o.event_id
- JOIN ticket_types tt ON tt.id=t.ticket_type_id`;
+ JOIN ticket_types tt ON tt.id=t.ticket_type_id LEFT JOIN order_attendees a ON a.id=t.attendee_id`;
 const fields = `t.ticket_code,t.attendee_name,t.status,t.checked_in_at,o.booking_ref,o.customer_name,
  o.status AS order_status,o.payment_method,o.event_id,e.title AS event_title,e.status AS event_status,
- e.archived_at AS event_archived_at,e.venue,e.city,e.start_datetime,e.schedule_text,e.entry_instructions,tt.name AS type_name`;
+ e.archived_at AS event_archived_at,e.venue,e.city,e.start_datetime,e.schedule_text,e.entry_instructions,tt.name AS type_name,
+ a.answers_json AS answers_json`;
+function registration(answers) {
+ try {
+  const list=typeof answers==='string'?JSON.parse(answers):(Array.isArray(answers)?answers:[]);
+  if(!Array.isArray(list))return [];
+  return list.map(a=>{let v=a.value;
+   if(Array.isArray(v))v=v.filter(Boolean).join(', ');
+   else if(v===true)v='Yes';else if(v===false)v='No';
+   else if(v&&typeof v==='object')v=v.name||'';
+   v=v==null?'':String(v).trim();
+   return {label:(a.label||a.id||'').trim(), value:v};
+  }).filter(x=>x.label&&x.value);
+ } catch { return []; }
+}
 async function find(code) {
  const [rows] = await db.query(`SELECT ${fields} ${joins} WHERE t.ticket_code=? AND o.archived_at IS NULL LIMIT 1`,[code]);
- return rows[0] || null;
+ const row=rows[0]||null;
+ if(row){row.registration=registration(row.answers_json);delete row.answers_json;}
+ return row;
 }
 function verdict(ticket, selectedEvent) {
  if(!ticket) return {valid:false,reason:'not_found',message:'Ticket not found in this organization.'};
