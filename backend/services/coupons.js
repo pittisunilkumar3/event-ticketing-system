@@ -117,11 +117,13 @@ async function calculate(conn,input,items,{lock=false,email=''}={}){
  if(subtotal<Number(coupon.min_subtotal_minor))fail('This coupon requires a booking subtotal of ₹'+money.decimal(Number(coupon.min_subtotal_minor))+'.');
  const types=JSON.parse(coupon.ticket_type_ids);
  const perTicket=coupon.kind==='fixed' && Boolean(coupon.fixed_per_ticket);
+ const rawDiscounts=perTicket?coupon.fixed_ticket_discounts_minor:null;
+ const ticketDiscounts=typeof rawDiscounts==='string'?JSON.parse(rawDiscounts):rawDiscounts;
  const lines=items.map(({ticketType,qty})=>{
   const unit=money.minorUnits(ticketType.price),amount=unit*qty;
   const applies=!types.length||types.includes(ticketType.id);
   // For per-ticket offers, a cheaper pass cannot transfer unused savings to another pass.
-  const weight=applies?(perTicket?Math.min(unit,Number(coupon.value_units))*qty:amount):0;
+  const weight=applies?(perTicket?Math.min(unit,Number(ticketDiscounts?.[ticketType.id]??coupon.value_units))*qty:amount):0;
   return {ticket_type_id:ticketType.id,eligible:applies,subtotal_minor:amount,weight};
  });
  const eligible=lines.reduce((sum,l)=>sum+(l.eligible?l.subtotal_minor:0),0);

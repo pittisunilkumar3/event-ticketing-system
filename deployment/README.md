@@ -648,11 +648,12 @@ Final canvas polish also selects text when clicking the gap between wrapped titl
 
 ## CINICAEDU student coupon and exclusive checkout discounts
 
-The deployed CINICAEDU promotion is scoped to Explorer and Creators passes. A ₹500 fixed discount applies per eligible pass: Explorer ₹999 → ₹499 without tax; Creators ₹1,499 → ₹999 plus its configured 18% GST. One of each totals ₹1,677.82.
+The deployed CINICAEDU promotion is scoped to Explorer, Creators and Day passes. Explorer receives ₹500 off (₹999 → ₹499 without tax), Creators receives ₹500 off (₹1,499 → ₹999 plus its configured 18% GST), and Day receives ₹100 off its current ₹499 offer price (₹399 without tax). One of each totals ₹2,076.82.
 
 - Migration `031_per_ticket_coupon.sql` adds opt-in `fixed_per_ticket` and `tax_free_unit_max_minor` coupon settings. The promotion uses a 49,900-paise post-discount unit-price exemption ceiling. Existing coupons retain their previous per-booking pricing and tax treatment. Coupon settings are event data, not globally seeded by the migration.
+- Migration `033_coupon_ticket_discounts.sql` adds optional `fixed_ticket_discounts_minor` JSON overrides, mapping ticket-type IDs to per-ticket discounts in paise. CINICAEDU overrides Day to 10,000 paise; the other eligible passes retain the default 50,000-paise discount. Overrides only affect fixed-per-ticket coupons and survive ordinary coupon-editor updates.
 - Migration `032_student_coupon_fields.sql` adds `require_student_fields` and an event-scoped student registry. Enable “Require college name and student ID” on CINICAEDU. Every eligible attendee must provide both; other passes and no-code checkout are unchanged.
-- Student IDs are trimmed and case-insensitively unique across both passes, within a booking and across concurrent bookings. Reservations and attendee answers are saved in the order transaction. As with Udyam numbers, IDs remain reserved after cancellation or unpaid expiry. Student credentials are self-declared, not independently verified.
+- Student IDs are trimmed and case-insensitively unique across all three eligible passes, within a booking and across concurrent bookings. Reservations and attendee answers are saved in the order transaction. As with Udyam numbers, IDs remain reserved after cancellation or unpaid expiry. Student credentials are self-declared, not independently verified.
 - Student identities are excluded from pricing tokens, so entering them after applying the coupon does not invalidate the quoted price.
 - An applied coupon disables the Udyam input itself, its Clear button and certificate entry; no Udyam values or files are submitted. The disabled field is visibly muted and no longer prompts for a number. Removing the coupon restores Udyam. The server rejects combining the discounts.
 
@@ -660,4 +661,4 @@ Required checkout dependencies are included: migration `028_event_udyam_registra
 
 Verification: `node tests/checkout-attendees.mjs` and `npm run build` from `frontend`; `node tests/studentCoupons.integration.js` and `node tests/coupons.integration.js` from `backend` against a disposable MariaDB instance with CREATE/DROP permission. The student integration test exercises required fields, price-token consistency, stored answers, event-scoped uniqueness, concurrency and Udyam exclusion. Do not run database integration tests against the production database.
 
-Public checkout verification covered Explorer alone, Creators alone and both together, including attempted focus/typing into disabled Udyam fields, required blank student fields, coupon removal and desktop/mobile presentation. No production booking, payment or email was created.
+Public checkout verification covered individual passes and mixed bookings, including Day's ₹399 total, required blank student fields, coupon removal and desktop/mobile presentation. The isolated booking test also rejects duplicate IDs between Day and both other eligible passes, including simultaneous requests for all three. No production booking, payment or email was created.
