@@ -74,13 +74,16 @@ function compute(profiles,items,coupon){
  const applied=new Map(),components=new Map();
  const lines=items.map(i=>{
   const subtotal=money.minorUnits(i.ticketType.price)*i.qty;
-  const discount=coupon.breakdown?.lines.find(l=>l.ticket_type_id===i.ticketType.id)?.discount_minor||0;
+  const couponLine=coupon.breakdown?.lines.find(l=>l.ticket_type_id===i.ticketType.id);
+  const discount=couponLine?.discount_minor||0;
   const gross=subtotal-discount;
   const matches=profiles.filter(p=>!p.ticket_type_ids.length||p.ticket_type_ids.includes(i.ticketType.id));if(matches.length>1)fail('Tax settings overlap. Contact the organizer.',409);
-  const profile=matches[0];let tax=0,amounts=[];
+  const ceiling=coupon.breakdown?.tax_free_unit_max_minor;
+  const exempt=couponLine?.eligible && ceiling!=null && gross<=ceiling*i.qty;
+  const profile=exempt?null:matches[0];let tax=0,amounts=[];
   if(profile){applied.set(profile.id,profile);const rate=profile.components.reduce((sum,c)=>sum+c.rate_bps,0);tax=rounded(BigInt(gross)*BigInt(rate),BigInt(profile.price_mode==='inclusive'?10000+rate:10000));amounts=allocate(tax,profile.components);profile.components.forEach((c,index)=>{const key=profile.id+':'+index;const row=components.get(key)||{name:c.name,rate_bps:c.rate_bps,amount_minor:0,included:profile.price_mode==='inclusive',profile_id:profile.id};row.amount_minor+=amounts[index];components.set(key,row);});}
   const included=profile?.price_mode==='inclusive';
-  return {ticket_type_id:i.ticketType.id,profile_id:profile?.id||null,price_mode:profile?.price_mode||null,subtotal_minor:subtotal,discount_minor:discount,taxable_minor:included?gross-tax:gross,tax_minor:tax,total_minor:included?gross:gross+tax};
+  return {ticket_type_id:i.ticketType.id,profile_id:profile?.id||null,price_mode:profile?.price_mode||null,subtotal_minor:subtotal,discount_minor:discount,taxable_minor:exempt?0:included?gross-tax:gross,tax_minor:tax,total_minor:included?gross:gross+tax};
  });
  const snapshot={profiles:[...applied.values()].map(p=>({id:p.id,revision:p.revision,name:p.name,price_mode:p.price_mode,legal_name:p.legal_name,gstin:p.gstin})),components:[...components.values()],lines,taxable_minor:lines.reduce((s,l)=>s+l.taxable_minor,0),tax_minor:lines.reduce((s,l)=>s+l.tax_minor,0),total_minor:lines.reduce((s,l)=>s+l.total_minor,0)};
  money.decimal(snapshot.total_minor);

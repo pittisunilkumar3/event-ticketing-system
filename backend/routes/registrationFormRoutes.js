@@ -10,6 +10,8 @@ router.get('/templates',wrap(async(req,res)=>{const [rows]=await db.query('SELEC
 router.post('/templates',wrap(async(req,res)=>{const config=forms.validate(req.body.config),name=v.string(req.body.name,'Template name',120,true);const [result]=await db.query('INSERT INTO registration_form_templates(name,config_json) VALUES (?,?)',[name,JSON.stringify(config)]);res.status(201);ok(res,{template:{id:result.insertId,name,config}});}));
 router.get('/events/:id',wrap(async(req,res)=>{if(!await require('../models/Event').findById(req.params.id))v.fail('Event not found.',404);ok(res,{form:await forms.get(req.params.id)});}));
 router.put('/events/:id',wrap(async(req,res)=>ok(res,{form:await forms.save(req.params.id,req.body)})));
+router.get('/events/:id/udyam',wrap(async(req,res)=>ok(res,{settings:await require('../services/udyam').settings(req.params.id)})));
+router.put('/events/:id/udyam',wrap(async(req,res)=>ok(res,{settings:await require('../services/udyam').saveSettings(req.params.id,req.body,req.admin.id)})));
 router.get('/events/:id/tickets/:typeId',wrap(async(req,res)=>ok(res,{form:await forms.ticket(req.params.id,req.params.typeId)})));
 router.put('/events/:id/tickets/:typeId',wrap(async(req,res)=>ok(res,{form:await forms.saveTicket(req.params.id,req.params.typeId,req.body)})));
 router.get('/events/:id/responses',wrap(async(req,res)=>{

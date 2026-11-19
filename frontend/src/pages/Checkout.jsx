@@ -1,5 +1,5 @@
 import TaxBreakdown,{readTaxSnapshot} from '../components/TaxBreakdown';
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import {
   useNavigate,
   useParams,
@@ -19,6 +19,7 @@ import {eventThemeId, refreshCheckoutTheme} from './eventTheme';
 import {watchEventContent} from '../settings/watchEventContent';
 import CheckoutAttendees,{attendeePayload} from './CheckoutAttendees';
 import {checkoutDestination} from './checkoutNavigation';
+import useUdyam,{udyamItems} from './useUdyam';
 export default function Checkout() {
   const { slug } = useParams(),
     [params] = useSearchParams(),
@@ -40,6 +41,10 @@ export default function Checkout() {
     state?.items?.map((i) => i.ticket_type_id + ':' + i.qty).join(',') ||
     '';
   useEffect(()=>{couponRequest.current++;setCouponInput('');setCouponQuote(null);setCouponError('');setCouponBusy(false);},[slug,cart]);
+  const storageKey='event-checkout:'+window.location.pathname+':'+cart;
+  const requestKey=useCallback(()=>{let key=sessionStorage.getItem(storageKey);if(!key){key=crypto.randomUUID();sessionStorage.setItem(storageKey,key);}return key;},[storageKey]);
+  const udyam=useUdyam({policy:data?.udyamDiscount,resetKey:storageKey});
+  const quoteItems=JSON.stringify(udyamItems(cart.split(',').filter(Boolean).map(s=>{const [id,qty]=s.split(':');return {id:Number(id),qty:Number(qty)};}),udyam.records));
   useEffect(() => {
     const controller = new AbortController();
     setData(null);
@@ -69,13 +74,12 @@ export default function Checkout() {
     return () => { stop(); controller.abort(); };
   }, [slug, cart]);
   useEffect(()=>{
-    setBaseQuote(null);setQuoteError('');if(!data?.event.id)return;
+    setBaseQuote(null);setQuoteError('');if(!data?.event.id||udyam.blocked)return;
     const controller=new AbortController();
-    const items=cart.split(',').filter(Boolean).map(s=>{const [id,qty]=s.split(':');return {ticket_type_id:Number(id),qty:Number(qty)};});
-    api.post('/checkout/quote',{event_id:data.event.id,items},{signal:controller.signal}).then(r=>{if(!controller.signal.aborted)setBaseQuote(r.data.data);}).catch(e=>{if(!controller.signal.aborted)setQuoteError(e.response?.data?.message||'Unable to calculate the total. Please retry.');});
+    const items=JSON.parse(quoteItems);
+    api.post('/checkout/quote',{event_id:data.event.id,items,request_key:requestKey()},{signal:controller.signal}).then(r=>{if(!controller.signal.aborted)setBaseQuote(r.data.data);}).catch(e=>{if(!controller.signal.aborted)setQuoteError(e.response?.data?.message||'Unable to calculate the total. Please retry.');});
     return()=>controller.abort();
-  },[data?.event.id,cart,quoteReload]);
-  const storageKey='event-checkout:'+window.location.pathname+':'+cart;
+  },[data?.event.id,quoteItems,quoteReload,udyam.blocked,requestKey]);
   function finish(result){sessionStorage.removeItem(storageKey);navigate('/confirmation/'+result.order.booking_ref,{replace:true,state:{fresh:result,email:result.order.email}});}
   useEffect(()=>{let active=true;setPending(null);const token=sessionStorage.getItem(storageKey);if(token)api.post('/booking-payments/status',{}, {headers:{'x-booking-token':token}}).then(r=>{if(!active)return;if(r.data.data.paid)finish(r.data.data);else setPending(r.data.data);}).catch(()=>{});return()=>{active=false;};},[storageKey]);
   async function checkPayment(){setBusy(true);setError('');try{const r=await api.post('/booking-payments/status',{}, {headers:{'x-booking-token':sessionStorage.getItem(storageKey)}});if(r.data.data.paid)finish(r.data.data);else{setPending(r.data.data);setError(r.data.data.payment.status==='review'?'Payment needs review. Please contact the organizer with your booking reference.':'Payment is not confirmed yet. You can resume checkout or check again.');}}catch(e){setError(e.response?.data?.message||'Unable to check payment.');}finally{setBusy(false);}}
@@ -114,6 +118,7 @@ export default function Checkout() {
         i.qty <= Math.min(i.type.available, i.type.max_per_order)
     );
   async function applyCoupon(e){
+    if(udyam.entered){e.preventDefault();return;}
     e.preventDefault();const request=++couponRequest.current;setCouponBusy(true);setCouponError('');setCouponQuote(null);
     try{const r=await api.post('/checkout/quote',{event_id:data.event.id,coupon_code:couponInput,items:items.map(i=>({ticket_type_id:i.id,qty:i.qty}))});if(request===couponRequest.current)setCouponQuote(r.data.data);}
     catch(e){if(request===couponRequest.current)setCouponError(e.response?.data?.message||'Unable to validate this code. Please try again.');}
@@ -127,22 +132,23 @@ export default function Checkout() {
   const { event } = data,
     total = pending ? Number(pending.order.total_amount) : (couponQuote||baseQuote) ? (couponQuote||baseQuote).total_minor/100 : items.reduce((s, i) => s + Number(i.type.price) * i.qty, 0),
     count = items.reduce((s, i) => s + i.qty, 0);
+  const studentReq=couponQuote?.student_id_required?{eligible:new Set((couponQuote.breakdown?.lines||[]).filter(l=>l.eligible).map(l=>l.ticket_type_id))}:null;
   async function book(e) {
     e.preventDefault();
-    if (busy||couponBusy||(!pending&&!baseQuote)) return;
+    if (busy||couponBusy||(!pending&&(!baseQuote||udyam.blocked))) return;
     setBusy(true);
     setError('');
     try {
       if(pending){await pay(pending);return;}
-      let requestKey=sessionStorage.getItem(storageKey);if(!requestKey){requestKey=crypto.randomUUID();sessionStorage.setItem(storageKey,requestKey);}
-      const attendeeData=attendeePayload(items,people,data.registrationForm?.config);
+      const checkoutKey=requestKey();
+      const attendeeData=attendeePayload(items,people,data.registrationForm?.config,udyam.records,udyam.enabled,udyam.policy,studentReq,Boolean(couponQuote));
       if(attendeeData.attachments.some(a=>a.file.size>2*1024*1024))throw new Error('Each registration attachment must be 2 MB or smaller.');
       if(attendeeData.attachments.length>30||attendeeData.attachments.reduce((n,a)=>n+a.file.size,0)>20*1024*1024)throw new Error('Use up to 30 attachments and 20 MB per booking.');
       const payload={
         event_id: event.id,
         pricing_token:(couponQuote||baseQuote)?.pricing_token,
         ...(couponQuote?{coupon_code:couponQuote.coupon.code,coupon_revision:couponQuote.coupon.revision}:{}),
-        request_key:requestKey,
+        request_key:checkoutKey,
         contact_source: 'attendee',
         items: attendeeData.items,
         form_revision:data.registrationForm?.revision||0,
@@ -162,13 +168,14 @@ export default function Checkout() {
       setBusy(false);
     }
   }
-  return <CheckoutPageView {...{data, items, people, pending, busy, error, pages, editLink, total, count,couponInput,couponQuote,couponError,couponBusy,baseQuote,quoteError}} pricingBusy={!pending&&!baseQuote} onRetryQuote={()=>setQuoteReload(n=>n+1)} onApplyCoupon={applyCoupon} onCouponChange={changeCoupon} onBook={book} onPersonChange={(key,person)=>setPeople(p=>({...p,[key]:person}))} onCheckPayment={checkPayment} onStartNew={()=>{sessionStorage.removeItem(storageKey);setPending(null);window.location.reload();}}/>;
+  return <CheckoutPageView {...{data, items, people, pending, busy, error, pages, editLink, total, count,couponInput,couponQuote,couponError,couponBusy,baseQuote,quoteError,udyam,studentReq}} pricingBusy={!pending&&!baseQuote&&!udyam.blocked} onRetryQuote={()=>setQuoteReload(n=>n+1)} onApplyCoupon={applyCoupon} onCouponChange={changeCoupon} onBook={book} onPersonChange={(key,person)=>setPeople(p=>({...p,[key]:person}))} onCheckPayment={checkPayment} onStartNew={()=>{sessionStorage.removeItem(storageKey);setPending(null);window.location.reload();}}/>;
 }
 
-export function CheckoutPageView({data,items,people={},pending=null,busy=false,error='',pages=[],editLink,total,count,onBook,onPersonChange,onCheckPayment,onStartNew,couponInput='',couponQuote=null,couponError='',couponBusy=false,onApplyCoupon,onCouponChange,baseQuote=null,quoteError='',pricingBusy=false,onRetryQuote}) {
+export function CheckoutPageView({data,items,people={},pending=null,busy=false,error='',pages=[],editLink,total,count,onBook,onPersonChange,onCheckPayment,onStartNew,couponInput='',couponQuote=null,couponError='',couponBusy=false,onApplyCoupon,onCouponChange,baseQuote=null,quoteError='',pricingBusy=false,onRetryQuote,udyam,studentReq=null}) {
   const {event}=data;
   const tax=pending?readTaxSnapshot(pending.order.tax_snapshot):(couponQuote||baseQuote)?.tax;
-  let breakdown=couponQuote?.breakdown;
+  const discountQuote=couponQuote||baseQuote;
+  let breakdown=discountQuote?.breakdown;
   if(pending){try{breakdown=JSON.parse(pending.order.coupon_breakdown||'null');}catch{breakdown=null;}}
 
   return (
@@ -199,7 +206,7 @@ export function CheckoutPageView({data,items,people={},pending=null,busy=false,e
         </div>
         <div className="checkout-grid">
           <form onSubmit={onBook} className="checkout-form">
-            <CheckoutAttendees items={items} people={people} config={data.registrationForm?.config} disabled={busy||Boolean(pending)} saved={pending?.attendees} onChange={onPersonChange}/>
+            <CheckoutAttendees items={items} people={people} config={data.registrationForm?.config} disabled={busy||couponBusy||Boolean(pending)} saved={pending?.attendees} onChange={onPersonChange} udyam={udyam} couponApplied={Boolean(couponQuote)} student={studentReq}/>
             <div className="checkout-section-title">
               <span>02</span>
               <div>
@@ -225,7 +232,8 @@ export function CheckoutPageView({data,items,people={},pending=null,busy=false,e
               </div>
             )}
             {!pending&&pricingBusy&&<p role="status">{quoteError||'Calculating your total and taxes…'} {quoteError&&<button type="button" className="booking-text-link" onClick={onRetryQuote}>Retry total</button>}</p>}
-            <button className="booking-primary" disabled={busy||couponBusy||pricingBusy||(total>0&&(!data.payment?.configured||!data.payment?.has_webhook_secret))||(pending&&!pending.payment.can_pay)}>
+            {!pending&&udyam?.blocked&&<p role="status">Correct the highlighted Udyam fields, or clear them to continue at full price.</p>}
+            <button className="booking-primary" disabled={busy||couponBusy||pricingBusy||(!pending&&udyam?.blocked)||(total>0&&(!data.payment?.configured||!data.payment?.has_webhook_secret))||(pending&&!pending.payment.can_pay)}>
               {busy
                 ? 'Preparing payment…'
                 : (pending?'Resume payment':total===0?'Confirm free booking':'Pay securely') + ' · ' + formatCurrency(total)}
@@ -273,16 +281,17 @@ export function CheckoutPageView({data,items,people={},pending=null,busy=false,e
                         {i.qty} × {formatCurrency(i.type?.price)}
                       </small>
                     </span>
-                    <span className="checkout-line-price">{line?.discount_minor>0?<><s>{formatCurrency(line.subtotal_minor/100)}</s><strong>{formatCurrency(line.total_minor/100)}</strong><small>Coupon savings: {formatCurrency(line.discount_minor/100)}</small></>:<><strong>{formatCurrency(i.qty * (i.type?.price||0))}</strong>{line&&!line.eligible&&<small>Coupon does not apply</small>}</>}{taxLine?.profile_id&&<small>{taxLine.price_mode==='inclusive'?<>Includes {formatCurrency(taxLine.tax_minor/100)} tax</>:<>With tax: {formatCurrency(taxLine.total_minor/100)}</>}</small>}</span>
+                    <span className="checkout-line-price">{line?.discount_minor>0?<><s>{formatCurrency(line.subtotal_minor/100)}</s><strong>{formatCurrency(line.total_minor/100)}</strong><small>{breakdown?.udyam?'Udyam savings':'Coupon savings'}: {formatCurrency(line.discount_minor/100)}</small></>:<><strong>{formatCurrency(i.qty * (i.type?.price||0))}</strong>{line&&!line.eligible&&!breakdown?.udyam&&<small>Coupon does not apply</small>}</>}{taxLine?.profile_id&&<small>{taxLine.price_mode==='inclusive'?<>Includes {formatCurrency(taxLine.tax_minor/100)} tax</>:<>With tax: {formatCurrency(taxLine.total_minor/100)}</>}</small>}</span>
                   </div>
                 );})}
               </div>
               {!pending&&<form className="checkout-coupon" onSubmit={onApplyCoupon}>
-                <label htmlFor="checkout-coupon-code">Have a coupon code?</label><div><input id="checkout-coupon-code" value={couponInput} placeholder="Enter coupon code" maxLength={40} autoComplete="off" disabled={busy||couponBusy} onChange={e=>onCouponChange(e.target.value.toUpperCase())}/>{couponQuote?<button type="button" disabled={busy} onClick={()=>onCouponChange('')}>Remove</button>:<button disabled={busy||couponBusy||pricingBusy||!couponInput.trim()}>{couponBusy?'Checking…':'Apply'}</button>}</div>
+                <label htmlFor="checkout-coupon-code">Have a coupon code?</label><div><input id="checkout-coupon-code" value={couponInput} placeholder="Enter coupon code" maxLength={40} autoComplete="off" disabled={busy||couponBusy||udyam?.entered} onChange={e=>onCouponChange(e.target.value.toUpperCase())}/>{couponQuote?<button type="button" disabled={busy} onClick={()=>onCouponChange('')}>Remove</button>:<button disabled={busy||couponBusy||pricingBusy||udyam?.entered||!couponInput.trim()}>{couponBusy?'Checking…':'Apply'}</button>}</div>
+                {udyam?.entered&&<p>Clear the Udyam Registration Numbers to use a coupon instead.</p>}
                 {couponError&&<p role="alert">{couponError}</p>}{couponQuote&&<p className="coupon-applied" role="status">{couponQuote.coupon.code} applied · You save {formatCurrency(couponQuote.discount_minor/100)}</p>}
               </form>}
-              {breakdown&&<p className="checkout-coupon-scope">{breakdown.scope==='all'?'Discount applies to all tickets in this booking.':'Discount applies only to eligible ticket types.'} <span>Eligible ticket subtotal: {formatCurrency(breakdown.eligible_subtotal_minor/100)}</span></p>}
-              {(pending?.order.coupon_code||couponQuote)&&<div className="checkout-discount" aria-label="Discount summary"><div><span>Subtotal</span><strong>{formatCurrency(pending?pending.order.subtotal_amount:couponQuote.subtotal_minor/100)}</strong></div><div><span>Discount · {pending?pending.order.coupon_code:couponQuote.coupon.code}</span><strong>−{formatCurrency(pending?pending.order.discount_amount:couponQuote.discount_minor/100)}</strong></div></div>}
+              {breakdown&&<p className="checkout-coupon-scope">{breakdown.udyam?`Udyam discount applies to ${breakdown.udyam.accepted_count} ticket${breakdown.udyam.accepted_count===1?'':'s'} with a correctly formatted number. Registration status is not checked.`:breakdown.scope==='all'?'Discount applies to all tickets in this booking.':'Discount applies only to eligible ticket types.'} <span>Eligible ticket subtotal: {formatCurrency(breakdown.eligible_subtotal_minor/100)}</span></p>}
+              {(Number(pending?.order.discount_amount)>0||discountQuote?.discount_minor>0)&&<div className="checkout-discount" aria-label="Discount summary"><div><span>Subtotal</span><strong>{formatCurrency(pending?pending.order.subtotal_amount:discountQuote.subtotal_minor/100)}</strong></div><div><span>{breakdown?.udyam?'Udyam discount':'Discount · '+(pending?pending.order.coupon_code:couponQuote?.coupon.code)}</span><strong>−{formatCurrency(pending?pending.order.discount_amount:discountQuote.discount_minor/100)}</strong></div></div>}
               <TaxBreakdown value={tax}/>
               <div className="checkout-total">
                 <span>

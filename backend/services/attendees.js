@@ -1,7 +1,7 @@
 const db=require('../config/db');
 const {fail,string,emailAddress}=require('./studioValidation');
 const forms=require('./registrationForms');
-function validate(items,form,files=[]) {
+function validate(items,form,files=[],udyamPolicy) {
  const usedFiles=new Set();
  const result=new Map();
  for(const item of items){
@@ -22,15 +22,15 @@ function validate(items,form,files=[]) {
    }
    const prefix=`attendee_file_${id}_${index}_`;
    const ownFiles=files.filter(file=>file.fieldname.startsWith(prefix)).map(file=>{usedFiles.add(file);return {...file,fieldname:'registration_file_'+file.fieldname.slice(prefix.length)};});
-   let answers;
-   try{answers=forms.answersFor(ticketForm.config,person.registration_answers,ownFiles);}catch(e){e.message=`${name||`Attendee ${index+1}`}: ${e.message}`;throw e;}
+   let answers,attendeeForm;
+   try{attendeeForm=require('./udyam').attendeeForm(ticketForm,person,udyamPolicy);answers=forms.answersFor(attendeeForm.config,person.registration_answers,ownFiles);}catch(e){e.message=`${name||`Attendee ${index+1}`}: ${e.message}`;throw e;}
    if(custom){
     const value=type=>answers.find(a=>a.type===type&&a.value)?.value||'';
     name=string(value('name'),`Attendee ${index+1} name`,150)||`Attendee ${index+1}`;
     email=emailAddress(value('email')).toLowerCase();
     phone=string(value('tel'),'Phone number',40);
    }
-   return {name,email,phone,position:index,answers,files:ownFiles};
+   return {name,email,phone,position:index,answers,files:ownFiles,form:attendeeForm};
   });
   result.set(id,people);
  }
@@ -40,7 +40,8 @@ function validate(items,form,files=[]) {
 async function save(conn,orderId,typeId,people,form){
  const saved=[];
  for(const p of people){
-  const [row]=await conn.query('INSERT INTO order_attendees(order_id,ticket_type_id,position,name,email,phone,form_json,answers_json) VALUES (?,?,?,?,?,?,?,?)',[orderId,typeId,p.position,p.name,p.email,p.phone,form.config.enabled?JSON.stringify(form):null,form.config.enabled?JSON.stringify(p.answers):null]);
+  const ownForm=p.form||form;
+  const [row]=await conn.query('INSERT INTO order_attendees(order_id,ticket_type_id,position,name,email,phone,form_json,answers_json) VALUES (?,?,?,?,?,?,?,?)',[orderId,typeId,p.position,p.name,p.email,p.phone,ownForm.config.enabled?JSON.stringify(ownForm):null,p.answers.length?JSON.stringify(p.answers):null]);
   for(const answer of p.answers.filter(a=>a.type==='file'&&a.value)){
    const file=p.files.find(f=>f.fieldname==='registration_file_'+answer.id);
    await conn.query('INSERT INTO attendee_registration_files(attendee_id,field_id,file_name,mime_type,file_data) VALUES (?,?,?,?,?)',[row.insertId,answer.id,answer.value.name,answer.value.mime,file.buffer]);

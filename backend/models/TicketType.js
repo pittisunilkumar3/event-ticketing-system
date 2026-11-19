@@ -1,11 +1,19 @@
 const db = require('../config/db');
 
 const TicketType = {
-  async create({ event_id, name, description, price, quantity, sales_start, sales_end, template_id, email_template_id=null, submission_url=null, guidelines_url=null, is_active = true, min_per_order = 1, max_per_order = 10, sort_order = 0 }) {
+  // Effective pricing: when an offer price is set, `price` becomes what everyone pays and `list_price` keeps the original for strike-through display.
+  withOffer(tt){
+    if(tt && tt.offer_price!==null && tt.offer_price!==undefined && Number(tt.offer_price)>=0 && Number(tt.offer_price)<Number(tt.price)){
+      tt.list_price = tt.price;
+      tt.price = tt.offer_price;
+    }
+    return tt;
+  },
+  async create({ event_id, name, description, price, quantity, sales_start, sales_end, template_id, email_template_id=null, submission_url=null, guidelines_url=null, is_active = true, min_per_order = 1, max_per_order = 10, sort_order = 0, udyam_discount_minor = null, offer_price = null }) {
     const [result] = await db.query(
-      `INSERT INTO ticket_types (event_id, name, description, price, quantity, sales_start, sales_end, template_id, email_template_id, submission_url, guidelines_url, is_active, min_per_order, max_per_order, sort_order)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [event_id, name, description || null, price, quantity, sales_start || null, sales_end || null, template_id || null, email_template_id, submission_url, guidelines_url, is_active, min_per_order, max_per_order, sort_order]
+      `INSERT INTO ticket_types (event_id, name, description, price, quantity, sales_start, sales_end, template_id, email_template_id, submission_url, guidelines_url, is_active, min_per_order, max_per_order, sort_order, udyam_discount_minor, offer_price)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [event_id, name, description || null, price, quantity, sales_start || null, sales_end || null, template_id || null, email_template_id, submission_url, guidelines_url, is_active, min_per_order, max_per_order, sort_order, udyam_discount_minor, offer_price]
     );
     return this.findById(result.insertId);
   },
@@ -21,7 +29,7 @@ const TicketType = {
   },
 
   async update(id, fields) {
-    const allowed = ['name', 'description', 'price', 'quantity', 'sales_start', 'sales_end', 'template_id','email_template_id','submission_url','guidelines_url','is_active','min_per_order','max_per_order','sort_order'];
+    const allowed = ['name', 'description', 'price', 'quantity', 'sales_start', 'sales_end', 'template_id','email_template_id','submission_url','guidelines_url','is_active','min_per_order','max_per_order','sort_order','udyam_discount_minor','offer_price'];
     const sets = [];
     const params = [];
     for (const key of allowed) {

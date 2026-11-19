@@ -57,6 +57,38 @@ try {
  console.log('PASS custom attendee fields: required versus optional controls, no default contact inputs, empty forms and stale identity excluded.');
  const saved=renderToStaticMarkup(React.createElement(CheckoutAttendees,{items,people:{},config,contact:{},saved:[{id:1,name:'Reserved attendee',position:0,type_name:'VIP',answers:[{id:'f_meal',label:'Meal preference',type:'text',value:'Vegan'}]}]}));
  assert.match(saved,/Reserved attendee/);assert.match(saved,/Vegan/);assert.doesNotMatch(saved,/<input/);
+ const udyamCheckout={enabled:true,policy:{per_ticket_minor:10000},records:{'9_0':{number:'UDYAM-TS-09-0216688',status:'accepted'},'1_0':{number:'UDYAM-TS-09-0216688',status:'accepted'}},change:()=>{},upload:()=>{}};
+ const udyamForm={enabled:true,attendee_mode:'fields',fields:[{id:'f_udyam_number',type:'text',label:'Udyam Registration Number',required:false}]};
+ const renderUdyamCheckout=type=>renderToStaticMarkup(React.createElement(CheckoutAttendees,{items:[{id:type.id,qty:1,type}],people:{},onChange:()=>{},config:udyamForm,udyam:udyamCheckout}));
+ const vipUdyam=renderUdyamCheckout({id:9,name:'INTL-VIP PASS',price:11119,udyam_discount_minor:100000});
+ assert.match(vipUdyam,/save ₹1,000\.00 on this ticket only/);assert.match(vipUdyam,/Number format accepted · ₹1,000\.00 discount requested/);assert.doesNotMatch(vipUdyam,/save ₹100\.00 on this ticket only/);
+ const standardUdyam=renderUdyamCheckout({id:1,name:'Explorer Pass',price:999,udyam_discount_minor:null});
+ assert.match(standardUdyam,/save ₹100\.00 on this ticket only/);assert.match(standardUdyam,/Number format accepted · ₹100\.00 discount requested/);assert.doesNotMatch(standardUdyam,/₹1,000\.00/);
+ console.log('PASS checkout Udyam messages use the VIP ₹1,000 override and the standard ₹100 default for help and accepted states.');
+ const studentPasses=[{id:1,qty:1,type:{name:'Explorer Pass',price:999}},{id:2,qty:1,type:{name:'Creators Pass',price:1499}},{id:6,qty:1,type:{name:'Day Pass',price:499}}];
+ const studentRequirement={eligible:new Set([1,2])};
+ const studentPeople={'1_0':{college_name:'College A',student_id:'STUDENT-1',answers:{f_udyam_number:'UDYAM-TS-09-0216688'}},'2_0':{college_name:'College B',student_id:'STUDENT-2'}};
+ const blockedUdyam={...udyamCheckout,policy:{...udyamCheckout.policy,certificate_required:true}};
+ const couponHtml=renderToStaticMarkup(React.createElement(CheckoutAttendees,{items:studentPasses,people:studentPeople,config:udyamForm,udyam:blockedUdyam,couponApplied:true,student:studentRequirement}));
+ for(const pass of [1,2])for(const field of ['college_name','student_id']){
+  const tag=couponHtml.match(new RegExp('<input[^>]*id="person_'+pass+'_0_'+field+'"[^>]*>'))?.[0];
+  assert(tag?.includes('required=""'));assert(!tag.includes('disabled'));
+ }
+ assert.doesNotMatch(couponHtml,/person_6_0_(college_name|student_id)/);
+ const udyamControls=couponHtml.match(/<input[^>]*id="person_\d+_0_udyam"[^>]*>/g);
+ assert.equal(udyamControls.length,3);assert(udyamControls.every(t=>t.includes('disabled=""')&&!t.includes('required=')));
+ assert.doesNotMatch(couponHtml,/type="file"|udyam-verified|save ₹/);
+ assert.match(couponHtml,/<button[^>]*disabled=""[^>]*>Clear/);
+ const noUdyam=attendeePayload(studentPasses,studentPeople,udyamForm,blockedUdyam.records,true,blockedUdyam.policy,studentRequirement,true);
+ assert.deepEqual(noUdyam.items.map(i=>i.attendees[0].student_id),['STUDENT-1','STUDENT-2',undefined]);
+ assert(noUdyam.items.every(i=>i.attendees[0].udyam_number===undefined&&i.attendees[0].registration_answers.f_udyam_number===undefined));
+ assert.deepEqual(noUdyam.attachments,[]);
+ for(const field of ['college_name','student_id']){
+  assert.throws(()=>attendeePayload(studentPasses,{...studentPeople,'1_0':{...studentPeople['1_0'],[field]:'   '}},udyamForm,{},true,{},studentRequirement,true),/college name and student ID/);
+ }
+ const otherCoupon=attendeePayload(studentPasses,{},udyamForm,blockedUdyam.records,true,blockedUdyam.policy,null,true);
+ assert(otherCoupon.items.every(i=>i.attendees[0].udyam_number===undefined));
+ console.log('PASS student fields are required only for eligible passes; active coupons disable every Udyam control and exclude Udyam values and certificates from booking payloads.');
  const {TicketAttendeeDetails}=await server.ssrLoadModule('/src/admin/CheckIn.jsx');
  const scan=renderToStaticMarkup(React.createElement(TicketAttendeeDetails,{ticket:{attendee_name:'VIP Guest',attendee_email:'vip@example.test',attendee_phone:'1234567890',customer_name:'Booking Contact',email:'booker@example.test'}}));
  assert.match(scan,/Attendee<.*VIP Guest/);assert.match(scan,/vip@example.test/);assert.match(scan,/Booked by<.*Booking Contact/);

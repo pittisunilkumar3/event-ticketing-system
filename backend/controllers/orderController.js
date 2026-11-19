@@ -30,6 +30,7 @@ const createPublicOrder = asyncHandler(async (req, res) => {
   }
   const result = await require('../services/bookingPayments').create({
     event_id,
+    request_key:req.body.request_key,
     coupon_code:req.body.coupon_code,
     coupon_revision:req.body.coupon_revision,
     pricing_token:req.body.pricing_token,

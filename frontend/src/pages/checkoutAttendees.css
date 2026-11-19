@@ -18,3 +18,16 @@
 @media(max-width:600px) { .checkout-person { padding:18px; } .attendee-contact-fields { grid-template-columns:1fr; } }
 
 .checkout-person>legend+.attendee-custom { margin-top:0; padding-top:0; border-top:0; }
+
+.attendee-udyam { margin-top:22px; }
+.attendee-udyam label { display:block; font-size:13px; font-weight:600; margin-bottom:8px; }
+.attendee-udyam label span { font-weight:400; }
+.attendee-udyam-controls { display:flex; gap:8px; flex-wrap:wrap; }
+.attendee-udyam input { flex:1 1 190px; min-width:0; border:1px solid currentColor; border-radius:8px; padding:12px; color:inherit; background:transparent; font:inherit; font-size:14px; }
+.attendee-udyam button { border:1px solid currentColor; border-radius:8px; padding:10px 12px; color:inherit; font:inherit; font-size:13px; }
+.attendee-udyam button:disabled { opacity:.5; }
+.attendee-udyam input:disabled { opacity:.5; cursor:not-allowed; }
+.attendee-udyam p { font-size:12px; line-height:1.6; margin-top:8px; }
+.attendee-udyam .udyam-verified { font-weight:650; }
+.udyam-certificate { margin-top:16px; }
+.udyam-certificate input { width:100%; }

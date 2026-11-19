@@ -18,7 +18,7 @@ const Order = {
    * Create order + issue tickets inside a DB transaction.
    * items: [{ ticket_type_id, qty }]
    */
-  async createWithTickets({ event_id, customer_name, email, phone, contact_source, items, registration_answers, form_revision, registration_files=[], payment=null, coupon_code, coupon_revision, pricing_token }) {
+  async createWithTickets({ event_id, customer_name, email, phone, contact_source, items, registration_answers, form_revision, registration_files=[], payment=null, coupon_code, coupon_revision, pricing_token, request_key }) {
     const conn = await db.getConnection();
 
     try {
@@ -42,7 +42,8 @@ const Order = {
       forms.checkVersions(items,ticketForms,registrationForm,form_revision);
       const perAttendee = contact_source==='attendee' || Boolean(payment) || items.some(item=>item.attendees!==undefined);
       if(!perAttendee&&items.some(item=>ticketForms.get(Number(item.ticket_type_id))?.source==='ticket'))fail('Enter one attendee for every selected ticket.');
-      const attendees = perAttendee ? require('../services/attendees').validate(items,ticketForms,registration_files) : null;
+      const udyamPolicy=await require('../services/udyam').publicConfig(event_id,conn);
+      const attendees = perAttendee ? require('../services/attendees').validate(items,ticketForms,registration_files,udyamPolicy) : null;
       if(contact_source==='attendee')({customer_name,email,phone}=require('../services/attendees').bookingContact(attendees));
       const answers = perAttendee ? [] : forms.answersFor(registrationForm.config,registration_answers,registration_files);
 
@@ -67,6 +68,7 @@ const Order = {
           err.statusCode = 400;
           throw err;
         }
+        require('./TicketType').withOffer(tt);
         const saleStatus=availability(eventRows[0],tt);
         if(saleStatus!=='on_sale') fail(`"${tt.name}" is not available for booking (${saleStatus.replace('_',' ')}).`,409);
         const reserved = await TicketType.reserve(tt.id, qty, conn);
@@ -80,7 +82,11 @@ const Order = {
       }
 
       const coupons=require('../services/coupons');
-      const quote=await coupons.calculate(conn,{event_id,coupon_code,coupon_revision},resolvedItems,{lock:true,email});
+      const quote=await require('../services/checkoutDiscounts').calculate(conn,{event_id,coupon_code,coupon_revision,items,request_key},resolvedItems,{lock:true,email});
+      require('../services/udyam').saveAnswers(attendees,quote);
+      const studentEntries=coupons.studentEntriesFor({items},resolvedItems,quote);
+      await coupons.checkStudentIds(conn,event_id,studentEntries,{lock:true,requestKey:request_key||''});
+      coupons.saveStudentAnswers(attendees,studentEntries);
       const taxes=require('../services/taxes'),tax=await taxes.calculate(conn,event_id,resolvedItems,quote);
       if((pricing_token||tax.profiles.length)&&pricing_token!==taxes.token(event_id,quote,tax))fail('Prices or taxes changed. Review the updated total before paying.',409);
       total=tax.total_minor;
@@ -99,7 +105,10 @@ const Order = {
         [event_id, bookingRef, customer_name, email, phone || null, wallet.decimal(total), pending ? 'pending' : 'paid', method, payment?.request_hash || null, payment ? 'INR' : 'USD',wallet.decimal(quote.subtotal_minor),wallet.decimal(quote.discount_minor),quote.coupon?.id||null,quote.coupon?.code||null,quote.breakdown?JSON.stringify(quote.breakdown):null,wallet.decimal(tax.taxable_minor),wallet.decimal(tax.tax_minor),tax.profiles.length?JSON.stringify(tax):null]
       );
       const orderId = orderResult.insertId;
+      const udyam=require('../services/udyam');
+      await udyam.reserve(conn,event_id,orderId,udyam.numbersFor({items},resolvedItems));
       await coupons.reserve(conn,quote,orderId,email,pending);
+      await coupons.reserveStudentIds(conn,event_id,orderId,studentEntries);
       if (pending) await require('../services/bookingPayments').register(conn, { ...payment, event_id, order_id:orderId, amount_minor:total, currency:'INR', gateway });
       else await wallet.credit(conn, orderId);
 

@@ -46,7 +46,7 @@ const Event = {
               (SELECT COUNT(*) FROM ticket_types tt WHERE tt.event_id = e.id AND tt.archived_at IS NULL) AS ticket_type_count,
               (SELECT COALESCE(SUM(tt.quantity),0) FROM ticket_types tt WHERE tt.event_id=e.id AND tt.archived_at IS NULL) AS capacity,
               (SELECT COALESCE(SUM(tt.sold),0) FROM ticket_types tt WHERE tt.event_id=e.id) AS tickets_sold,
-              (SELECT MIN(tt.price) FROM ticket_types tt WHERE tt.event_id = e.id AND tt.is_active=1 AND tt.archived_at IS NULL) AS min_price,
+              (SELECT MIN(CASE WHEN tt.offer_price IS NOT NULL AND tt.offer_price < tt.price THEN tt.offer_price ELSE tt.price END) FROM ticket_types tt WHERE tt.event_id = e.id AND tt.is_active=1 AND tt.archived_at IS NULL) AS min_price,
               (SELECT COALESCE(SUM(o.total_amount), 0) FROM orders o WHERE o.event_id = e.id AND o.status = 'paid' AND o.archived_at IS NULL AND o.currency='INR') AS revenue
        FROM events e ${whereSql}
        ORDER BY e.start_datetime DESC

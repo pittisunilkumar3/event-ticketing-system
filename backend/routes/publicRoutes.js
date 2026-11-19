@@ -84,7 +84,7 @@ router.get(
       const forms=require('../services/registrationForms'),ticketForms=await forms.forTickets(event.id);
       const checkout = organization.id !== req.organization.id
         ? {checkout_path:'/o/'+encodeURIComponent(organization.slug)+'/checkout/'+encodeURIComponent(event.slug)} : {};
-      res.json({ success: true, data: { event, ...checkout, ticketTypes: types.map(type=>({...type,registrationForm:ticketForms.get(type.id)})), payment:require('../saas/paymentSettings').safe(await require('../saas/paymentSettings').get()), registrationForm:await forms.get(event.id) } });
+      res.json({ success: true, data: { event, ...checkout, udyamDiscount:await require('../services/udyam').publicConfig(event.id), ticketTypes: types.map(type=>({...require('../models/TicketType').withOffer({...type}),registrationForm:ticketForms.get(type.id)})), payment:require('../saas/paymentSettings').safe(await require('../saas/paymentSettings').get()), registrationForm:await forms.get(event.id) } });
     });
   })
 );

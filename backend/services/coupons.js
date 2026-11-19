@@ -29,7 +29,8 @@ function fields(input){
  const start=date(input.starts_at),end=date(input.ends_at);
  if(start&&end&&start>=end)fail('Expiry must be after the start date.');
  if(typeof input.enabled!=='boolean')fail('Choose whether the coupon is enabled.');
- return {code:code(input.code),kind:input.kind,value_units:units,event_id:event,ticket_type_ids:JSON.stringify(ids.map(id=>positive(id,'ticket type'))),min_subtotal_minor:money.minorUnits(input.min_subtotal||0),max_discount_minor:input.max_discount?money.minorUnits(input.max_discount):null,usage_limit:positive(input.usage_limit,'total usage limit',true),per_email_limit:positive(input.per_email_limit,'per-email limit',true),starts_at:start,ends_at:end,enabled:input.enabled};
+ if(typeof input.student_fields!=='boolean')fail('Choose whether this coupon requires attendee college and student ID.');
+ return {code:code(input.code),kind:input.kind,value_units:units,event_id:event,ticket_type_ids:JSON.stringify(ids.map(id=>positive(id,'ticket type'))),min_subtotal_minor:money.minorUnits(input.min_subtotal||0),max_discount_minor:input.max_discount?money.minorUnits(input.max_discount):null,usage_limit:positive(input.usage_limit,'total usage limit',true),per_email_limit:positive(input.per_email_limit,'per-email limit',true),starts_at:start,ends_at:end,enabled:input.enabled,require_student_fields:input.student_fields};
 }
 function present(row){return {...row,ticket_type_ids:JSON.parse(row.ticket_type_ids),value:(Number(row.value_units)/100).toFixed(2),min_subtotal:money.decimal(Number(row.min_subtotal_minor)),max_discount:row.max_discount_minor===null?'':money.decimal(Number(row.max_discount_minor)),starts_at:row.starts_at?row.starts_at.replace(' ','T')+'Z':null,ends_at:row.ends_at?row.ends_at.replace(' ','T')+'Z':null};}
 async function save(input,id){
@@ -57,6 +58,50 @@ async function list(query={}){
  const [[count]]=await db.query('SELECT COUNT(*) total FROM discount_coupons WHERE code LIKE ?',['%'+search+'%']);
  return {coupons:rows.map(present),total:Number(count.total),page};
 }
+// Student-pricing coupons require each attendee of a discounted pass to give a
+// college and a student ID that is unique across the event (like Udyam numbers).
+function studentEntriesFor(input,items,quote){
+ if(!quote.student_id_required)return [];
+ const entries=[],seen=new Set();
+ const types=quote.breakdown.lines.filter(line=>line.eligible).map(line=>line.ticket_type_id);
+ for(const {ticketType,qty} of items.filter(i=>types.includes(i.ticketType.id))){
+  const people=(input.items||[]).find(i=>Number(i.ticket_type_id)===ticketType.id)?.attendees;
+  if(!Array.isArray(people)||people.length!==qty)fail(`Enter the college name and student ID for each discounted "${ticketType.name}" attendee.`);
+  people.forEach((person,position)=>{
+   const college=typeof person?.college_name==='string'?person.college_name.trim():'';
+   const studentId=typeof person?.student_id==='string'?person.student_id.trim():'';
+   if(!college||!studentId)fail(`"${ticketType.name}" attendee ${position+1}: enter both college name and student ID.`);
+   if(!college||college.length>150)fail(`"${ticketType.name}" attendee ${position+1}: use a college name of up to 150 characters.`);
+   if(studentId.length<2||studentId.length>40||/[^\x20-\x7e]/.test(studentId))fail(`"${ticketType.name}" attendee ${position+1}: use a student ID of 2–40 visible characters.`);
+   const key=studentId.toLowerCase();
+   if(seen.has(key))fail(`Student ID ${studentId} appears more than once in this booking. Each attendee needs their own ID.`,409);
+   seen.add(key);entries.push({ticket_type_id:ticketType.id,position,college_name:college,student_id:studentId});
+  });
+ }
+ return entries;
+}
+async function checkStudentIds(conn,eventId,entries,{lock=false,requestKey=''}={}){
+ if(!entries.length)return;
+ const [used]=await conn.query('SELECT r.student_id,o.checkout_request_hash FROM event_student_registrations r JOIN orders o ON o.id=r.order_id WHERE r.event_id=? AND r.student_id IN (?)',[eventId,entries.map(e=>e.student_id)]);
+ // Concurrent retries of one checkout must reach the existing order's unique
+ // request hash. They still cannot create a second registration or payment.
+ const hash=lock&&/^[a-zA-Z0-9-]{32,80}$/.test(requestKey)?require('node:crypto').createHash('sha256').update(requestKey).digest('hex'):null;
+ if(used.some(row=>!hash||row.checkout_request_hash!==hash))fail('This student ID has already been used for this event. Each student can claim one discounted pass.',409);
+}
+async function reserveStudentIds(conn,eventId,orderId,entries){
+ for(const entry of entries||[]){
+  try{await conn.query('INSERT INTO event_student_registrations(event_id,student_id,order_id,ticket_type_id,attendee_position,college_name) VALUES (?,?,?,?,?,?)',[eventId,entry.student_id,orderId,entry.ticket_type_id,entry.position,entry.college_name]);}
+  catch(e){if(e.code==='ER_DUP_ENTRY')fail('This student ID has already been used for this event. Each student can claim one discounted pass.',409);throw e;}
+ }
+}
+function saveStudentAnswers(attendees,entries){
+ for(const entry of entries){
+  const person=attendees?.get(entry.ticket_type_id)?.[entry.position];
+  if(!person)fail('Enter attendee details for the discounted ticket.');
+  person.answers=person.answers.filter(a=>a.id!=='f_college_name'&&a.id!=='f_student_id');
+  person.answers.push({id:'f_college_name',type:'text',label:'College name',value:entry.college_name},{id:'f_student_id',type:'text',label:'Student ID (self-declared)',value:entry.student_id});
+ }
+}
 // Called with the coupon row locked while reserving a booking. Preview is advisory.
 async function calculate(conn,input,items,{lock=false,email=''}={}){
  const subtotal=items.reduce((sum,i)=>sum+money.minorUnits(i.ticketType.price)*i.qty,0);
@@ -71,24 +116,40 @@ async function calculate(conn,input,items,{lock=false,email=''}={}){
  if(coupon.event_id&&coupon.event_id!==Number(input.event_id))fail('This coupon is not valid for this event.');
  if(subtotal<Number(coupon.min_subtotal_minor))fail('This coupon requires a booking subtotal of ₹'+money.decimal(Number(coupon.min_subtotal_minor))+'.');
  const types=JSON.parse(coupon.ticket_type_ids);
- const eligible=items.filter(i=>!types.length||types.includes(i.ticketType.id)).reduce((sum,i)=>sum+money.minorUnits(i.ticketType.price)*i.qty,0);
+ const perTicket=coupon.kind==='fixed' && Boolean(coupon.fixed_per_ticket);
+ const lines=items.map(({ticketType,qty})=>{
+  const unit=money.minorUnits(ticketType.price),amount=unit*qty;
+  const applies=!types.length||types.includes(ticketType.id);
+  // For per-ticket offers, a cheaper pass cannot transfer unused savings to another pass.
+  const weight=applies?(perTicket?Math.min(unit,Number(coupon.value_units))*qty:amount):0;
+  return {ticket_type_id:ticketType.id,eligible:applies,subtotal_minor:amount,weight};
+ });
+ const eligible=lines.reduce((sum,l)=>sum+(l.eligible?l.subtotal_minor:0),0);
  if(!eligible)fail('This coupon does not apply to the selected tickets.');
  if(lock&&coupon.per_email_limit&&!email.trim())fail('This coupon requires an attendee email address.');
  const [[usage]]=await conn.query("SELECT COUNT(*) total,COALESCE(SUM(email=?),0) customer FROM coupon_redemptions WHERE coupon_id=? AND status IN ('reserved','redeemed')",[email.trim().toLowerCase(),coupon.id]);
  if(coupon.usage_limit&&usage.total>=coupon.usage_limit)fail('This coupon has reached its usage limit.',409);
  if(email&&coupon.per_email_limit&&usage.customer>=coupon.per_email_limit)fail('This email address has already used this coupon the allowed number of times.',409);
- let discount=coupon.kind==='fixed'?Number(coupon.value_units):Number(BigInt(eligible)*BigInt(coupon.value_units)/10000n);
+ const weightTotal=perTicket?lines.reduce((sum,l)=>sum+l.weight,0):eligible;
+ let discount=perTicket?weightTotal:coupon.kind==='fixed'?Number(coupon.value_units):Number(BigInt(eligible)*BigInt(coupon.value_units)/10000n);
  discount=Math.min(eligible,discount,coupon.max_discount_minor===null?eligible:Number(coupon.max_discount_minor));
  if(discount<1)fail('This coupon does not reduce the selected ticket total.');
  const total=subtotal-discount;
 
  // Allocate a capped/fixed discount proportionally, preserving every paise.
- const lines=items.map(i=>{const amount=money.minorUnits(i.ticketType.price)*i.qty,applies=!types.length||types.includes(i.ticketType.id);const numerator=BigInt(discount)*BigInt(applies?amount:0);return {ticket_type_id:i.ticketType.id,eligible:applies,subtotal_minor:amount,discount_minor:Number(numerator/BigInt(eligible)),remainder:numerator%BigInt(eligible)};});
+ for(const line of lines){
+  const numerator=BigInt(discount)*BigInt(line.weight);
+  line.discount_minor=Number(numerator/BigInt(weightTotal));
+  line.remainder=numerator%BigInt(weightTotal);
+ }
  let remaining=discount-lines.reduce((sum,line)=>sum+line.discount_minor,0);
  const ranked=[...lines].sort((a,b)=>a.remainder===b.remainder?a.ticket_type_id-b.ticket_type_id:a.remainder>b.remainder?-1:1);
  for(const line of ranked){if(!remaining)break;if(line.eligible&&line.subtotal_minor){line.discount_minor++;remaining--;}}
- const breakdown={scope:types.length?'selected':'all',eligible_subtotal_minor:eligible,lines:lines.map(({remainder,...line})=>({...line,total_minor:line.subtotal_minor-line.discount_minor}))};
- return {subtotal_minor:subtotal,discount_minor:discount,total_minor:total,breakdown,coupon:{id:coupon.id,code:coupon.code,revision:coupon.revision}};
+ const breakdown={scope:types.length?'selected':'all',eligible_subtotal_minor:eligible,lines:lines.map(({remainder,weight,...line})=>({...line,total_minor:line.subtotal_minor-line.discount_minor}))};
+ if(coupon.tax_free_unit_max_minor!=null)breakdown.tax_free_unit_max_minor=Number(coupon.tax_free_unit_max_minor);
+ // Student identities are validated on booking, never included in the price token.
+ const extra=coupon.require_student_fields?{student_id_required:true}:{};
+ return {...extra,subtotal_minor:subtotal,discount_minor:discount,total_minor:total,breakdown,coupon:{id:coupon.id,code:coupon.code,revision:coupon.revision}};
 }
 async function resolveCart(input,conn=db){
  if(!Array.isArray(input.items)||!input.items.length||input.items.length>50||new Set(input.items.map(i=>Number(i.ticket_type_id))).size!==input.items.length)fail('Choose valid tickets.');
@@ -97,7 +158,7 @@ async function resolveCart(input,conn=db){
  const items=[];
  for(const item of [...input.items].sort((a,b)=>Number(a.ticket_type_id)-Number(b.ticket_type_id))){const [[type]]=await conn.query('SELECT * FROM ticket_types WHERE id=? AND event_id=?',[positive(item.ticket_type_id,'ticket type'),event.id]);const qty=positive(item.qty,'ticket quantity');
   if(!type||availability(event,type)!=='on_sale'||qty<type.min_per_order||qty>type.max_per_order||qty>type.quantity-type.sold)fail('Review your ticket availability and quantities.',409);
-  items.push({ticketType:type,qty});
+  items.push({ticketType:require('../models/TicketType').withOffer(type),qty});
  }
  return items;
 }
@@ -111,4 +172,4 @@ async function transition(conn,orderId,status){
  await conn.query('SELECT id FROM discount_coupons WHERE id=? FOR UPDATE',[row.coupon_id]);
  await conn.query("UPDATE coupon_redemptions SET status=? WHERE order_id=? AND status='reserved'",[status,orderId]);
 }
-module.exports={code,fields,save,list,preview,resolveCart,calculate,reserve,transition};
+module.exports={code,fields,save,list,preview,resolveCart,calculate,reserve,transition,studentEntriesFor,checkStudentIds,reserveStudentIds,saveStudentAnswers};

@@ -645,3 +645,19 @@ Final canvas polish also selects text when clicking the gap between wrapped titl
 - Verified local create/save/reload/reopen, independent 900×600 sizing, proportional reduction to 720×480, and a one-page 540×360pt PDF with an undistorted QR. Production build, 47 backend tests, 180 layout checks, clipboard/geometry checks and diff check passed. Focused lint only reports the pre-existing preview-field effect warning.
 - Backup: `/root/ticketflow-backup-consistent-designer-20261022-yDI3x1`. Shared PDF bundle deployed and service restarted successfully. Frontend index SHA256 `f3498ce494e9077b1872a4b9f2483a680b452c6a5fc6111da2bad5ecd02a13ad`.
 - Live verification: New design opens the classic layout with Cinematica branding and attendee/ticket form preview; selecting attendee text exposes edit/style/delete and eight resize handles. Live PDF preview generated successfully. No production template saved; existing drafts preserved. Proof: `deployment/ticket-consistent-new-design-live.png`.
+
+## CINICAEDU student coupon and exclusive checkout discounts
+
+The deployed CINICAEDU promotion is scoped to Explorer and Creators passes. A ₹500 fixed discount applies per eligible pass: Explorer ₹999 → ₹499 without tax; Creators ₹1,499 → ₹999 plus its configured 18% GST. One of each totals ₹1,677.82.
+
+- Migration `031_per_ticket_coupon.sql` adds opt-in `fixed_per_ticket` and `tax_free_unit_max_minor` coupon settings. The promotion uses a 49,900-paise post-discount unit-price exemption ceiling. Existing coupons retain their previous per-booking pricing and tax treatment. Coupon settings are event data, not globally seeded by the migration.
+- Migration `032_student_coupon_fields.sql` adds `require_student_fields` and an event-scoped student registry. Enable “Require college name and student ID” on CINICAEDU. Every eligible attendee must provide both; other passes and no-code checkout are unchanged.
+- Student IDs are trimmed and case-insensitively unique across both passes, within a booking and across concurrent bookings. Reservations and attendee answers are saved in the order transaction. As with Udyam numbers, IDs remain reserved after cancellation or unpaid expiry. Student credentials are self-declared, not independently verified.
+- Student identities are excluded from pricing tokens, so entering them after applying the coupon does not invalidate the quoted price.
+- An applied coupon disables the Udyam input itself, its Clear button and certificate entry; no Udyam values or files are submitted. The disabled field is visibly muted and no longer prompts for a number. Removing the coupon restores Udyam. The server rejects combining the discounts.
+
+Required checkout dependencies are included: migration `028_event_udyam_registrations.sql`, the shared Udyam/coupon quote path, and migration `030_offer_price.sql` for effective ticket prices. Unrelated production campaign and theme changes are not part of this update.
+
+Verification: `node tests/checkout-attendees.mjs` and `npm run build` from `frontend`; `node tests/studentCoupons.integration.js` and `node tests/coupons.integration.js` from `backend` against a disposable MariaDB instance with CREATE/DROP permission. The student integration test exercises required fields, price-token consistency, stored answers, event-scoped uniqueness, concurrency and Udyam exclusion. Do not run database integration tests against the production database.
+
+Public checkout verification covered Explorer alone, Creators alone and both together, including attempted focus/typing into disabled Udyam fields, required blank student fields, coupon removal and desktop/mobile presentation. No production booking, payment or email was created.

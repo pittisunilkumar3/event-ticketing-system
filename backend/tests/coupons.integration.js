@@ -30,7 +30,7 @@ const pass=message=>{passed++;console.log('PASS '+message);};
  }
  const [a,b]=tenants;
  await require('../saas/paymentSettings').save({key_id:'rzp_test_coupons',key_secret:'coupon-fixture',webhook_secret:'coupon-hook',mode:'test'},null);
- const defaults={kind:'percentage',value:20,event_id:'',ticket_type_ids:[],min_subtotal:0,max_discount:'',usage_limit:'',per_email_limit:'',starts_at:null,ends_at:null,enabled:true};
+ const defaults={kind:'percentage',value:20,event_id:'',ticket_type_ids:[],min_subtotal:0,max_discount:'',usage_limit:'',per_email_limit:'',starts_at:null,ends_at:null,enabled:true,student_fields:false};
  async function make(code,extra={},t=a){return {id:(await req(t.path+'/admin/coupons','POST',{...defaults,code,...extra},t.token,201)).id,...defaults,code,...extra,revision:1};}
  const quote=(code,items=[{ticket_type_id:a.type.id,qty:1}],status=200,extra={})=>req(a.path+'/coupons/validate','POST',{event_id:a.event.id,coupon_code:code,items,...extra},null,status);
  const payload=(code,email='guest@coupon.test',types=[a.type],extra={})=>({event_id:a.event.id,customer_name:'Coupon Guest',email,phone:'9876543210',request_key:crypto.randomUUID(),coupon_code:code,items:types.map(t=>({ticket_type_id:t.id,qty:1,attendees:[{name:'Coupon Guest',email,phone:'9876543210'}]})),...extra});

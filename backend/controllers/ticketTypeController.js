@@ -41,6 +41,19 @@ const list = asyncHandler(async (req, res) => {
   res.json({ success: true, data: { ticketTypes: types } });
 });
 
+function offerPrice(value,price){
+  if(value===undefined||value===null||value==='')return null;
+  const n=Number(value);
+  if(!Number.isFinite(n)||n<0)fail('Enter the offer price as a valid amount.');
+  if(price!==undefined&&price!==null&&n>=Number(price))fail('The offer price must be lower than the ticket price.');
+  return n;
+}
+function udyamMinor(value){
+  if(value===undefined||value===null||value==='')return null;
+  if(!/^\d+$/.test(String(value))||Number(value)>100000000)fail('Enter the Udyam offer as a valid amount.');
+  return Number(value);
+}
+
 /** POST /api/admin/ticket-types */
 const create = asyncHandler(async (req, res) => {
   const { event_id, name, price, quantity } = req.body;
@@ -65,6 +78,8 @@ const create = asyncHandler(async (req, res) => {
     sales_start: date(req.body.sales_start,'Sales start'),
     sales_end: date(req.body.sales_end,'Sales end'),
     is_active:req.body.is_active ?? true, min_per_order:req.body.min_per_order ?? 1, max_per_order:req.body.max_per_order ?? 10, sort_order:req.body.sort_order ?? 0,
+    udyam_discount_minor: udyamMinor(req.body.udyam_discount_minor),
+    offer_price: offerPrice(req.body.offer_price, req.body.price),
     template_id: req.body.template_id || null,
     email_template_id:req.body.email_template_id||null,submission_url:req.body.submission_url||null,guidelines_url:req.body.guidelines_url||null,
   });
@@ -89,6 +104,8 @@ const update = asyncHandler(async (req, res) => {
   const fields={...req.body};
   for(const key of ['email_template_id','submission_url','guidelines_url'])if(key in fields&&!fields[key])fields[key]=null;
   for(const key of ['sales_start','sales_end']) if(key in fields) fields[key]=date(fields[key],key);
+  if('udyam_discount_minor' in fields) fields.udyam_discount_minor=udyamMinor(fields.udyam_discount_minor);
+  if('offer_price' in fields) fields.offer_price=offerPrice(fields.offer_price, fields.price!==undefined?fields.price:type.price);
   const updated = await TicketType.update(type.id, fields);
   res.json({ success: true, message: 'Ticket type updated', data: { ticketType: updated } });
 });
